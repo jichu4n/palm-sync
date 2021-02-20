@@ -1,0 +1,36 @@
+{
+  "name": "palm-pdb",
+  "version": "0.1.0",
+  "description": "Library for manipulating Palm OS PDB files",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jichu4n/palm-pdb.git"
+  },
+  "author": "Chuan Ji <chuan@jichu4n.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jichu4n/palm-pdb/issues"
+  },
+  "homepage": "https://github.com/jichu4n/palm-pdb#readme",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "lint": "prettier --check .",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.7",
+    "@types/jest": "^26.0.20",
+    "@types/lodash": "^4.14.168",
+    "@types/node": "^14.14.30",
+    "fs-extra": "^9.1.0",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.1",
+    "typescript": "^4.1.5"
+  },
+  "dependencies": {
+    "lodash": "^4.17.20",
+    "smart-buffer": "^4.1.0"
+  }
+}
