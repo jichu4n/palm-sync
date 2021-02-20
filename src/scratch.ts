@@ -7,10 +7,16 @@ if (require.main === module) {
     const buffer = await fs.readFile(
       path.join(__dirname, '..', 'tests', 'testdata', 'DatebookDB.pdb')
     );
-    const pdb = new Database();
-    pdb.parseFrom(buffer);
-    console.log(JSON.stringify(pdb.header, null, 2));
-    console.log(JSON.stringify(pdb.getRecord(0), null, 2));
-    console.log(JSON.stringify(pdb.getRecord(1), null, 2));
+    const pdb1 = new Database();
+    pdb1.parseFrom(buffer);
+    console.log(JSON.stringify(pdb1.header, null, 2));
+
+    const pdb2 = new Database();
+    await fs.writeFile(
+      path.join(__dirname, '..', 'tests', 'testdata', 'DatebookDB-2.pdb'),
+      pdb1.serialize()
+    );
+    pdb2.parseFrom(pdb1.serialize());
+    console.log(JSON.stringify(pdb2.header, null, 2));
   })();
 }

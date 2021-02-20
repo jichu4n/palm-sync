@@ -6,7 +6,7 @@ export interface Serializable {
   /** Deserializes a buffer into this object. */
   parseFrom(buffer: Buffer): void;
   /** Serializes this object into a buffer. */
-  // serialize(): Buffer;
+  serialize(): Buffer;
 }
 
 /** Epoch for PDB timestamps. */
@@ -40,6 +40,21 @@ export class PdbDate implements Serializable {
       this.value.setTime(ts * 1000);
     }
   }
+
+  serialize() {
+    const buffer = Buffer.alloc(4);
+    switch (this.epochType) {
+      case 'pdb':
+        buffer.writeUInt32BE((this.value.getTime() - PDB_EPOCH) / 1000);
+        break;
+      case 'unix':
+        buffer.writeInt32BE(this.value.getTime() / 1000);
+        break;
+      default:
+        throw new Error(`Unknown epoch type: ${this.epochType}`);
+    }
+    return buffer;
+  }
 }
 
 /** PdbDate corresponding to PDB_EPOCH. */
@@ -63,9 +78,9 @@ export class DatabaseHdrType implements Serializable {
   /** Modification number (integer). */
   modificationNumber: number = 0;
   /** Offset to AppInfo block. */
-  appInfoId: number | null = null;
+  appInfoId: number = 0;
   /** Offset to SortInfo block. */
-  sortInfoId: number | null = null;
+  sortInfoId: number = 0;
   /** Database type identifier (max 4 bytes). */
   type: string = '';
   /** Database creator identifier (max 4 bytes). */
@@ -92,6 +107,33 @@ export class DatabaseHdrType implements Serializable {
     this.uniqueIdSeed = reader.readUInt32BE();
     this.recordList.parseFrom(buffer.slice(reader.readOffset));
   }
+
+  serialize() {
+    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    if (this.name.length > 31) {
+      throw new Error(`Name exceeds 31 bytes: ${this.name.length}`);
+    }
+    writer.writeStringNT(this.name);
+    writer.writeBuffer(this.attributes.serialize(), 32);
+    writer.writeUInt16BE(this.version);
+    writer.writeBuffer(this.creationDate.serialize());
+    writer.writeBuffer(this.modificationDate.serialize());
+    writer.writeBuffer(this.lastBackupDate.serialize());
+    writer.writeUInt32BE(this.modificationNumber);
+    writer.writeUInt32BE(this.appInfoId);
+    writer.writeUInt32BE(this.sortInfoId);
+    if (this.type.length > 4) {
+      throw new Error(`Type exceeds 4 bytes: ${this.type.length}`);
+    }
+    writer.writeString(this.type);
+    if (this.creator.length > 4) {
+      throw new Error(`Type exceeds 4 bytes: ${this.creator.length}`);
+    }
+    writer.writeString(this.creator, 64);
+    writer.writeUInt32BE(this.uniqueIdSeed, 68);
+    writer.writeBuffer(this.recordList.serialize());
+    return writer.toBuffer();
+  }
 }
 
 /** Record metadata list. */
@@ -106,12 +148,34 @@ export class RecordListType implements Serializable {
   parseFrom(buffer: Buffer) {
     const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
     this.nextRecordListId = reader.readUInt32BE();
+    if (this.nextRecordListId !== 0) {
+      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
+    }
     this.numRecords = reader.readUInt16BE();
     for (let i = 0; i < this.numRecords; ++i) {
       const entry = new RecordEntryType();
       entry.parseFrom(reader.readBuffer(8));
       this.entries.push(entry);
     }
+  }
+
+  serialize() {
+    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    if (this.nextRecordListId !== 0) {
+      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
+    }
+    writer.writeUInt32BE(this.nextRecordListId);
+    if (this.numRecords !== this.entries.length) {
+      throw new Error(
+        `numRecords (${this.numRecords}) does not match actual RecordList entries (${this.entries.length})`
+      );
+    }
+    writer.writeUInt16BE(this.numRecords);
+    for (const entry of this.entries) {
+      writer.writeBuffer(entry.serialize());
+    }
+    writer.writeUInt16BE(0); // Placeholder bytes.
+    return writer.toBuffer();
   }
 }
 
@@ -129,15 +193,25 @@ export class RecordEntryType implements Serializable {
     this.localChunkId = reader.readUInt32BE();
     this.attributes.parseFrom(reader.readBuffer(1));
     this.uniqueId =
-      (reader.readUInt8() << 32) |
       (reader.readUInt8() << 16) |
+      (reader.readUInt8() << 8) |
       reader.readUInt8();
+  }
+
+  serialize() {
+    const writer = SmartBuffer.fromSize(8, 'ascii');
+    writer.writeUInt32BE(this.localChunkId);
+    writer.writeBuffer(this.attributes.serialize());
+    writer.writeUInt8((this.uniqueId >> 16) & 0xff);
+    writer.writeUInt8((this.uniqueId >> 8) & 0xff);
+    writer.writeUInt8(this.uniqueId & 0xff);
+    return writer.toBuffer();
   }
 }
 
 /** Utility type for attribute bitmasks. */
 export type AttrsSpec<T> = {
-  [K in keyof Partial<T>]: {
+  [K in keyof T]?: {
     bitmask: number;
     valueType: 'boolean' | 'number';
   };
@@ -197,6 +271,12 @@ export class DatabaseAttrs implements Serializable {
     );
   }
 
+  serialize() {
+    const buffer = Buffer.alloc(2);
+    buffer.writeUInt16BE(serializeAttrs(this, DatabaseAttrs.attrsSpec));
+    return buffer;
+  }
+
   private static attrsSpec: AttrsSpec<DatabaseAttrs> = {
     resDB: {bitmask: 0x0001, valueType: 'boolean'},
     readOnly: {bitmask: 0x0002, valueType: 'boolean'},
@@ -245,6 +325,19 @@ export class RecordAttrs implements Serializable {
     }
   }
 
+  serialize() {
+    const buffer = Buffer.alloc(1);
+    buffer.writeUInt8(
+      serializeAttrs(
+        this,
+        this.delete || this.busy
+          ? _.omit(RecordAttrs.attrsSpec, 'category')
+          : _.omit(RecordAttrs.attrsSpec, 'archive')
+      )
+    );
+    return buffer;
+  }
+
   private static attrsSpec: AttrsSpec<RecordAttrs> = {
     delete: {bitmask: 0x80, valueType: 'boolean'},
     dirty: {bitmask: 0x40, valueType: 'boolean'},
@@ -263,9 +356,27 @@ function parseAttrs<T extends Object>(
 ) {
   Object.assign(
     t,
-    _.mapValues(spec, ({bitmask, valueType}) => {
+    _.mapValues(spec, (attrSpec) => {
+      const {bitmask, valueType} = attrSpec!;
       const rawValue = rawAttrs & bitmask;
       return valueType === 'boolean' ? !!rawValue : rawValue;
     })
   );
+}
+
+/** Utility function for serializing attributes using bitmasks. */
+function serializeAttrs<T extends Object>(t: T, spec: AttrsSpec<T>): number {
+  let rawAttrs = 0;
+  for (const [key, attrSpec] of Object.entries(spec)) {
+    const {bitmask, valueType} = attrSpec!;
+    const rawValue = t[key as keyof T];
+    const numericValue =
+      valueType === 'boolean'
+        ? rawValue
+          ? ~0
+          : 0
+        : ((rawValue as any) as number);
+    rawAttrs |= numericValue & bitmask;
+  }
+  return rawAttrs;
 }
