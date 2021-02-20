@@ -1,9 +1,6 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 
-/** Epoch for PDB timestamps. */
-export const PDB_EPOCH = new Date('1904-01-01T00:00:00.000Z');
-
 /** An object that can be serialized / deserialized. */
 export interface Serializable {
   /** Deserializes a buffer into this object. */
@@ -11,6 +8,43 @@ export interface Serializable {
   /** Serializes this object into a buffer. */
   // serialize(): Buffer;
 }
+
+/** Epoch for PDB timestamps. */
+export const PDB_EPOCH = new Date('1904-01-01T00:00:00.000Z').getTime();
+
+/** Date object augmented with PDB-specific attributes. */
+export class PdbDate implements Serializable {
+  /** JavaScript Date value corresponding to the time. */
+  value: Date = new Date();
+  /** The epoch to use when serializing this date. */
+  epochType: 'pdb' | 'unix' = 'pdb';
+
+  /** Parses a PDB timestamp.
+   *
+   * From https://wiki.mobileread.com/wiki/PDB#PDB_Times:
+   *
+   * If the time has the top bit set, it's an unsigned 32-bit number counting
+   * from 1st Jan 1904.
+   *
+   * If the time has the top bit clear, it's a signed 32-bit number counting
+   * from 1st Jan 1970.
+   */
+  parseFrom(buffer: Buffer) {
+    let ts = buffer.readUInt32BE();
+    if (ts === 0 || ts & (1 << 31)) {
+      this.epochType = 'pdb';
+      this.value.setTime(PDB_EPOCH + ts * 1000);
+    } else {
+      this.epochType = 'unix';
+      ts = buffer.readInt32BE();
+      this.value.setTime(ts * 1000);
+    }
+  }
+}
+
+/** PdbDate corresponding to PDB_EPOCH. */
+const pdbEpochDate = new PdbDate();
+pdbEpochDate.value.setTime(PDB_EPOCH);
 
 /** PDB database header. */
 export class DatabaseHdrType implements Serializable {
@@ -21,11 +55,11 @@ export class DatabaseHdrType implements Serializable {
   /** Database version (integer). */
   version: number = 0;
   /** Database creation timestamp. */
-  creationDate: Date = new Date();
+  creationDate: PdbDate = new PdbDate();
   /** Database modification timestamp. */
-  modificationDate: Date = new Date();
+  modificationDate: PdbDate = new PdbDate();
   /** Last backup timestamp. */
-  lastBackupDate: Date = PDB_EPOCH;
+  lastBackupDate: PdbDate = pdbEpochDate;
   /** Modification number (integer). */
   modificationNumber: number = 0;
   /** Offset to AppInfo block. */
@@ -47,9 +81,9 @@ export class DatabaseHdrType implements Serializable {
     reader.readOffset = 32;
     this.attributes.parseFrom(reader.readBuffer(2));
     this.version = reader.readUInt16BE();
-    this.creationDate = parseTimestamp(reader.readBuffer(4));
-    this.modificationDate = parseTimestamp(reader.readBuffer(4));
-    this.lastBackupDate = parseTimestamp(reader.readBuffer(4));
+    this.creationDate.parseFrom(reader.readBuffer(4));
+    this.modificationDate.parseFrom(reader.readBuffer(4));
+    this.lastBackupDate.parseFrom(reader.readBuffer(4));
     this.modificationNumber = reader.readUInt32BE();
     this.appInfoId = reader.readUInt32BE();
     this.sortInfoId = reader.readUInt32BE();
@@ -234,24 +268,4 @@ function parseAttrs<T extends Object>(
       return valueType === 'boolean' ? !!rawValue : rawValue;
     })
   );
-}
-
-/** Parses a PDB timestamp.
- *
- * From https://wiki.mobileread.com/wiki/PDB#PDB_Times:
- *
- * If the time has the top bit set, it's an unsigned 32-bit number counting
- * from 1st Jan 1904.
- *
- * If the time has the top bit clear, it's a signed 32-bit number counting
- * from 1st Jan 1970.
- */
-function parseTimestamp(data: Buffer) {
-  let ts = data.readUInt32BE();
-  if (ts === 0 || ts & (1 << 31)) {
-    return new Date(PDB_EPOCH.getTime() + ts * 1000);
-  } else {
-    ts = data.readInt32BE();
-    return new Date(ts * 1000);
-  }
 }
