@@ -4,7 +4,7 @@ import DatabaseDate, {epochDatabaseDate} from './database-date';
 import Serializable from './serializable';
 
 /** PDB database header. */
-export class DatabaseHdrType extends Serializable {
+export class DatabaseHdrType implements Serializable {
   /** Database name (max 31 bytes). */
   name: string = '';
   /** Database attribute flags. */
@@ -29,8 +29,6 @@ export class DatabaseHdrType extends Serializable {
   creator: string = '';
   /** Seed for generating record IDs. */
   uniqueIdSeed: number = 0;
-  /** Record metadata list. */
-  recordList: RecordListType = new RecordListType();
 
   parseFrom(buffer: Buffer) {
     const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
@@ -47,7 +45,6 @@ export class DatabaseHdrType extends Serializable {
     this.type = reader.readString(4);
     this.creator = reader.readString(4);
     this.uniqueIdSeed = reader.readUInt32BE();
-    this.recordList.parseFrom(buffer.slice(reader.readOffset));
   }
 
   serialize() {
@@ -73,17 +70,16 @@ export class DatabaseHdrType extends Serializable {
     }
     writer.writeString(this.creator, 64);
     writer.writeUInt32BE(this.uniqueIdSeed, 68);
-    writer.writeBuffer(this.recordList.serialize());
     return writer.toBuffer();
   }
 
   get serializedLength() {
-    return 72 + this.recordList.serializedLength;
+    return 72;
   }
 }
 
 /** Record metadata list. */
-export class RecordListType extends Serializable {
+export class RecordListType implements Serializable {
   /** Offset of next RecordList structure. (Unsupported) */
   nextRecordListId: number = 0;
   /** Number of records in list. */
@@ -126,7 +122,7 @@ export class RecordListType extends Serializable {
 }
 
 /** Record metadata for PDB files. */
-export class RecordEntryType extends Serializable {
+export class RecordEntryType implements Serializable {
   /** Offset to raw record data. */
   localChunkId: number = 0;
   /** Record attributes. */
@@ -171,7 +167,7 @@ export type AttrsSpec<T> = {
  *
  * Source: https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
  */
-export class DatabaseAttrs extends Serializable {
+export class DatabaseAttrs implements Serializable {
   /** Resource database. */
   resDB: boolean = false;
   /** Read Only database. */
@@ -255,7 +251,7 @@ export class DatabaseAttrs extends Serializable {
  *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
  *   - https://metacpan.org/release/Palm-PDB/source/lib/Palm/PDB.pm
  */
-export class RecordAttrs extends Serializable {
+export class RecordAttrs implements Serializable {
   /** Delete this record next sync */
   delete: boolean = false;
   /** Archive this record next sync */

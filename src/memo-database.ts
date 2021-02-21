@@ -1,7 +1,8 @@
-import Database from './database';
 import {SmartBuffer} from 'smart-buffer';
-import Serializable, {SerializableBuffer} from './serializable';
+import Database from './database';
 import {DatabaseHdrType} from './database-header';
+import {BaseRecord} from './record';
+import {SerializableBuffer} from './serializable';
 
 /** MemoDB database. */
 class MemoDatabase extends Database<
@@ -27,7 +28,7 @@ class MemoDatabase extends Database<
 }
 
 /** A MemoDB record. */
-class MemoRecord extends Serializable {
+class MemoRecord extends BaseRecord {
   /** Memo content. */
   content: string = '';
 

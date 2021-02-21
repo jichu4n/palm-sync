@@ -1,19 +1,17 @@
 /** An object that can be serialized / deserialized. */
-abstract class Serializable {
+interface Serializable {
   /** Deserializes a buffer into this object. */
-  abstract parseFrom(buffer: Buffer): void;
+  parseFrom(buffer: Buffer): void;
   /** Serializes this object into a buffer. */
-  abstract serialize(): Buffer;
+  serialize(): Buffer;
   /** Computes the serialized length of this object. */
-  get serializedLength(): number {
-    return this.serialize().length;
-  }
+  serializedLength: number;
 }
 
 export default Serializable;
 
 /** No-op Serializable implementation that serializes to / from Buffers. */
-export class SerializableBuffer extends Serializable {
+export class SerializableBuffer implements Serializable {
   data: Buffer = Buffer.alloc(0);
 
   parseFrom(buffer: Buffer) {
@@ -23,5 +21,9 @@ export class SerializableBuffer extends Serializable {
 
   serialize() {
     return this.data;
+  }
+
+  get serializedLength() {
+    return this.data.length;
   }
 }

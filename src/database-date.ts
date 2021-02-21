@@ -4,7 +4,7 @@ import Serializable from './serializable';
 export const epochDate = new Date('1904-01-01T00:00:00.000Z');
 
 /** Wrapper around a `Date` value with PDB-specific attributes. */
-class DatabaseDate extends Serializable {
+class DatabaseDate implements Serializable {
   /** JavaScript Date value corresponding to the time. */
   value: Date = new Date();
   /** The epoch to use when serializing this date. */

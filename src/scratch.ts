@@ -15,6 +15,7 @@ if (require.main === module) {
       console.log('------------');
       console.log(`Memo #${i}`);
       console.log('------------');
+      console.log(JSON.stringify(record.entry));
       console.log(record.content);
     }
 
