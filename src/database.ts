@@ -16,7 +16,7 @@ class Database<
    * Note that some fields in the header are recomputed based on other
    * properties during serialization. See `recomputeHeader()` for details.
    */
-  header: DatabaseHdrType = new DatabaseHdrType();
+  header: DatabaseHdrType = this.defaultHeader;
   /** AppInfo value. */
   appInfo: AppInfoT | null = null;
   /** SortInfo value. */
@@ -42,6 +42,11 @@ class Database<
     this.sortInfoType = sortInfoType;
   }
 
+  /** Generates the default header for a new database. */
+  get defaultHeader() {
+    return new DatabaseHdrType();
+  }
+
   /** Parses a PDB file. */
   parseFrom(buffer: Buffer) {
     this.header.parseFrom(buffer);
@@ -49,7 +54,7 @@ class Database<
     if (this.header.appInfoId) {
       const appInfoEnd =
         this.header.sortInfoId ||
-        (this.numRecords > 0
+        (this.header.recordList.numRecords > 0
           ? this.header.recordList.entries[0].localChunkId
           : buffer.length);
       this.appInfo = new this.appInfoType();
@@ -60,7 +65,7 @@ class Database<
 
     if (this.header.sortInfoId) {
       const sortInfoEnd =
-        this.numRecords > 0
+        this.header.recordList.numRecords > 0
           ? this.header.recordList.entries[0].localChunkId
           : buffer.length;
       this.sortInfo = new this.sortInfoType();
@@ -72,10 +77,10 @@ class Database<
     }
 
     this.records.length = 0;
-    for (let i = 0; i < this.numRecords; ++i) {
+    for (let i = 0; i < this.header.recordList.numRecords; ++i) {
       const recordStart = this.header.recordList.entries[i].localChunkId;
       const recordEnd =
-        i < this.numRecords - 1
+        i < this.header.recordList.numRecords - 1
           ? this.header.recordList.entries[i + 1].localChunkId
           : buffer.length;
       const record = new this.recordType();
@@ -111,7 +116,7 @@ class Database<
   recomputeHeader() {
     const headerSize =
       78 /* Header fields up to to numRecords */ +
-      this.numRecords * 8 /* Record list */ +
+      this.records.length * 8 /* Record list */ +
       2; /* Placeholder */
     let offset = headerSize;
     if (this.appInfo) {
@@ -127,21 +132,16 @@ class Database<
       this.header.sortInfoId = 0;
     }
 
-    if (this.numRecords !== this.records.length) {
+    if (this.header.recordList.entries.length !== this.records.length) {
       throw new Error(
-        `Number of record entries in header (${this.numRecords}) ` +
+        `Number of record entries in header (${this.header.recordList.entries.length}) ` +
           `do not match record values (${this.records.length})`
       );
     }
-    for (let i = 0; i < this.numRecords; ++i) {
+    for (let i = 0; i < this.records.length; ++i) {
       this.header.recordList.entries[i].localChunkId = offset;
       offset += this.records[i].serializedLength;
     }
-  }
-
-  /** Returns the number of records in the database. */
-  get numRecords() {
-    return this.header.recordList.entries.length;
   }
 
   private readonly recordType: new () => RecordT;
