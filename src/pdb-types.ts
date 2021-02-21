@@ -111,7 +111,7 @@ export class DatabaseHdrType implements Serializable {
   serialize() {
     const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
     if (this.name.length > 31) {
-      throw new Error(`Name exceeds 31 bytes: ${this.name.length}`);
+      throw new Error(`Name length exceeds 31 bytes: ${this.name.length}`);
     }
     writer.writeStringNT(this.name);
     writer.writeBuffer(this.attributes.serialize(), 32);
@@ -123,11 +123,11 @@ export class DatabaseHdrType implements Serializable {
     writer.writeUInt32BE(this.appInfoId);
     writer.writeUInt32BE(this.sortInfoId);
     if (this.type.length > 4) {
-      throw new Error(`Type exceeds 4 bytes: ${this.type.length}`);
+      throw new Error(`Type length exceeds 4 bytes: ${this.type.length}`);
     }
     writer.writeString(this.type);
     if (this.creator.length > 4) {
-      throw new Error(`Type exceeds 4 bytes: ${this.creator.length}`);
+      throw new Error(`Creator exceeds 4 bytes: ${this.creator.length}`);
     }
     writer.writeString(this.creator, 64);
     writer.writeUInt32BE(this.uniqueIdSeed, 68);
@@ -165,16 +165,12 @@ export class RecordListType implements Serializable {
       throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
     }
     writer.writeUInt32BE(this.nextRecordListId);
-    if (this.numRecords !== this.entries.length) {
-      throw new Error(
-        `numRecords (${this.numRecords}) does not match actual RecordList entries (${this.entries.length})`
-      );
-    }
+    this.numRecords = this.entries.length;
     writer.writeUInt16BE(this.numRecords);
     for (const entry of this.entries) {
       writer.writeBuffer(entry.serialize());
     }
-    writer.writeUInt16BE(0); // Placeholder bytes.
+    writer.writeUInt16BE(0); // 2 placeholder bytes.
     return writer.toBuffer();
   }
 }

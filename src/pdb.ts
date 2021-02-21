@@ -56,6 +56,26 @@ class Database implements Serializable {
   }
 
   serialize() {
+    this.recomputeHeader();
+    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    writer.writeBuffer(this.header.serialize());
+    writer.writeBuffer(this.appInfoBuffer);
+    writer.writeBuffer(this.sortInfoBuffer);
+    for (const recordBuffer of this.recordBuffers) {
+      writer.writeBuffer(recordBuffer);
+    }
+    return writer.toBuffer();
+  }
+
+  /** Recomputes header fields based on this object's state.
+   *
+   * Recomputed header fields:
+   *
+   *   - appInfoId
+   *   - sortInfoId
+   *   - localChunkId for each RecordEntryType
+   */
+  recomputeHeader() {
     const headerSize =
       78 /* Header fields up to to numRecords */ +
       this.numRecords * 8 /* Record list */ +
@@ -74,29 +94,16 @@ class Database implements Serializable {
       this.header.sortInfoId = 0;
     }
 
-    if (this.numRecords !== this.header.recordList.entries.length) {
-      throw new Error(
-        `numRecords (${this.numRecords}) does not match actual RecordList entries (${this.header.recordList.entries.length})`
-      );
-    }
     if (this.numRecords !== this.recordBuffers.length) {
       throw new Error(
-        `numRecords (${this.numRecords}) does not match actual records (${this.recordBuffers.length})`
+        `Number of record entries in header (${this.numRecords}) ` +
+          `do not match record values (${this.recordBuffers.length})`
       );
     }
     for (let i = 0; i < this.numRecords; ++i) {
       this.header.recordList.entries[i].localChunkId = offset;
       offset += this.recordBuffers[i].length;
     }
-
-    const writer = SmartBuffer.fromSize(offset, 'ascii');
-    writer.writeBuffer(this.header.serialize());
-    writer.writeBuffer(this.appInfoBuffer);
-    writer.writeBuffer(this.sortInfoBuffer);
-    for (const recordBuffer of this.recordBuffers) {
-      writer.writeBuffer(recordBuffer);
-    }
-    return writer.toBuffer();
   }
 
   /** Returns the number of records in the database. */
