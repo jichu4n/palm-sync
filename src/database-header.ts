@@ -1,68 +1,10 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
-
-/** An object that can be serialized / deserialized. */
-export interface Serializable {
-  /** Deserializes a buffer into this object. */
-  parseFrom(buffer: Buffer): void;
-  /** Serializes this object into a buffer. */
-  serialize(): Buffer;
-}
-
-/** Epoch for PDB timestamps. */
-export const PDB_EPOCH = new Date('1904-01-01T00:00:00.000Z').getTime();
-
-/** Date object augmented with PDB-specific attributes. */
-export class PdbDate implements Serializable {
-  /** JavaScript Date value corresponding to the time. */
-  value: Date = new Date();
-  /** The epoch to use when serializing this date. */
-  epochType: 'pdb' | 'unix' = 'pdb';
-
-  /** Parses a PDB timestamp.
-   *
-   * From https://wiki.mobileread.com/wiki/PDB#PDB_Times:
-   *
-   * If the time has the top bit set, it's an unsigned 32-bit number counting
-   * from 1st Jan 1904.
-   *
-   * If the time has the top bit clear, it's a signed 32-bit number counting
-   * from 1st Jan 1970.
-   */
-  parseFrom(buffer: Buffer) {
-    let ts = buffer.readUInt32BE();
-    if (ts === 0 || ts & (1 << 31)) {
-      this.epochType = 'pdb';
-      this.value.setTime(PDB_EPOCH + ts * 1000);
-    } else {
-      this.epochType = 'unix';
-      ts = buffer.readInt32BE();
-      this.value.setTime(ts * 1000);
-    }
-  }
-
-  serialize() {
-    const buffer = Buffer.alloc(4);
-    switch (this.epochType) {
-      case 'pdb':
-        buffer.writeUInt32BE((this.value.getTime() - PDB_EPOCH) / 1000);
-        break;
-      case 'unix':
-        buffer.writeInt32BE(this.value.getTime() / 1000);
-        break;
-      default:
-        throw new Error(`Unknown epoch type: ${this.epochType}`);
-    }
-    return buffer;
-  }
-}
-
-/** PdbDate corresponding to PDB_EPOCH. */
-const pdbEpochDate = new PdbDate();
-pdbEpochDate.value.setTime(PDB_EPOCH);
+import DatabaseDate, {epochDatabaseDate} from './database-date';
+import Serializable from './serializable';
 
 /** PDB database header. */
-export class DatabaseHdrType implements Serializable {
+export class DatabaseHdrType extends Serializable {
   /** Database name (max 31 bytes). */
   name: string = '';
   /** Database attribute flags. */
@@ -70,11 +12,11 @@ export class DatabaseHdrType implements Serializable {
   /** Database version (integer). */
   version: number = 0;
   /** Database creation timestamp. */
-  creationDate: PdbDate = new PdbDate();
+  creationDate: DatabaseDate = new DatabaseDate();
   /** Database modification timestamp. */
-  modificationDate: PdbDate = new PdbDate();
+  modificationDate: DatabaseDate = new DatabaseDate();
   /** Last backup timestamp. */
-  lastBackupDate: PdbDate = pdbEpochDate;
+  lastBackupDate: DatabaseDate = epochDatabaseDate;
   /** Modification number (integer). */
   modificationNumber: number = 0;
   /** Offset to AppInfo block. */
@@ -134,10 +76,14 @@ export class DatabaseHdrType implements Serializable {
     writer.writeBuffer(this.recordList.serialize());
     return writer.toBuffer();
   }
+
+  get serializedLength() {
+    return 72 + this.recordList.serializedLength;
+  }
 }
 
 /** Record metadata list. */
-export class RecordListType implements Serializable {
+export class RecordListType extends Serializable {
   /** Offset of next RecordList structure. (Unsupported) */
   nextRecordListId: number = 0;
   /** Number of records in list. */
@@ -173,10 +119,14 @@ export class RecordListType implements Serializable {
     writer.writeUInt16BE(0); // 2 placeholder bytes.
     return writer.toBuffer();
   }
+
+  get serializedLength() {
+    return 6 + this.entries.length * 8 + 2;
+  }
 }
 
 /** Record metadata for PDB files. */
-export class RecordEntryType implements Serializable {
+export class RecordEntryType extends Serializable {
   /** Offset to raw record data. */
   localChunkId: number = 0;
   /** Record attributes. */
@@ -203,6 +153,10 @@ export class RecordEntryType implements Serializable {
     writer.writeUInt8(this.uniqueId & 0xff);
     return writer.toBuffer();
   }
+
+  get serializedLength() {
+    return 8;
+  }
 }
 
 /** Utility type for attribute bitmasks. */
@@ -217,7 +171,7 @@ export type AttrsSpec<T> = {
  *
  * Source: https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
  */
-export class DatabaseAttrs implements Serializable {
+export class DatabaseAttrs extends Serializable {
   /** Resource database. */
   resDB: boolean = false;
   /** Read Only database. */
@@ -273,6 +227,10 @@ export class DatabaseAttrs implements Serializable {
     return buffer;
   }
 
+  get serializedLength() {
+    return 2;
+  }
+
   private static attrsSpec: AttrsSpec<DatabaseAttrs> = {
     resDB: {bitmask: 0x0001, valueType: 'boolean'},
     readOnly: {bitmask: 0x0002, valueType: 'boolean'},
@@ -297,7 +255,7 @@ export class DatabaseAttrs implements Serializable {
  *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
  *   - https://metacpan.org/release/Palm-PDB/source/lib/Palm/PDB.pm
  */
-export class RecordAttrs implements Serializable {
+export class RecordAttrs extends Serializable {
   /** Delete this record next sync */
   delete: boolean = false;
   /** Archive this record next sync */
@@ -332,6 +290,10 @@ export class RecordAttrs implements Serializable {
       )
     );
     return buffer;
+  }
+
+  get serializedLength() {
+    return 1;
   }
 
   private static attrsSpec: AttrsSpec<RecordAttrs> = {
