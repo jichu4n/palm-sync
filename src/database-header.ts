@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
-import DatabaseDate, {epochDatabaseDate} from './database-date';
+import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
 import Serializable from './serializable';
 
 /** PDB database header. */
@@ -12,11 +12,11 @@ export class DatabaseHdrType implements Serializable {
   /** Database version (integer). */
   version: number = 0;
   /** Database creation timestamp. */
-  creationDate: DatabaseDate = new DatabaseDate();
+  creationDate: DatabaseTimestamp = new DatabaseTimestamp();
   /** Database modification timestamp. */
-  modificationDate: DatabaseDate = new DatabaseDate();
+  modificationDate: DatabaseTimestamp = new DatabaseTimestamp();
   /** Last backup timestamp. */
-  lastBackupDate: DatabaseDate = epochDatabaseDate;
+  lastBackupDate: DatabaseTimestamp = epochDatabaseTimestamp;
   /** Modification number (integer). */
   modificationNumber: number = 0;
   /** Offset to AppInfo block. */
