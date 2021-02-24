@@ -27,17 +27,18 @@ export const APP_INFO_CATEGORY_DATA_LENGTH = 276;
  * If data is non-null, it will be used to serialize / deserialize extra data in
  * the AppInfo block following standard category data.
  */
-export class AppInfoType<T extends Serializable = SerializableBuffer>
+export class AppInfoType<AppDataT extends Serializable = SerializableBuffer>
   implements Serializable {
   /** Array of category information (max 16 elements). */
   categories: Array<CategoryInfo> = [];
   /** The last unique category ID assigned. */
   lastUniqId: number = 0;
-  /** Extra data in the AppInfo block following standard category data.
-   *
-   * If null, application-specific data will not be serialized / deserialized.
-   */
-  data: T | null = null;
+  /** Extra data in the AppInfo block following standard category data. */
+  appData: AppDataT | null = null;
+
+  constructor(appDataType?: new () => AppDataT) {
+    this.appDataType = appDataType;
+  }
 
   /** Finds the category with the given unique ID. */
   getCategoryByUniqId(uniqId: number): CategoryInfo | null {
@@ -79,8 +80,11 @@ export class AppInfoType<T extends Serializable = SerializableBuffer>
       });
     }
 
-    if (this.data) {
-      this.data.parseFrom(reader.readBuffer());
+    if (this.appDataType && reader.remaining()) {
+      this.appData = new this.appDataType();
+      this.appData.parseFrom(reader.readBuffer());
+    } else {
+      this.appData = null;
     }
 
     return reader.readOffset;
@@ -124,8 +128,8 @@ export class AppInfoType<T extends Serializable = SerializableBuffer>
 
     writer.writeUInt8(0); // Padding byte.
 
-    if (this.data) {
-      writer.writeBuffer(this.data.serialize());
+    if (this.appData) {
+      writer.writeBuffer(this.appData.serialize());
     }
 
     return writer.toBuffer();
@@ -134,7 +138,9 @@ export class AppInfoType<T extends Serializable = SerializableBuffer>
   get serializedLength() {
     return (
       APP_INFO_CATEGORY_DATA_LENGTH +
-      (this.data ? this.data.serializedLength : 0)
+      (this.appData ? this.appData.serializedLength : 0)
     );
   }
+
+  private readonly appDataType?: new () => AppDataT;
 }

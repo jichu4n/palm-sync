@@ -6,16 +6,11 @@ import {BaseRecord} from './record';
 import Serializable, {SerializableBuffer} from './serializable';
 
 /** MemoDB database. */
-class MemoDatabase extends Database<
-  MemoRecord,
-  MemoAppInfoType,
-  SerializableBuffer
-> {
+class MemoDatabase extends Database<MemoRecord, MemoAppInfoType> {
   constructor() {
     super({
       recordType: MemoRecord,
       appInfoType: MemoAppInfoType,
-      sortInfoType: SerializableBuffer,
     });
   }
 
@@ -30,7 +25,7 @@ class MemoDatabase extends Database<
 
 export default MemoDatabase;
 
-/** MemoDB extra data in the AppInfo block. */
+/** Extra data in the AppInfo block in MemoDB. */
 export class MemoAppInfoData implements Serializable {
   /** Memo sort order.
    *
@@ -40,13 +35,9 @@ export class MemoAppInfoData implements Serializable {
 
   parseFrom(buffer: Buffer) {
     const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
-    if (reader.remaining() >= 4) {
-      reader.readUInt16BE(); // Padding bytes
-      this.sortOrder = reader.readUInt8();
-      reader.readUInt8(); // Padding byte
-    } else {
-      this.sortOrder = 0;
-    }
+    reader.readUInt16BE(); // Padding bytes
+    this.sortOrder = reader.readUInt8();
+    reader.readUInt8(); // Padding byte
     return reader.readOffset;
   }
 
@@ -68,7 +59,9 @@ export class MemoAppInfoData implements Serializable {
 
 /** MemoDB AppInfo block. */
 export class MemoAppInfoType extends AppInfoType<MemoAppInfoData> {
-  data = new MemoAppInfoData();
+  constructor() {
+    super(MemoAppInfoData);
+  }
 }
 
 /** A MemoDB record. */

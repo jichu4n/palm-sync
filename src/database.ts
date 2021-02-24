@@ -9,9 +9,9 @@ class Database<
   /** Record type. */
   RecordT extends Record,
   /** AppInfo type. */
-  AppInfoT extends Serializable,
+  AppInfoT extends Serializable = SerializableBuffer,
   /** SortInfo type. */
-  SortInfoT extends Serializable
+  SortInfoT extends Serializable = SerializableBuffer
 > implements Serializable {
   /** Database header.
    *
@@ -34,9 +34,9 @@ class Database<
     /** Record type constructor. */
     recordType: new () => RecordT;
     /** AppInfo type constructor. */
-    appInfoType: new () => AppInfoT;
+    appInfoType?: new () => AppInfoT;
     /** SortInfo type constructor. */
-    sortInfoType: new () => SortInfoT;
+    sortInfoType?: new () => SortInfoT;
   }) {
     this.recordType = recordType;
     this.appInfoType = appInfoType;
@@ -54,7 +54,7 @@ class Database<
     const recordList = new RecordListType();
     recordList.parseFrom(buffer.slice(this.header.serializedLength));
 
-    if (this.header.appInfoId) {
+    if (this.appInfoType && this.header.appInfoId) {
       const appInfoEnd =
         this.header.sortInfoId ||
         (recordList.numRecords > 0
@@ -66,7 +66,7 @@ class Database<
       this.appInfo = null;
     }
 
-    if (this.header.sortInfoId) {
+    if (this.sortInfoType && this.header.sortInfoId) {
       const sortInfoEnd =
         recordList.numRecords > 0
           ? recordList.entries[0].localChunkId
@@ -145,8 +145,8 @@ class Database<
   }
 
   private readonly recordType: new () => RecordT;
-  private readonly appInfoType: new () => AppInfoT;
-  private readonly sortInfoType: new () => SortInfoT;
+  private readonly appInfoType?: new () => AppInfoT;
+  private readonly sortInfoType?: new () => SortInfoT;
 }
 
 export default Database;
