@@ -30,6 +30,8 @@ class DatabaseDate implements Serializable {
       ts = buffer.readInt32BE();
       this.value.setTime(ts * 1000);
     }
+
+    return 4;
   }
 
   serialize() {

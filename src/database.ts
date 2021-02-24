@@ -80,6 +80,7 @@ class Database<
     }
 
     this.records.length = 0;
+    let lastRecordEnd = 0;
     for (let i = 0; i < recordList.numRecords; ++i) {
       const recordStart = recordList.entries[i].localChunkId;
       const recordEnd =
@@ -90,7 +91,10 @@ class Database<
       record.entry = recordList.entries[i];
       record.parseFrom(buffer.slice(recordStart, recordEnd));
       this.records.push(record);
+      lastRecordEnd = recordEnd;
     }
+
+    return lastRecordEnd;
   }
 
   // Recomputed fields:

@@ -45,6 +45,7 @@ export class DatabaseHdrType implements Serializable {
     this.type = reader.readString(4);
     this.creator = reader.readString(4);
     this.uniqueIdSeed = reader.readUInt32BE();
+    return reader.readOffset;
   }
 
   serialize() {
@@ -99,6 +100,7 @@ export class RecordListType implements Serializable {
       entry.parseFrom(reader.readBuffer(8));
       this.entries.push(entry);
     }
+    return reader.readOffset;
   }
 
   serialize() {
@@ -138,6 +140,7 @@ export class RecordEntryType implements Serializable {
       (reader.readUInt8() << 16) |
       (reader.readUInt8() << 8) |
       reader.readUInt8();
+    return reader.readOffset;
   }
 
   serialize() {
@@ -215,6 +218,7 @@ export class DatabaseAttrs implements Serializable {
       buffer.readUInt16BE(),
       DatabaseAttrs.attrsSpec
     );
+    return 2;
   }
 
   serialize() {
@@ -273,6 +277,7 @@ export class RecordAttrs implements Serializable {
     } else {
       this.archive = false;
     }
+    return 1;
   }
 
   serialize() {

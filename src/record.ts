@@ -11,7 +11,7 @@ export interface Record extends Serializable {
 export abstract class BaseRecord implements Record {
   entry: RecordEntryType = new RecordEntryType();
 
-  abstract parseFrom(buffer: Buffer): void;
+  abstract parseFrom(buffer: Buffer): number;
   abstract serialize(): Buffer;
   abstract get serializedLength(): number;
 }

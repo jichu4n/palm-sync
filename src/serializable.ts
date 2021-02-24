@@ -1,7 +1,10 @@
 /** An object that can be serialized / deserialized. */
 interface Serializable {
-  /** Deserializes a buffer into this object. */
-  parseFrom(buffer: Buffer): void;
+  /** Deserializes a buffer into this object.
+   *
+   * Returns number of bytes read.
+   */
+  parseFrom(buffer: Buffer): number;
   /** Serializes this object into a buffer. */
   serialize(): Buffer;
   /** Computes the serialized length of this object. */
@@ -17,6 +20,7 @@ export class SerializableBuffer implements Serializable {
   parseFrom(buffer: Buffer) {
     this.data = Buffer.alloc(buffer.length);
     buffer.copy(this.data);
+    return this.data.length;
   }
 
   serialize() {

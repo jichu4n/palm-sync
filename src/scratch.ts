@@ -10,6 +10,7 @@ if (require.main === module) {
     const pdb1 = new MemoDatabase();
     pdb1.parseFrom(buffer);
     console.log(JSON.stringify(pdb1.header, null, 2));
+    console.log(JSON.stringify(pdb1.appInfo, null, 2));
     for (let i = 0; i < pdb1.records.length; ++i) {
       const record = pdb1.records[i];
       console.log('------------');
