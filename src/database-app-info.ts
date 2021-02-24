@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
-import Serializable from './serializable';
+import Serializable, {SerializableBuffer} from './serializable';
 
 /** Information about a category. */
 export interface CategoryInfo {
@@ -24,14 +24,20 @@ export const APP_INFO_CATEGORY_DATA_LENGTH = 276;
 
 /** AppInfo block for standard category data.
  *
- * This class can be used as a base class in cases where a database's AppInfo
- * block contains additional data after the standard category data.
+ * If data is non-null, it will be used to serialize / deserialize extra data in
+ * the AppInfo block following standard category data.
  */
-export class AppInfoType implements Serializable {
+export class AppInfoType<T extends Serializable = SerializableBuffer>
+  implements Serializable {
   /** Array of category information (max 16 elements). */
   categories: Array<CategoryInfo> = [];
   /** The last unique category ID assigned. */
   lastUniqId: number = 0;
+  /** Extra data in the AppInfo block following standard category data.
+   *
+   * If null, application-specific data will not be serialized / deserialized.
+   */
+  data: T | null = null;
 
   /** Finds the category with the given unique ID. */
   getCategoryByUniqId(uniqId: number): CategoryInfo | null {
@@ -71,6 +77,10 @@ export class AppInfoType implements Serializable {
         uniqId: categoryUniqIds[i],
         isRenamed: !!(renamedCategories & (1 << i)),
       });
+    }
+
+    if (this.data) {
+      this.data.parseFrom(reader.readBuffer());
     }
 
     return reader.readOffset;
@@ -114,10 +124,17 @@ export class AppInfoType implements Serializable {
 
     writer.writeUInt8(0); // Padding byte.
 
+    if (this.data) {
+      writer.writeBuffer(this.data.serialize());
+    }
+
     return writer.toBuffer();
   }
 
   get serializedLength() {
-    return APP_INFO_CATEGORY_DATA_LENGTH;
+    return (
+      APP_INFO_CATEGORY_DATA_LENGTH +
+      (this.data ? this.data.serializedLength : 0)
+    );
   }
 }

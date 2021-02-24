@@ -1,9 +1,9 @@
 import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
+import {AppInfoType} from './database-app-info';
 import {DatabaseHdrType} from './database-header';
 import {BaseRecord} from './record';
-import {SerializableBuffer} from './serializable';
-import {AppInfoType, APP_INFO_CATEGORY_DATA_LENGTH} from './database-app-info';
+import Serializable, {SerializableBuffer} from './serializable';
 
 /** MemoDB database. */
 class MemoDatabase extends Database<
@@ -30,8 +30,8 @@ class MemoDatabase extends Database<
 
 export default MemoDatabase;
 
-/** MemoDB AppInfo block. */
-export class MemoAppInfoType extends AppInfoType {
+/** MemoDB extra data in the AppInfo block. */
+export class MemoAppInfoData implements Serializable {
   /** Memo sort order.
    *
    * New for 2.0 memo application. 0 = manual, 1 = alphabetical.
@@ -40,7 +40,6 @@ export class MemoAppInfoType extends AppInfoType {
 
   parseFrom(buffer: Buffer) {
     const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
-    reader.readOffset = super.parseFrom(buffer);
     if (reader.remaining() >= 4) {
       reader.readUInt16BE(); // Padding bytes
       this.sortOrder = reader.readUInt8();
@@ -52,8 +51,7 @@ export class MemoAppInfoType extends AppInfoType {
   }
 
   serialize(): Buffer {
-    const writer = SmartBuffer.fromSize(this.serializedLength, 'ascii');
-    writer.writeBuffer(super.serialize());
+    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
     writer.writeUInt16BE(0); // Padding bytes
     if (this.sortOrder < 0 || this.sortOrder > 1) {
       throw new Error(`Invalid sort order: ${this.sortOrder}`);
@@ -64,8 +62,13 @@ export class MemoAppInfoType extends AppInfoType {
   }
 
   get serializedLength() {
-    return APP_INFO_CATEGORY_DATA_LENGTH + 4;
+    return 4;
   }
+}
+
+/** MemoDB AppInfo block. */
+export class MemoAppInfoType extends AppInfoType<MemoAppInfoData> {
+  data = new MemoAppInfoData();
 }
 
 /** A MemoDB record. */
