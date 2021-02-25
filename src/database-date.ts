@@ -47,3 +47,34 @@ class DatabaseDate implements Serializable {
 }
 
 export default DatabaseDate;
+
+/** DatabaseDate wrapper where the value may be unspecified (indicated by 0xff). */
+export class OptionalDatabaseDate implements Serializable {
+  /** DatabaseDate value, or null if unspecified.*/
+  value: DatabaseDate | null = null;
+
+  parseFrom(buffer: Buffer) {
+    const dateValue = buffer.readUInt16BE();
+    if (dateValue === 0xffff) {
+      this.value = null;
+    } else {
+      this.value = new DatabaseDate();
+      this.value.parseFrom(buffer);
+    }
+    return this.serializedLength;
+  }
+
+  serialize() {
+    if (this.value) {
+      return this.value.serialize();
+    } else {
+      const buffer = Buffer.alloc(this.serializedLength);
+      buffer.writeUInt16BE(0xffff);
+      return buffer;
+    }
+  }
+
+  get serializedLength() {
+    return 2;
+  }
+}

@@ -1,5 +1,10 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
+import {
+  BitmaskFieldSpecMap,
+  parseFromBitmask,
+  serializeToBitmask,
+} from './bitmask';
 import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
 import Serializable from './serializable';
 
@@ -158,14 +163,6 @@ export class RecordEntryType implements Serializable {
   }
 }
 
-/** Utility type for attribute bitmasks. */
-export type AttrsSpec<T> = {
-  [K in keyof T]?: {
-    bitmask: number;
-    valueType: 'boolean' | 'number';
-  };
-};
-
 /** Database attribute flags.
  *
  * Source: https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
@@ -213,17 +210,19 @@ export class DatabaseAttrs implements Serializable {
   open: boolean = false;
 
   parseFrom(buffer: Buffer) {
-    parseAttrs<DatabaseAttrs>(
+    parseFromBitmask(
       this,
       buffer.readUInt16BE(),
-      DatabaseAttrs.attrsSpec
+      DatabaseAttrs.bitmaskFieldSpecMap
     );
-    return 2;
+    return this.serializedLength;
   }
 
   serialize() {
-    const buffer = Buffer.alloc(2);
-    buffer.writeUInt16BE(serializeAttrs(this, DatabaseAttrs.attrsSpec));
+    const buffer = Buffer.alloc(this.serializedLength);
+    buffer.writeUInt16BE(
+      serializeToBitmask(this, DatabaseAttrs.bitmaskFieldSpecMap)
+    );
     return buffer;
   }
 
@@ -231,7 +230,7 @@ export class DatabaseAttrs implements Serializable {
     return 2;
   }
 
-  private static attrsSpec: AttrsSpec<DatabaseAttrs> = {
+  private static bitmaskFieldSpecMap: BitmaskFieldSpecMap<DatabaseAttrs> = {
     resDB: {bitmask: 0x0001, valueType: 'boolean'},
     readOnly: {bitmask: 0x0002, valueType: 'boolean'},
     appInfoDirty: {bitmask: 0x0004, valueType: 'boolean'},
@@ -271,23 +270,23 @@ export class RecordAttrs implements Serializable {
 
   parseFrom(buffer: Buffer) {
     const rawAttrs = buffer.readUInt8();
-    parseAttrs<RecordAttrs>(this, rawAttrs, RecordAttrs.attrsSpec);
+    parseFromBitmask(this, rawAttrs, RecordAttrs.bitmaskFieldSpecMap);
     if (this.delete || this.busy) {
       this.category = 0;
     } else {
       this.archive = false;
     }
-    return 1;
+    return this.serializedLength;
   }
 
   serialize() {
     const buffer = Buffer.alloc(1);
     buffer.writeUInt8(
-      serializeAttrs(
+      serializeToBitmask(
         this,
         this.delete || this.busy
-          ? _.omit(RecordAttrs.attrsSpec, 'category')
-          : _.omit(RecordAttrs.attrsSpec, 'archive')
+          ? _.omit(RecordAttrs.bitmaskFieldSpecMap, 'category')
+          : _.omit(RecordAttrs.bitmaskFieldSpecMap, 'archive')
       )
     );
     return buffer;
@@ -297,7 +296,7 @@ export class RecordAttrs implements Serializable {
     return 1;
   }
 
-  private static attrsSpec: AttrsSpec<RecordAttrs> = {
+  private static bitmaskFieldSpecMap: BitmaskFieldSpecMap<RecordAttrs> = {
     delete: {bitmask: 0x80, valueType: 'boolean'},
     dirty: {bitmask: 0x40, valueType: 'boolean'},
     busy: {bitmask: 0x20, valueType: 'boolean'},
@@ -305,37 +304,4 @@ export class RecordAttrs implements Serializable {
     category: {bitmask: 0x0f, valueType: 'number'},
     archive: {bitmask: 0x08, valueType: 'boolean'},
   };
-}
-
-/** Utility function for parsing attributes using bitmasks. */
-function parseAttrs<T extends Object>(
-  t: T,
-  rawAttrs: number,
-  spec: AttrsSpec<T>
-) {
-  Object.assign(
-    t,
-    _.mapValues(spec, (attrSpec) => {
-      const {bitmask, valueType} = attrSpec!;
-      const rawValue = rawAttrs & bitmask;
-      return valueType === 'boolean' ? !!rawValue : rawValue;
-    })
-  );
-}
-
-/** Utility function for serializing attributes using bitmasks. */
-function serializeAttrs<T extends Object>(t: T, spec: AttrsSpec<T>): number {
-  let rawAttrs = 0;
-  for (const [key, attrSpec] of Object.entries(spec)) {
-    const {bitmask, valueType} = attrSpec!;
-    const rawValue = t[key as keyof T];
-    const numericValue =
-      valueType === 'boolean'
-        ? rawValue
-          ? ~0
-          : 0
-        : ((rawValue as any) as number);
-    rawAttrs |= numericValue & bitmask;
-  }
-  return rawAttrs;
 }

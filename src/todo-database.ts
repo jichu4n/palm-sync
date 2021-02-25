@@ -1,10 +1,10 @@
 import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
 import {AppInfoType} from './database-app-info';
+import {OptionalDatabaseDate} from './database-date';
 import {DatabaseHdrType} from './database-header';
 import {BaseRecord} from './record';
-import Serializable, {SerializableBuffer} from './serializable';
-import DatabaseDate from './database-date';
+import Serializable from './serializable';
 
 /** ToDoDB database. */
 class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfoType> {
@@ -70,7 +70,7 @@ export class ToDoAppInfoType extends AppInfoType<ToDoAppInfoData> {
 /** A ToDoDB record. */
 export class ToDoRecord extends BaseRecord {
   /** Due date of the item, or null if no due date. */
-  dueDate: DatabaseDate | null = null;
+  dueDate: OptionalDatabaseDate = new OptionalDatabaseDate();
   /** Whether the item is completed. */
   isCompleted: boolean = false;
   /** Priority of the item (max 127). */
@@ -83,13 +83,7 @@ export class ToDoRecord extends BaseRecord {
   parseFrom(buffer: Buffer) {
     const reader = SmartBuffer.fromBuffer(buffer, 'latin1');
 
-    const dueDateValue = reader.readUInt16BE();
-    if (dueDateValue === 0xffff) {
-      this.dueDate = null;
-    } else {
-      this.dueDate = new DatabaseDate();
-      this.dueDate.parseFrom(buffer);
-    }
+    this.dueDate.parseFrom(reader.readBuffer(this.dueDate.serializedLength));
 
     const attrsValue = reader.readUInt8();
     this.isCompleted = !!(attrsValue & 0x80);
@@ -104,11 +98,7 @@ export class ToDoRecord extends BaseRecord {
   serialize() {
     const writer = SmartBuffer.fromSize(this.serializedLength, 'latin1');
 
-    if (this.dueDate) {
-      writer.writeBuffer(this.dueDate.serialize());
-    } else {
-      writer.writeUInt16BE(0xffff);
-    }
+    writer.writeBuffer(this.dueDate.serialize());
 
     if (this.priority < 0 || this.priority > 0x7f) {
       throw new Error(`Invalid priority: ${this.priority}`);

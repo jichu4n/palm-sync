@@ -1,5 +1,6 @@
 import fs from 'fs-extra';
 import path from 'path';
+import DatebookDatabase from './datebook-database';
 import MemoDatabase from './memo-database';
 import ToDoDatabase from './todo-database';
 
@@ -31,6 +32,21 @@ if (require.main === module) {
       const record = pdb2.records[i];
       console.log('------------');
       console.log(`ToDo #${i}`);
+      console.log('------------');
+      console.log(JSON.stringify(record, null, 2));
+    }
+
+    const buffer3 = await fs.readFile(
+      path.join(__dirname, '..', 'tests', 'testdata', 'DatebookDB.pdb')
+    );
+    const pdb3 = new DatebookDatabase();
+    pdb3.parseFrom(buffer3);
+    console.log(JSON.stringify(pdb3.header, null, 2));
+    console.log(JSON.stringify(pdb3.appInfo, null, 2));
+    for (let i = 0; i < pdb3.records.length; ++i) {
+      const record = pdb3.records[i];
+      console.log('------------');
+      console.log(`Event #${i}`);
       console.log('------------');
       console.log(JSON.stringify(record, null, 2));
     }

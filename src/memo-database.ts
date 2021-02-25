@@ -3,7 +3,7 @@ import Database from './database';
 import {AppInfoType} from './database-app-info';
 import {DatabaseHdrType} from './database-header';
 import {BaseRecord} from './record';
-import Serializable, {SerializableBuffer} from './serializable';
+import Serializable from './serializable';
 
 /** MemoDB database. */
 class MemoDatabase extends Database<MemoRecord, MemoAppInfoType> {
