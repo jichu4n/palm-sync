@@ -1,22 +1,22 @@
 import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
-import {AppInfoType} from './database-app-info';
+import {AppInfo} from './database-app-info';
 import {OptionalDatabaseDate} from './database-date';
-import {DatabaseHdrType} from './database-header';
+import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
 import Serializable from './serializable';
 
 /** ToDoDB database. */
-class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfoType> {
+class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfo> {
   constructor() {
     super({
       recordType: ToDoRecord,
-      appInfoType: ToDoAppInfoType,
+      appInfoType: ToDoAppInfo,
     });
   }
 
   get defaultHeader() {
-    const header = new DatabaseHdrType();
+    const header = new DatabaseHeader();
     header.name = 'ToDoDB';
     header.type = 'DATA';
     header.creator = 'todo';
@@ -61,7 +61,7 @@ export class ToDoAppInfoData implements Serializable {
 }
 
 /** ToDoDB AppInfo block. */
-export class ToDoAppInfoType extends AppInfoType<ToDoAppInfoData> {
+export class ToDoAppInfo extends AppInfo<ToDoAppInfoData> {
   constructor() {
     super(ToDoAppInfoData);
   }

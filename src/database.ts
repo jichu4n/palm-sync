@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
-import {DatabaseHdrType, RecordListType} from './database-header';
+import {DatabaseHeader, RecordMetadataList} from './database-header';
 import {Record, SerializableBufferRecord} from './record';
 import Serializable, {SerializableBuffer} from './serializable';
 
@@ -16,9 +16,9 @@ class Database<
   /** Database header.
    *
    * Note that some fields in the header are recomputed based on other
-   * properties during serialization. See `recomputeHeader()` for details.
+   * properties during serialization. See `serialize()` for details.
    */
-  header: DatabaseHdrType = this.defaultHeader;
+  header: DatabaseHeader = this.defaultHeader;
   /** AppInfo value. */
   appInfo: AppInfoT | null = null;
   /** SortInfo value. */
@@ -45,13 +45,13 @@ class Database<
 
   /** Generates the default header for a new database. */
   get defaultHeader() {
-    return new DatabaseHdrType();
+    return new DatabaseHeader();
   }
 
   /** Parses a PDB file. */
   parseFrom(buffer: Buffer) {
     this.header.parseFrom(buffer);
-    const recordList = new RecordListType();
+    const recordList = new RecordMetadataList();
     recordList.parseFrom(buffer.slice(this.header.serializedLength));
 
     if (this.appInfoType && this.header.appInfoId) {
@@ -88,7 +88,7 @@ class Database<
           ? recordList.entries[i + 1].localChunkId
           : buffer.length;
       const record = new this.recordType();
-      record.entry = recordList.entries[i];
+      record.metadata = recordList.entries[i];
       record.parseFrom(buffer.slice(recordStart, recordEnd));
       this.records.push(record);
       lastRecordEnd = recordEnd;
@@ -102,7 +102,7 @@ class Database<
   //   - sortInfoId
   //   - localChunkId for each recordEntry.
   serialize() {
-    const recordList = new RecordListType();
+    const recordList = new RecordMetadataList();
     recordList.numRecords = this.records.length;
     recordList.entries = _.map(this.records, 'entry');
 

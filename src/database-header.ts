@@ -8,8 +8,8 @@ import {
 import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
 import Serializable from './serializable';
 
-/** PDB database header. */
-export class DatabaseHdrType implements Serializable {
+/** PDB database header, a.k.a DatabaseHdrType. */
+export class DatabaseHeader implements Serializable {
   /** Database name (max 31 bytes). */
   name: string = '';
   /** Database attribute flags. */
@@ -84,14 +84,14 @@ export class DatabaseHdrType implements Serializable {
   }
 }
 
-/** Record metadata list. */
-export class RecordListType implements Serializable {
+/** Record metadata list, a.k.a RecordListType. */
+export class RecordMetadataList implements Serializable {
   /** Offset of next RecordList structure. (Unsupported) */
   nextRecordListId: number = 0;
   /** Number of records in list. */
   numRecords: number = 0;
   /** Array of record metadata. */
-  entries: Array<RecordEntryType> = [];
+  entries: Array<RecordMetadata> = [];
 
   parseFrom(buffer: Buffer) {
     const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
@@ -101,7 +101,7 @@ export class RecordListType implements Serializable {
     }
     this.numRecords = reader.readUInt16BE();
     for (let i = 0; i < this.numRecords; ++i) {
-      const entry = new RecordEntryType();
+      const entry = new RecordMetadata();
       entry.parseFrom(reader.readBuffer(8));
       this.entries.push(entry);
     }
@@ -128,8 +128,8 @@ export class RecordListType implements Serializable {
   }
 }
 
-/** Record metadata for PDB files. */
-export class RecordEntryType implements Serializable {
+/** Record metadata for PDB files, a.k.a. RecordEntryType. */
+export class RecordMetadata implements Serializable {
   /** Offset to raw record data. */
   localChunkId: number = 0;
   /** Record attributes. */

@@ -1,8 +1,8 @@
 import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
-import {AppInfoType} from './database-app-info';
+import {AppInfo} from './database-app-info';
 import DatabaseDate, {OptionalDatabaseDate} from './database-date';
-import {DatabaseHdrType} from './database-header';
+import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
 import Serializable from './serializable';
 import {
@@ -12,16 +12,16 @@ import {
 } from './bitmask';
 
 /** DatebookDB database. */
-class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfoType> {
+class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfo> {
   constructor() {
     super({
       recordType: DatebookRecord,
-      appInfoType: DatebookAppInfoType,
+      appInfoType: DatebookAppInfo,
     });
   }
 
   get defaultHeader() {
-    const header = new DatabaseHdrType();
+    const header = new DatabaseHeader();
     header.name = 'DatebookDB';
     header.type = 'DATA';
     header.creator = 'date';
@@ -56,7 +56,7 @@ export class DatebookAppInfoData implements Serializable {
 }
 
 /** DatebookDB AppInfo block. */
-export class DatebookAppInfoType extends AppInfoType<DatebookAppInfoData> {
+export class DatebookAppInfo extends AppInfo<DatebookAppInfoData> {
   constructor() {
     super(DatebookAppInfoData);
   }

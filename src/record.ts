@@ -1,15 +1,15 @@
-import {RecordEntryType} from './database-header';
+import {RecordMetadata} from './database-header';
 import Serializable, {SerializableBuffer} from './serializable';
 
 /** Interface of database records. */
 export interface Record extends Serializable {
   /** Metadata corresponding to this record. */
-  entry: RecordEntryType;
+  metadata: RecordMetadata;
 }
 
 /** Base class for database records. */
 export abstract class BaseRecord implements Record {
-  entry: RecordEntryType = new RecordEntryType();
+  metadata: RecordMetadata = new RecordMetadata();
 
   abstract parseFrom(buffer: Buffer): number;
   abstract serialize(): Buffer;
@@ -24,5 +24,5 @@ export abstract class BaseRecord implements Record {
 export class SerializableBufferRecord
   extends SerializableBuffer
   implements Record {
-  entry: RecordEntryType = new RecordEntryType();
+  metadata: RecordMetadata = new RecordMetadata();
 }

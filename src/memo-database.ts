@@ -1,21 +1,21 @@
 import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
-import {AppInfoType} from './database-app-info';
-import {DatabaseHdrType} from './database-header';
+import {AppInfo} from './database-app-info';
+import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
 import Serializable from './serializable';
 
 /** MemoDB database. */
-class MemoDatabase extends Database<MemoRecord, MemoAppInfoType> {
+class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {
   constructor() {
     super({
       recordType: MemoRecord,
-      appInfoType: MemoAppInfoType,
+      appInfoType: MemoAppInfo,
     });
   }
 
   get defaultHeader() {
-    const header = new DatabaseHdrType();
+    const header = new DatabaseHeader();
     header.name = 'MemoDB';
     header.type = 'DATA';
     header.creator = 'memo';
@@ -58,7 +58,7 @@ export class MemoAppInfoData implements Serializable {
 }
 
 /** MemoDB AppInfo block. */
-export class MemoAppInfoType extends AppInfoType<MemoAppInfoData> {
+export class MemoAppInfo extends AppInfo<MemoAppInfoData> {
   constructor() {
     super(MemoAppInfoData);
   }

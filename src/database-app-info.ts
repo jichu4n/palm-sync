@@ -3,7 +3,7 @@ import {SmartBuffer} from 'smart-buffer';
 import Serializable, {SerializableBuffer} from './serializable';
 
 /** Information about a category. */
-export interface CategoryInfo {
+export interface Category {
   /** Name of the category (max 15 bytes). */
   label: string;
   /** ID of the category (1 byte long).
@@ -22,15 +22,15 @@ export interface CategoryInfo {
 /** Length of standard category data. */
 export const APP_INFO_CATEGORY_DATA_LENGTH = 276;
 
-/** AppInfo block for standard category data.
+/** AppInfo block for standard category data, a.k.a AppInfoType.
  *
  * If data is non-null, it will be used to serialize / deserialize extra data in
  * the AppInfo block following standard category data.
  */
-export class AppInfoType<AppDataT extends Serializable = SerializableBuffer>
+export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
   implements Serializable {
   /** Array of category information (max 16 elements). */
-  categories: Array<CategoryInfo> = [];
+  categories: Array<Category> = [];
   /** The last unique category ID assigned. */
   lastUniqId: number = 0;
   /** Extra data in the AppInfo block following standard category data. */
@@ -41,12 +41,12 @@ export class AppInfoType<AppDataT extends Serializable = SerializableBuffer>
   }
 
   /** Finds the category with the given unique ID. */
-  getCategoryByUniqId(uniqId: number): CategoryInfo | null {
+  getCategoryByUniqId(uniqId: number): Category | null {
     return _.find(this.categories, ['categoryUniqId', uniqId]) ?? null;
   }
 
   /** Finds the category with the given label. */
-  getCategoryByLabel(label: string): CategoryInfo | null {
+  getCategoryByLabel(label: string): Category | null {
     return _.find(this.categories, ['categoryLabel', label]) ?? null;
   }
 
