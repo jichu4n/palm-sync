@@ -41,8 +41,7 @@ describe('ToDoDatabase', function () {
       record.priority = i + 1;
       record.isCompleted = !!(i % 2);
       if (i % 3) {
-        record.dueDate.value = new DatabaseDate();
-        record.dueDate.value.year = 2000 + i;
+        record.dueDate.value = new DatabaseDate({year: 2000 + i});
       }
       db1.records.push(record);
     }
@@ -56,13 +55,7 @@ describe('ToDoDatabase', function () {
     expect(db2.appInfo?.categories).toStrictEqual(db1.appInfo.categories);
     expect(db2.records.length).toStrictEqual(db1.records.length);
     for (let i = 0; i < db1.records.length; ++i) {
-      expect(db2.records[i].description).toStrictEqual(`Task #${i}`);
-      expect(db2.records[i].note).toStrictEqual(`Note #${i}`);
-      expect(db2.records[i].priority).toStrictEqual(i + 1);
-      expect(db2.records[i].isCompleted).toStrictEqual(!!(i % 2));
-      if (i % 3) {
-        expect(db2.records[i].dueDate.value?.year).toStrictEqual(2000 + i);
-      }
+      expect(db2.records[i]).toStrictEqual(db1.records[i]);
     }
   });
 });
