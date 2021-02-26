@@ -91,7 +91,7 @@ export class RecordMetadataList implements Serializable {
   /** Number of records in list. */
   numRecords: number = 0;
   /** Array of record metadata. */
-  entries: Array<RecordMetadata> = [];
+  values: Array<RecordMetadata> = [];
 
   parseFrom(buffer: Buffer) {
     const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
@@ -101,9 +101,9 @@ export class RecordMetadataList implements Serializable {
     }
     this.numRecords = reader.readUInt16BE();
     for (let i = 0; i < this.numRecords; ++i) {
-      const entry = new RecordMetadata();
-      entry.parseFrom(reader.readBuffer(8));
-      this.entries.push(entry);
+      const recordMetadata = new RecordMetadata();
+      recordMetadata.parseFrom(reader.readBuffer(8));
+      this.values.push(recordMetadata);
     }
     return reader.readOffset;
   }
@@ -114,17 +114,17 @@ export class RecordMetadataList implements Serializable {
       throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
     }
     writer.writeUInt32BE(this.nextRecordListId);
-    this.numRecords = this.entries.length;
+    this.numRecords = this.values.length;
     writer.writeUInt16BE(this.numRecords);
-    for (const entry of this.entries) {
-      writer.writeBuffer(entry.serialize());
+    for (const recordMetadata of this.values) {
+      writer.writeBuffer(recordMetadata.serialize());
     }
     writer.writeUInt16BE(0); // 2 placeholder bytes.
     return writer.toBuffer();
   }
 
   get serializedLength() {
-    return 6 + this.entries.length * 8 + 2;
+    return 6 + this.values.length * 8 + 2;
   }
 }
 

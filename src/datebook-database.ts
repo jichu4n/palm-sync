@@ -27,6 +27,8 @@ class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfo> {
     header.creator = 'date';
     return header;
   }
+
+  appInfo = new DatebookAppInfo();
 }
 
 export default DatebookDatabase;
@@ -60,6 +62,8 @@ export class DatebookAppInfo extends AppInfo<DatebookAppInfoData> {
   constructor() {
     super(DatebookAppInfoData);
   }
+
+  appData = new DatebookAppInfoData();
 }
 
 /** A DatebookDB record. */

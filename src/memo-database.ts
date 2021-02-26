@@ -21,6 +21,8 @@ class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {
     header.creator = 'memo';
     return header;
   }
+
+  appInfo = new MemoAppInfo();
 }
 
 export default MemoDatabase;
@@ -62,6 +64,8 @@ export class MemoAppInfo extends AppInfo<MemoAppInfoData> {
   constructor() {
     super(MemoAppInfoData);
   }
+
+  appData = new MemoAppInfoData();
 }
 
 /** A MemoDB record. */

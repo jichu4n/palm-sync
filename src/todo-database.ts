@@ -22,6 +22,8 @@ class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfo> {
     header.creator = 'todo';
     return header;
   }
+
+  appInfo = new ToDoAppInfo();
 }
 
 export default ToDoDatabase;
@@ -65,6 +67,8 @@ export class ToDoAppInfo extends AppInfo<ToDoAppInfoData> {
   constructor() {
     super(ToDoAppInfoData);
   }
+
+  appData = new ToDoAppInfoData();
 }
 
 /** A ToDoDB record. */

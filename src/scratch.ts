@@ -7,7 +7,7 @@ import ToDoDatabase from './todo-database';
 if (require.main === module) {
   (async () => {
     const buffer1 = await fs.readFile(
-      path.join(__dirname, '..', 'tests', 'testdata', 'MemoDB.pdb')
+      path.join(__dirname, '..', 'src', 'tests', 'testdata', 'MemoDB.pdb')
     );
     const pdb1 = new MemoDatabase();
     pdb1.parseFrom(buffer1);
@@ -22,7 +22,7 @@ if (require.main === module) {
     }
 
     const buffer2 = await fs.readFile(
-      path.join(__dirname, '..', 'tests', 'testdata', 'ToDoDB.pdb')
+      path.join(__dirname, '..', 'src', 'tests', 'testdata', 'ToDoDB.pdb')
     );
     const pdb2 = new ToDoDatabase();
     pdb2.parseFrom(buffer2);
@@ -37,7 +37,7 @@ if (require.main === module) {
     }
 
     const buffer3 = await fs.readFile(
-      path.join(__dirname, '..', 'tests', 'testdata', 'DatebookDB.pdb')
+      path.join(__dirname, '..', 'src', 'tests', 'testdata', 'DatebookDB.pdb')
     );
     const pdb3 = new DatebookDatabase();
     pdb3.parseFrom(buffer3);

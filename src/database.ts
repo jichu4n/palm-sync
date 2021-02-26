@@ -58,7 +58,7 @@ class Database<
       const appInfoEnd =
         this.header.sortInfoId ||
         (recordList.numRecords > 0
-          ? recordList.entries[0].localChunkId
+          ? recordList.values[0].localChunkId
           : buffer.length);
       this.appInfo = new this.appInfoType();
       this.appInfo.parseFrom(buffer.slice(this.header.appInfoId, appInfoEnd));
@@ -69,7 +69,7 @@ class Database<
     if (this.sortInfoType && this.header.sortInfoId) {
       const sortInfoEnd =
         recordList.numRecords > 0
-          ? recordList.entries[0].localChunkId
+          ? recordList.values[0].localChunkId
           : buffer.length;
       this.sortInfo = new this.sortInfoType();
       this.sortInfo.parseFrom(
@@ -82,13 +82,13 @@ class Database<
     this.records.length = 0;
     let lastRecordEnd = 0;
     for (let i = 0; i < recordList.numRecords; ++i) {
-      const recordStart = recordList.entries[i].localChunkId;
+      const recordStart = recordList.values[i].localChunkId;
       const recordEnd =
         i < recordList.numRecords - 1
-          ? recordList.entries[i + 1].localChunkId
+          ? recordList.values[i + 1].localChunkId
           : buffer.length;
       const record = new this.recordType();
-      record.metadata = recordList.entries[i];
+      record.metadata = recordList.values[i];
       record.parseFrom(buffer.slice(recordStart, recordEnd));
       this.records.push(record);
       lastRecordEnd = recordEnd;
@@ -100,11 +100,10 @@ class Database<
   // Recomputed fields:
   //   - appInfoId
   //   - sortInfoId
-  //   - localChunkId for each recordEntry.
   serialize() {
     const recordList = new RecordMetadataList();
     recordList.numRecords = this.records.length;
-    recordList.entries = _.map(this.records, 'entry');
+    recordList.values = _.map(this.records, 'metadata');
 
     let offset = this.header.serializedLength + recordList.serializedLength;
     if (this.appInfo) {
@@ -121,7 +120,7 @@ class Database<
     }
 
     for (let i = 0; i < this.records.length; ++i) {
-      recordList.entries[i].localChunkId = offset;
+      recordList.values[i].localChunkId = offset;
       offset += this.records[i].serializedLength;
     }
 
