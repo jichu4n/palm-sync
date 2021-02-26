@@ -24,7 +24,7 @@ describe('MemoDatabase', function () {
       {label: 'Unfiled', uniqId: 0, isRenamed: false},
       {label: 'Personal', uniqId: 1, isRenamed: false},
     ];
-    for (let i = 0; i < 5; ++i) {
+    for (let i = 0; i < 10; ++i) {
       const record = new MemoRecord();
       record.content = `Memo #${i}`;
       db1.records.push(record);
@@ -37,8 +37,8 @@ describe('MemoDatabase', function () {
 
     // Check db2 contents.
     expect(db2.appInfo?.categories).toStrictEqual(db1.appInfo.categories);
-    expect(db2.records.length).toStrictEqual(5);
-    for (let i = 0; i < 5; ++i) {
+    expect(db2.records.length).toStrictEqual(db1.records.length);
+    for (let i = 0; i < db1.records.length; ++i) {
       expect(db2.records[i].content).toStrictEqual(`Memo #${i}`);
     }
   });

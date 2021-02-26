@@ -4,11 +4,25 @@ import {epochTimestamp} from './database-timestamp';
 /** A date (year, month, DOM) encoded as a 16-bit integer. */
 class DatabaseDate implements Serializable {
   /** Year. */
-  year: number = epochTimestamp.getUTCFullYear();
+  year: number;
   /** Month (Jan = 1, Dec = 12). */
-  month: number = 1;
+  month: number;
   /** Day of the month (1st = 1). */
-  dayOfMonth: number = 1;
+  dayOfMonth: number;
+
+  constructor({
+    year = epochTimestamp.getUTCFullYear(),
+    month = 1,
+    dayOfMonth = 1,
+  }: {
+    year?: number;
+    month?: number;
+    dayOfMonth?: number;
+  } = {}) {
+    this.year = year;
+    this.month = month;
+    this.dayOfMonth = dayOfMonth;
+  }
 
   parseFrom(buffer: Buffer) {
     const value = buffer.readUInt16BE();
