@@ -36,7 +36,7 @@ export class MemoAppInfoData implements Serializable {
   sortOrder: number = 0;
 
   parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
+    const reader = SmartBuffer.fromBuffer(buffer);
     reader.readUInt16BE(); // Padding bytes
     this.sortOrder = reader.readUInt8();
     reader.readUInt8(); // Padding byte
@@ -44,7 +44,7 @@ export class MemoAppInfoData implements Serializable {
   }
 
   serialize(): Buffer {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     writer.writeUInt16BE(0); // Padding bytes
     if (this.sortOrder < 0 || this.sortOrder > 1) {
       throw new Error(`Invalid sort order: ${this.sortOrder}`);

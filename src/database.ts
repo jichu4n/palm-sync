@@ -124,7 +124,7 @@ class Database<
       offset += this.records[i].serializedLength;
     }
 
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     writer.writeBuffer(this.header.serialize());
     writer.writeBuffer(recordList.serialize());
     if (this.appInfo) {

@@ -36,8 +36,8 @@ export class DatabaseHeader implements Serializable {
   uniqueIdSeed: number = 0;
 
   parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
-    this.name = reader.readStringNT();
+    const reader = SmartBuffer.fromBuffer(buffer);
+    this.name = reader.readStringNT('latin1');
     reader.readOffset = 32;
     this.attributes.parseFrom(reader.readBuffer(2));
     this.version = reader.readUInt16BE();
@@ -47,18 +47,18 @@ export class DatabaseHeader implements Serializable {
     this.modificationNumber = reader.readUInt32BE();
     this.appInfoId = reader.readUInt32BE();
     this.sortInfoId = reader.readUInt32BE();
-    this.type = reader.readString(4);
-    this.creator = reader.readString(4);
+    this.type = reader.readString(4, 'ascii');
+    this.creator = reader.readString(4, 'ascii');
     this.uniqueIdSeed = reader.readUInt32BE();
     return reader.readOffset;
   }
 
   serialize() {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     if (this.name.length > 31) {
       throw new Error(`Name length exceeds 31 bytes: ${this.name.length}`);
     }
-    writer.writeStringNT(this.name);
+    writer.writeStringNT(this.name, 'latin1');
     writer.writeBuffer(this.attributes.serialize(), 32);
     writer.writeUInt16BE(this.version);
     writer.writeBuffer(this.creationDate.serialize());
@@ -94,7 +94,7 @@ export class RecordMetadataList implements Serializable {
   values: Array<RecordMetadata> = [];
 
   parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
+    const reader = SmartBuffer.fromBuffer(buffer);
     this.nextRecordListId = reader.readUInt32BE();
     if (this.nextRecordListId !== 0) {
       throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
@@ -109,7 +109,7 @@ export class RecordMetadataList implements Serializable {
   }
 
   serialize() {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     if (this.nextRecordListId !== 0) {
       throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
     }
@@ -138,7 +138,7 @@ export class RecordMetadata implements Serializable {
   uniqueId: number = 0;
 
   parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
+    const reader = SmartBuffer.fromBuffer(buffer);
     this.localChunkId = reader.readUInt32BE();
     this.attributes.parseFrom(reader.readBuffer(1));
     this.uniqueId =
@@ -149,7 +149,7 @@ export class RecordMetadata implements Serializable {
   }
 
   serialize() {
-    const writer = SmartBuffer.fromSize(8, 'ascii');
+    const writer = new SmartBuffer();
     writer.writeUInt32BE(this.localChunkId);
     writer.writeBuffer(this.attributes.serialize());
     writer.writeUInt8((this.uniqueId >> 16) & 0xff);

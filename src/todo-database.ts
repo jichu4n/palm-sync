@@ -39,7 +39,7 @@ export class ToDoAppInfoData implements Serializable {
   sortOrder: number = 0;
 
   parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
+    const reader = SmartBuffer.fromBuffer(buffer);
     this.dirty = reader.readUInt16BE();
     this.sortOrder = reader.readUInt8();
     reader.readUInt8(); // Padding byte
@@ -47,7 +47,7 @@ export class ToDoAppInfoData implements Serializable {
   }
 
   serialize(): Buffer {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     writer.writeUInt16BE(this.dirty);
     if (this.sortOrder < 0 || this.sortOrder > 1) {
       throw new Error(`Invalid sort order: ${this.sortOrder}`);

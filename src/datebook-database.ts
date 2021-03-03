@@ -39,14 +39,14 @@ export class DatebookAppInfoData implements Serializable {
   startOfWeek: number = 0;
 
   parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'ascii');
+    const reader = SmartBuffer.fromBuffer(buffer);
     this.startOfWeek = reader.readUInt8();
     reader.readUInt8(); // Padding byte
     return reader.readOffset;
   }
 
   serialize(): Buffer {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     writer.writeUInt8(this.startOfWeek);
     writer.writeUInt8(0); // Padding byte
     return writer.toBuffer();
@@ -257,7 +257,7 @@ export class OptionalEventTime implements Serializable {
   }
 
   serialize() {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     if (this.value) {
       const {hour, minute} = this.value;
       if (hour < 0 || hour > 23) {
@@ -299,7 +299,7 @@ export class AlarmSettings implements Serializable {
   }
 
   serialize() {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
     if (this.value < 0 || this.value > 0xff) {
       throw new Error(`Invalid hour value: ${this.value}`);
     }
@@ -423,7 +423,7 @@ export class RepetitionSettings implements Serializable {
   }
 
   serialize() {
-    const writer = SmartBuffer.fromOptions({encoding: 'ascii'});
+    const writer = new SmartBuffer();
 
     const typeValueIndex = RepetitionSettings.typeValues.indexOf(
       this.repetitionSpec.type
