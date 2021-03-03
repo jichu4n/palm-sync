@@ -6,11 +6,14 @@ import Serializable from './serializable';
 
 /** PalmDOC document. */
 class PalmDoc implements Serializable {
+  /** Document name (typically the file name). */
+  name: string = 'doc.txt';
   /** Text content. */
   text: string = '';
 
   parseFrom(buffer: Buffer) {
     const numBytes = this.db.parseFrom(buffer);
+    this.name = this.db.header.name;
     if (this.db.records.length === 0) {
       throw new Error(`PalmDOC metadata record missing`);
     }
@@ -28,6 +31,7 @@ class PalmDoc implements Serializable {
   }
 
   serialize() {
+    this.db.header.name = this.name;
     if (this.text !== this.textInDb) {
       this.db.records.length = 0;
 
