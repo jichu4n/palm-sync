@@ -26,7 +26,7 @@ class DatabaseDate implements Serializable {
 
   parseFrom(buffer: Buffer) {
     const value = buffer.readUInt16BE();
-    // top 7 bits => year since 1904
+    // upper 7 bits => year since 1904
     this.year = ((value >> 9) & 0x7f) + epochTimestamp.getUTCFullYear();
     // 4 bits => month
     this.month = (value >> 5) & 0x0f;
