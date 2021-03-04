@@ -34,6 +34,7 @@
   "dependencies": {
     "commander": "^7.1.0",
     "fs-extra": "^9.1.0",
+    "iconv-lite": "^0.6.2",
     "lodash": "^4.17.20",
     "smart-buffer": "^4.1.0"
   }

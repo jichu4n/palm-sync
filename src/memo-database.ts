@@ -1,9 +1,10 @@
 import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
 import {AppInfo} from './database-app-info';
+import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
-import Serializable from './serializable';
+import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 
 /** MemoDB database. */
 class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {
@@ -35,7 +36,7 @@ export class MemoAppInfoData implements Serializable {
    */
   sortOrder: number = 0;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
     reader.readUInt16BE(); // Padding bytes
     this.sortOrder = reader.readUInt8();
@@ -43,7 +44,7 @@ export class MemoAppInfoData implements Serializable {
     return reader.readOffset;
   }
 
-  serialize(): Buffer {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     writer.writeUInt16BE(0); // Padding bytes
     if (this.sortOrder < 0 || this.sortOrder > 1) {
@@ -54,7 +55,7 @@ export class MemoAppInfoData implements Serializable {
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 4;
   }
 }
@@ -73,18 +74,21 @@ export class MemoRecord extends BaseRecord {
   /** Memo content. */
   content: string = '';
 
-  parseFrom(buffer: Buffer) {
-    this.content = SmartBuffer.fromBuffer(buffer, 'latin1').readStringNT();
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    this.content = decodeString(
+      SmartBuffer.fromBuffer(buffer).readBufferNT(),
+      opts
+    );
     return buffer.length;
   }
 
-  serialize() {
-    const writer = SmartBuffer.fromSize(this.serializedLength, 'latin1');
-    writer.writeStringNT(this.content);
+  serialize(opts?: SerializeOptions) {
+    const writer = new SmartBuffer();
+    writer.writeBufferNT(encodeString(this.content, opts));
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return this.content.length + 1;
   }
 }

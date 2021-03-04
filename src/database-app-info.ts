@@ -1,6 +1,11 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
-import Serializable, {SerializableBuffer} from './serializable';
+import {decodeString, encodeString} from './database-encoding';
+import Serializable, {
+  ParseOptions,
+  SerializableBuffer,
+  SerializeOptions,
+} from './serializable';
 
 /** Information about a category. */
 export interface Category {
@@ -50,13 +55,13 @@ export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
     return _.find(this.categories, ['categoryLabel', label]) ?? null;
   }
 
-  parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'latin1');
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const reader = SmartBuffer.fromBuffer(buffer);
     const renamedCategories = reader.readUInt16BE();
     const categoryLabels: Array<string> = [];
     for (let i = 0; i < 16; ++i) {
       const initialReadOffset = reader.readOffset;
-      categoryLabels.push(reader.readStringNT());
+      categoryLabels.push(decodeString(reader.readBufferNT(), opts));
       reader.readOffset = initialReadOffset + 16;
     }
     const categoryUniqIds = [];
@@ -82,7 +87,7 @@ export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
 
     if (this.appDataType && reader.remaining()) {
       this.appData = new this.appDataType();
-      this.appData.parseFrom(reader.readBuffer());
+      this.appData.parseFrom(reader.readBuffer(), opts);
     } else {
       this.appData = null;
     }
@@ -90,8 +95,8 @@ export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
     return reader.readOffset;
   }
 
-  serialize(): Buffer {
-    const writer = SmartBuffer.fromOptions({encoding: 'latin1'});
+  serialize(opts?: SerializeOptions): Buffer {
+    const writer = new SmartBuffer();
 
     let renamedCategories = 0;
     for (let i = 0; i < this.categories.length; ++i) {
@@ -106,7 +111,7 @@ export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
       if (categoryLabel.length > 15) {
         throw new Error(`Category label length exceeds 15: "${categoryLabel}"`);
       }
-      writer.writeStringNT(categoryLabel, offset);
+      writer.writeBufferNT(encodeString(categoryLabel, opts), offset);
       offset += 16;
     }
     for (let i = this.categories.length; i < 16; ++i) {
@@ -129,16 +134,16 @@ export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
     writer.writeUInt8(0); // Padding byte.
 
     if (this.appData) {
-      writer.writeBuffer(this.appData.serialize());
+      writer.writeBuffer(this.appData.serialize(opts));
     }
 
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return (
       APP_INFO_CATEGORY_DATA_LENGTH +
-      (this.appData ? this.appData.serializedLength : 0)
+      (this.appData ? this.appData.getSerializedLength(opts) : 0)
     );
   }
 

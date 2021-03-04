@@ -1,15 +1,16 @@
 import {SmartBuffer} from 'smart-buffer';
-import Database from './database';
-import {AppInfo} from './database-app-info';
-import DatabaseDate, {OptionalDatabaseDate} from './database-date';
-import {DatabaseHeader} from './database-header';
-import {BaseRecord} from './record';
-import Serializable from './serializable';
 import {
   BitmaskFieldSpecMap,
   parseFromBitmask,
   serializeToBitmask,
 } from './bitmask';
+import Database from './database';
+import {AppInfo} from './database-app-info';
+import DatabaseDate, {OptionalDatabaseDate} from './database-date';
+import {decodeString, encodeString} from './database-encoding';
+import {DatabaseHeader} from './database-header';
+import {BaseRecord} from './record';
+import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 
 /** DatebookDB database. */
 class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfo> {
@@ -38,21 +39,21 @@ export class DatebookAppInfoData implements Serializable {
   /** Day of the week to start the week on. Not sure what the format is ¯\_(ツ)_/¯ */
   startOfWeek: number = 0;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
     this.startOfWeek = reader.readUInt8();
     reader.readUInt8(); // Padding byte
     return reader.readOffset;
   }
 
-  serialize(): Buffer {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     writer.writeUInt8(this.startOfWeek);
     writer.writeUInt8(0); // Padding byte
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 2;
   }
 }
@@ -85,23 +86,31 @@ export class DatebookRecord extends BaseRecord {
   /** Additional note. */
   note: string = '';
 
-  parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'latin1');
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const reader = SmartBuffer.fromBuffer(buffer);
 
     this.startTime.parseFrom(
-      reader.readBuffer(this.startTime.serializedLength)
+      reader.readBuffer(this.startTime.getSerializedLength(opts)),
+      opts
     );
-    this.endTime.parseFrom(reader.readBuffer(this.endTime.serializedLength));
-    this.date.parseFrom(reader.readBuffer(this.date.serializedLength));
+    this.endTime.parseFrom(
+      reader.readBuffer(this.endTime.getSerializedLength(opts)),
+      opts
+    );
+    this.date.parseFrom(
+      reader.readBuffer(this.date.getSerializedLength(opts)),
+      opts
+    );
 
     const attrs = new DatebookRecordAttrs();
-    attrs.parseFrom(reader.readBuffer(attrs.serializedLength));
+    attrs.parseFrom(reader.readBuffer(attrs.getSerializedLength(opts)), opts);
     reader.readUInt8(); // Padding byte
 
     if (attrs.hasAlarmSettings) {
       this.alarmSettings = new AlarmSettings();
       this.alarmSettings.parseFrom(
-        reader.readBuffer(this.alarmSettings.serializedLength)
+        reader.readBuffer(this.alarmSettings.getSerializedLength(opts)),
+        opts
       );
     } else {
       this.alarmSettings = null;
@@ -110,7 +119,8 @@ export class DatebookRecord extends BaseRecord {
     if (attrs.hasRepetitionSettings) {
       this.repetitionSettings = new RepetitionSettings();
       this.repetitionSettings.parseFrom(
-        reader.readBuffer(this.repetitionSettings.serializedLength)
+        reader.readBuffer(this.repetitionSettings.getSerializedLength(opts)),
+        opts
       );
     } else {
       this.repetitionSettings = null;
@@ -122,24 +132,27 @@ export class DatebookRecord extends BaseRecord {
       for (let i = 0; i < numExceptions; ++i) {
         const exceptionDate = new DatabaseDate();
         exceptionDate.parseFrom(
-          reader.readBuffer(exceptionDate.serializedLength)
+          reader.readBuffer(exceptionDate.getSerializedLength(opts)),
+          opts
         );
         this.exceptionDates.push(exceptionDate);
       }
     }
 
-    this.description = attrs.hasDescription ? reader.readStringNT() : '';
-    this.note = attrs.hasNote ? reader.readStringNT() : '';
+    this.description = attrs.hasDescription
+      ? decodeString(reader.readBufferNT(), opts)
+      : '';
+    this.note = attrs.hasNote ? decodeString(reader.readBufferNT(), opts) : '';
 
     return buffer.length;
   }
 
-  serialize() {
-    const writer = SmartBuffer.fromSize(this.serializedLength, 'latin1');
+  serialize(opts?: SerializeOptions) {
+    const writer = new SmartBuffer();
 
-    writer.writeBuffer(this.startTime.serialize());
-    writer.writeBuffer(this.endTime.serialize());
-    writer.writeBuffer(this.date.serialize());
+    writer.writeBuffer(this.startTime.serialize(opts));
+    writer.writeBuffer(this.endTime.serialize(opts));
+    writer.writeBuffer(this.date.serialize(opts));
 
     const attrs = new DatebookRecordAttrs();
     attrs.hasAlarmSettings = !!this.alarmSettings;
@@ -147,42 +160,43 @@ export class DatebookRecord extends BaseRecord {
     attrs.hasExceptionDates = this.exceptionDates.length > 0;
     attrs.hasDescription = !!this.description;
     attrs.hasNote = !!this.note;
-    writer.writeBuffer(attrs.serialize());
+    writer.writeBuffer(attrs.serialize(opts));
     writer.writeUInt8(0); // Padding byte
 
     if (this.alarmSettings) {
-      writer.writeBuffer(this.alarmSettings.serialize());
+      writer.writeBuffer(this.alarmSettings.serialize(opts));
     }
 
     if (this.repetitionSettings) {
-      writer.writeBuffer(this.repetitionSettings.serialize());
+      writer.writeBuffer(this.repetitionSettings.serialize(opts));
     }
 
     if (this.exceptionDates.length > 0) {
       writer.writeUInt16BE(this.exceptionDates.length);
       for (const exceptionDate of this.exceptionDates) {
-        writer.writeBuffer(exceptionDate.serialize());
+        writer.writeBuffer(exceptionDate.serialize(opts));
       }
     }
 
     if (this.description) {
-      writer.writeStringNT(this.description);
+      writer.writeBufferNT(encodeString(this.description, opts));
     }
     if (this.note) {
-      writer.writeStringNT(this.note);
+      writer.writeBufferNT(encodeString(this.note, opts));
     }
 
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return (
       8 +
-      (this.alarmSettings?.serializedLength ?? 0) +
-      (this.repetitionSettings?.serializedLength ?? 0) +
+      (this.alarmSettings?.getSerializedLength(opts) ?? 0) +
+      (this.repetitionSettings?.getSerializedLength(opts) ?? 0) +
       (this.exceptionDates.length > 0
         ? 2 +
-          this.exceptionDates.length * this.exceptionDates[0].serializedLength
+          this.exceptionDates.length *
+            this.exceptionDates[0].getSerializedLength(opts)
         : 0) +
       (this.note ? this.note.length + 1 : 0) +
       (this.description ? this.description.length + 1 : 0)
@@ -203,24 +217,24 @@ export class DatebookRecordAttrs implements Serializable {
   /** Whether this event has a description. */
   hasDescription: boolean = false;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     parseFromBitmask(
       this,
       buffer.readUInt8(),
       DatebookRecordAttrs.bitmaskFieldSpecMap
     );
-    return this.serializedLength;
+    return this.getSerializedLength(opts);
   }
 
-  serialize() {
-    const buffer = Buffer.alloc(this.serializedLength);
+  serialize(opts?: SerializeOptions) {
+    const buffer = Buffer.alloc(this.getSerializedLength(opts));
     buffer.writeUInt8(
       serializeToBitmask(this, DatebookRecordAttrs.bitmaskFieldSpecMap)
     );
     return buffer;
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 1;
   }
 
@@ -243,7 +257,7 @@ export class OptionalEventTime implements Serializable {
     minute: number;
   } | null = null;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     if (buffer.readUInt16BE() === 0xffff) {
       this.value = null;
     } else {
@@ -253,10 +267,10 @@ export class OptionalEventTime implements Serializable {
         minute: reader.readUInt8(),
       };
     }
-    return this.serializedLength;
+    return this.getSerializedLength(opts);
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     if (this.value) {
       const {hour, minute} = this.value;
@@ -274,7 +288,7 @@ export class OptionalEventTime implements Serializable {
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 2;
   }
 }
@@ -291,14 +305,14 @@ export class AlarmSettings implements Serializable {
   /** Number of time units before the event start time to fire the alarm. */
   value: number = 0;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
     this.value = reader.readUInt8();
     this.unit = AlarmSettings.unitValues[reader.readUInt8()];
     return reader.readOffset;
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     if (this.value < 0 || this.value > 0xff) {
       throw new Error(`Invalid hour value: ${this.value}`);
@@ -312,7 +326,7 @@ export class AlarmSettings implements Serializable {
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 2;
   }
 
@@ -383,14 +397,17 @@ export class RepetitionSettings implements Serializable {
   /** Repetition end date. */
   endDate: OptionalDatabaseDate = new OptionalDatabaseDate();
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
 
     const rawType = reader.readUInt8();
     const type = RepetitionSettings.typeValues[rawType];
     reader.readUInt8(); // Padding byte
 
-    this.endDate.parseFrom(reader.readBuffer(this.endDate.serializedLength));
+    this.endDate.parseFrom(
+      reader.readBuffer(this.endDate.getSerializedLength(opts)),
+      opts
+    );
 
     this.frequency = reader.readUInt8();
 
@@ -419,10 +436,10 @@ export class RepetitionSettings implements Serializable {
         throw new Error(`Invalid repetition type: ${rawType}`);
     }
 
-    return this.serializedLength;
+    return this.getSerializedLength(opts);
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
 
     const typeValueIndex = RepetitionSettings.typeValues.indexOf(
@@ -434,7 +451,7 @@ export class RepetitionSettings implements Serializable {
     writer.writeUInt8(typeValueIndex);
     writer.writeUInt8(0); // Padding byte
 
-    writer.writeBuffer(this.endDate.serialize());
+    writer.writeBuffer(this.endDate.serialize(opts));
 
     if (this.frequency < 0 || this.frequency > 0xff) {
       throw new Error(`Invalid frequency: ${this.frequency}`);
@@ -487,7 +504,7 @@ export class RepetitionSettings implements Serializable {
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 8;
   }
 

@@ -1,4 +1,4 @@
-import Serializable from './serializable';
+import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 import {epochTimestamp} from './database-timestamp';
 
 /** A date (year, month, DOM) encoded as a 16-bit integer. */
@@ -24,7 +24,7 @@ class DatabaseDate implements Serializable {
     this.dayOfMonth = dayOfMonth;
   }
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const value = buffer.readUInt16BE();
     // upper 7 bits => year since 1904
     this.year = ((value >> 9) & 0x7f) + epochTimestamp.getUTCFullYear();
@@ -33,10 +33,10 @@ class DatabaseDate implements Serializable {
     // 5 bits => date
     this.dayOfMonth = value & 0x1f;
 
-    return this.serializedLength;
+    return this.getSerializedLength(opts);
   }
 
-  serialize(): Buffer {
+  serialize(opts?: SerializeOptions) {
     const buffer = Buffer.alloc(2);
     if (this.year < epochTimestamp.getUTCFullYear()) {
       throw new Error(`Invalid year: ${this.year}`);
@@ -55,7 +55,7 @@ class DatabaseDate implements Serializable {
     return buffer;
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 2;
   }
 }
@@ -67,28 +67,28 @@ export class OptionalDatabaseDate implements Serializable {
   /** DatabaseDate value, or null if unspecified.*/
   value: DatabaseDate | null = null;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const dateValue = buffer.readUInt16BE();
     if (dateValue === 0xffff) {
       this.value = null;
     } else {
       this.value = new DatabaseDate();
-      this.value.parseFrom(buffer);
+      this.value.parseFrom(buffer, opts);
     }
-    return this.serializedLength;
+    return this.getSerializedLength(opts);
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     if (this.value) {
-      return this.value.serialize();
+      return this.value.serialize(opts);
     } else {
-      const buffer = Buffer.alloc(this.serializedLength);
+      const buffer = Buffer.alloc(this.getSerializedLength(opts));
       buffer.writeUInt16BE(0xffff);
       return buffer;
     }
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 2;
   }
 }

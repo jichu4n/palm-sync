@@ -2,9 +2,10 @@ import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
 import {AppInfo} from './database-app-info';
 import {OptionalDatabaseDate} from './database-date';
+import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
-import Serializable from './serializable';
+import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 
 /** ToDoDB database. */
 class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfo> {
@@ -38,7 +39,7 @@ export class ToDoAppInfoData implements Serializable {
    */
   sortOrder: number = 0;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
     this.dirty = reader.readUInt16BE();
     this.sortOrder = reader.readUInt8();
@@ -46,7 +47,7 @@ export class ToDoAppInfoData implements Serializable {
     return reader.readOffset;
   }
 
-  serialize(): Buffer {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     writer.writeUInt16BE(this.dirty);
     if (this.sortOrder < 0 || this.sortOrder > 1) {
@@ -57,7 +58,7 @@ export class ToDoAppInfoData implements Serializable {
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 4;
   }
 }
@@ -84,25 +85,28 @@ export class ToDoRecord extends BaseRecord {
   /** Additional note. */
   note: string = '';
 
-  parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer, 'latin1');
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const reader = SmartBuffer.fromBuffer(buffer);
 
-    this.dueDate.parseFrom(reader.readBuffer(this.dueDate.serializedLength));
+    this.dueDate.parseFrom(
+      reader.readBuffer(this.dueDate.getSerializedLength(opts)),
+      opts
+    );
 
     const attrsValue = reader.readUInt8();
     this.isCompleted = !!(attrsValue & 0x80);
     this.priority = attrsValue & 0x7f;
 
-    this.description = reader.readStringNT();
-    this.note = reader.readStringNT();
+    this.description = decodeString(reader.readBufferNT(), opts);
+    this.note = decodeString(reader.readBufferNT(), opts);
 
     return buffer.length;
   }
 
-  serialize() {
-    const writer = SmartBuffer.fromSize(this.serializedLength, 'latin1');
+  serialize(opts?: SerializeOptions) {
+    const writer = new SmartBuffer();
 
-    writer.writeBuffer(this.dueDate.serialize());
+    writer.writeBuffer(this.dueDate.serialize(opts));
 
     if (this.priority < 0 || this.priority > 0x7f) {
       throw new Error(`Invalid priority: ${this.priority}`);
@@ -113,13 +117,13 @@ export class ToDoRecord extends BaseRecord {
     }
     writer.writeUInt8(attrsValue);
 
-    writer.writeStringNT(this.description);
-    writer.writeStringNT(this.note);
+    writer.writeBufferNT(encodeString(this.description, opts));
+    writer.writeBufferNT(encodeString(this.note, opts));
 
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 3 + (this.description.length + 1) + (this.note.length + 1);
   }
 }

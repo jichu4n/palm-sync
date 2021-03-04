@@ -1,5 +1,9 @@
 import {RecordMetadata} from './database-header';
-import Serializable, {SerializableBuffer} from './serializable';
+import Serializable, {
+  ParseOptions,
+  SerializableBuffer,
+  SerializeOptions,
+} from './serializable';
 
 /** Interface of database records. */
 export interface Record extends Serializable {
@@ -11,9 +15,9 @@ export interface Record extends Serializable {
 export abstract class BaseRecord implements Record {
   metadata: RecordMetadata = new RecordMetadata();
 
-  abstract parseFrom(buffer: Buffer): number;
-  abstract serialize(): Buffer;
-  abstract get serializedLength(): number;
+  abstract parseFrom(buffer: Buffer, opts?: ParseOptions): number;
+  abstract serialize(opts?: SerializeOptions): Buffer;
+  abstract getSerializedLength(opts?: SerializeOptions): number;
 }
 
 /** No-op record implementation that serializes to / from Buffers.

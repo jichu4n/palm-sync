@@ -6,7 +6,8 @@ import {
   serializeToBitmask,
 } from './bitmask';
 import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
-import Serializable from './serializable';
+import {decodeString, encodeString} from './database-encoding';
+import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 
 /** PDB database header, a.k.a DatabaseHdrType. */
 export class DatabaseHeader implements Serializable {
@@ -35,15 +36,15 @@ export class DatabaseHeader implements Serializable {
   /** Seed for generating record IDs. */
   uniqueIdSeed: number = 0;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
-    this.name = reader.readStringNT('latin1');
+    this.name = decodeString(reader.readBufferNT(), opts);
     reader.readOffset = 32;
-    this.attributes.parseFrom(reader.readBuffer(2));
+    this.attributes.parseFrom(reader.readBuffer(2), opts);
     this.version = reader.readUInt16BE();
-    this.creationDate.parseFrom(reader.readBuffer(4));
-    this.modificationDate.parseFrom(reader.readBuffer(4));
-    this.lastBackupDate.parseFrom(reader.readBuffer(4));
+    this.creationDate.parseFrom(reader.readBuffer(4), opts);
+    this.modificationDate.parseFrom(reader.readBuffer(4), opts);
+    this.lastBackupDate.parseFrom(reader.readBuffer(4), opts);
     this.modificationNumber = reader.readUInt32BE();
     this.appInfoId = reader.readUInt32BE();
     this.sortInfoId = reader.readUInt32BE();
@@ -53,33 +54,33 @@ export class DatabaseHeader implements Serializable {
     return reader.readOffset;
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     if (this.name.length > 31) {
       throw new Error(`Name length exceeds 31 bytes: ${this.name.length}`);
     }
-    writer.writeStringNT(this.name, 'latin1');
-    writer.writeBuffer(this.attributes.serialize(), 32);
+    writer.writeBufferNT(encodeString(this.name, opts));
+    writer.writeBuffer(this.attributes.serialize(opts), 32);
     writer.writeUInt16BE(this.version);
-    writer.writeBuffer(this.creationDate.serialize());
-    writer.writeBuffer(this.modificationDate.serialize());
-    writer.writeBuffer(this.lastBackupDate.serialize());
+    writer.writeBuffer(this.creationDate.serialize(opts));
+    writer.writeBuffer(this.modificationDate.serialize(opts));
+    writer.writeBuffer(this.lastBackupDate.serialize(opts));
     writer.writeUInt32BE(this.modificationNumber);
     writer.writeUInt32BE(this.appInfoId);
     writer.writeUInt32BE(this.sortInfoId);
     if (this.type.length > 4) {
       throw new Error(`Type length exceeds 4 bytes: ${this.type.length}`);
     }
-    writer.writeString(this.type);
+    writer.writeString(this.type, 'ascii');
     if (this.creator.length > 4) {
       throw new Error(`Creator exceeds 4 bytes: ${this.creator.length}`);
     }
-    writer.writeString(this.creator, 64);
+    writer.writeString(this.creator, 64, 'ascii');
     writer.writeUInt32BE(this.uniqueIdSeed, 68);
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 72;
   }
 }
@@ -93,7 +94,7 @@ export class RecordMetadataList implements Serializable {
   /** Array of record metadata. */
   values: Array<RecordMetadata> = [];
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
     this.nextRecordListId = reader.readUInt32BE();
     if (this.nextRecordListId !== 0) {
@@ -102,13 +103,13 @@ export class RecordMetadataList implements Serializable {
     this.numRecords = reader.readUInt16BE();
     for (let i = 0; i < this.numRecords; ++i) {
       const recordMetadata = new RecordMetadata();
-      recordMetadata.parseFrom(reader.readBuffer(8));
+      recordMetadata.parseFrom(reader.readBuffer(8), opts);
       this.values.push(recordMetadata);
     }
     return reader.readOffset;
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     if (this.nextRecordListId !== 0) {
       throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
@@ -117,13 +118,13 @@ export class RecordMetadataList implements Serializable {
     this.numRecords = this.values.length;
     writer.writeUInt16BE(this.numRecords);
     for (const recordMetadata of this.values) {
-      writer.writeBuffer(recordMetadata.serialize());
+      writer.writeBuffer(recordMetadata.serialize(opts));
     }
     writer.writeUInt16BE(0); // 2 placeholder bytes.
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 6 + this.values.length * 8 + 2;
   }
 }
@@ -137,10 +138,10 @@ export class RecordMetadata implements Serializable {
   /** Record ID (3 bytes). */
   uniqueId: number = 0;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
     this.localChunkId = reader.readUInt32BE();
-    this.attributes.parseFrom(reader.readBuffer(1));
+    this.attributes.parseFrom(reader.readBuffer(1), opts);
     this.uniqueId =
       (reader.readUInt8() << 16) |
       (reader.readUInt8() << 8) |
@@ -148,17 +149,17 @@ export class RecordMetadata implements Serializable {
     return reader.readOffset;
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const writer = new SmartBuffer();
     writer.writeUInt32BE(this.localChunkId);
-    writer.writeBuffer(this.attributes.serialize());
+    writer.writeBuffer(this.attributes.serialize(opts));
     writer.writeUInt8((this.uniqueId >> 16) & 0xff);
     writer.writeUInt8((this.uniqueId >> 8) & 0xff);
     writer.writeUInt8(this.uniqueId & 0xff);
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 8;
   }
 }
@@ -209,24 +210,24 @@ export class DatabaseAttrs implements Serializable {
   /** Database not closed properly. */
   open: boolean = false;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     parseFromBitmask(
       this,
       buffer.readUInt16BE(),
       DatabaseAttrs.bitmaskFieldSpecMap
     );
-    return this.serializedLength;
+    return this.getSerializedLength(opts);
   }
 
-  serialize() {
-    const buffer = Buffer.alloc(this.serializedLength);
+  serialize(opts?: SerializeOptions) {
+    const buffer = Buffer.alloc(this.getSerializedLength(opts));
     buffer.writeUInt16BE(
       serializeToBitmask(this, DatabaseAttrs.bitmaskFieldSpecMap)
     );
     return buffer;
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 2;
   }
 
@@ -268,7 +269,7 @@ export class RecordAttrs implements Serializable {
   /** Archived (if deleted or busy). */
   archive: boolean = false;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const rawAttrs = buffer.readUInt8();
     parseFromBitmask(this, rawAttrs, RecordAttrs.bitmaskFieldSpecMap);
     if (this.delete || this.busy) {
@@ -276,10 +277,10 @@ export class RecordAttrs implements Serializable {
     } else {
       this.archive = false;
     }
-    return this.serializedLength;
+    return this.getSerializedLength(opts);
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const buffer = Buffer.alloc(1);
     buffer.writeUInt8(
       serializeToBitmask(
@@ -292,7 +293,7 @@ export class RecordAttrs implements Serializable {
     return buffer;
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 1;
   }
 

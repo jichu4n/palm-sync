@@ -2,7 +2,11 @@ import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 import {DatabaseHeader, RecordMetadataList} from './database-header';
 import {Record, SerializableBufferRecord} from './record';
-import Serializable, {SerializableBuffer} from './serializable';
+import Serializable, {
+  ParseOptions,
+  SerializableBuffer,
+  SerializeOptions,
+} from './serializable';
 
 /** Represetation of a Palm OS PDB file. */
 class Database<
@@ -49,10 +53,13 @@ class Database<
   }
 
   /** Parses a PDB file. */
-  parseFrom(buffer: Buffer) {
-    this.header.parseFrom(buffer);
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    this.header.parseFrom(buffer, opts);
     const recordList = new RecordMetadataList();
-    recordList.parseFrom(buffer.slice(this.header.serializedLength));
+    recordList.parseFrom(
+      buffer.slice(this.header.getSerializedLength(opts)),
+      opts
+    );
 
     if (this.appInfoType && this.header.appInfoId) {
       const appInfoEnd =
@@ -61,7 +68,10 @@ class Database<
           ? recordList.values[0].localChunkId
           : buffer.length);
       this.appInfo = new this.appInfoType();
-      this.appInfo.parseFrom(buffer.slice(this.header.appInfoId, appInfoEnd));
+      this.appInfo.parseFrom(
+        buffer.slice(this.header.appInfoId, appInfoEnd),
+        opts
+      );
     } else {
       this.appInfo = null;
     }
@@ -73,7 +83,8 @@ class Database<
           : buffer.length;
       this.sortInfo = new this.sortInfoType();
       this.sortInfo.parseFrom(
-        buffer.slice(this.header.sortInfoId, sortInfoEnd)
+        buffer.slice(this.header.sortInfoId, sortInfoEnd),
+        opts
       );
     } else {
       this.sortInfo = null;
@@ -89,7 +100,7 @@ class Database<
           : buffer.length;
       const record = new this.recordType();
       record.metadata = recordList.values[i];
-      record.parseFrom(buffer.slice(recordStart, recordEnd));
+      record.parseFrom(buffer.slice(recordStart, recordEnd), opts);
       this.records.push(record);
       lastRecordEnd = recordEnd;
     }
@@ -100,47 +111,49 @@ class Database<
   // Recomputed fields:
   //   - appInfoId
   //   - sortInfoId
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const recordList = new RecordMetadataList();
     recordList.numRecords = this.records.length;
     recordList.values = _.map(this.records, 'metadata');
 
-    let offset = this.header.serializedLength + recordList.serializedLength;
+    let offset =
+      this.header.getSerializedLength(opts) +
+      recordList.getSerializedLength(opts);
     if (this.appInfo) {
       this.header.appInfoId = offset;
-      offset += this.appInfo.serializedLength;
+      offset += this.appInfo.getSerializedLength(opts);
     } else {
       this.header.appInfoId = 0;
     }
     if (this.sortInfo) {
       this.header.sortInfoId = offset;
-      offset += this.sortInfo.serializedLength;
+      offset += this.sortInfo.getSerializedLength(opts);
     } else {
       this.header.sortInfoId = 0;
     }
 
     for (let i = 0; i < this.records.length; ++i) {
       recordList.values[i].localChunkId = offset;
-      offset += this.records[i].serializedLength;
+      offset += this.records[i].getSerializedLength(opts);
     }
 
     const writer = new SmartBuffer();
-    writer.writeBuffer(this.header.serialize());
-    writer.writeBuffer(recordList.serialize());
+    writer.writeBuffer(this.header.serialize(opts));
+    writer.writeBuffer(recordList.serialize(opts));
     if (this.appInfo) {
-      writer.writeBuffer(this.appInfo.serialize());
+      writer.writeBuffer(this.appInfo.serialize(opts));
     }
     if (this.sortInfo) {
-      writer.writeBuffer(this.sortInfo.serialize());
+      writer.writeBuffer(this.sortInfo.serialize(opts));
     }
     for (const record of this.records) {
-      writer.writeBuffer(record.serialize());
+      writer.writeBuffer(record.serialize(opts));
     }
     return writer.toBuffer();
   }
 
-  get serializedLength() {
-    return this.serialize().length;
+  getSerializedLength(opts?: SerializeOptions) {
+    return this.serialize(opts).length;
   }
 
   private readonly recordType: new () => RecordT;

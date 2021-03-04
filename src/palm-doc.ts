@@ -1,8 +1,9 @@
 import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
+import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
 import {SerializableBufferRecord} from './record';
-import Serializable from './serializable';
+import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 
 /** PalmDOC document. */
 class PalmDoc implements Serializable {
@@ -11,18 +12,19 @@ class PalmDoc implements Serializable {
   /** Text content. */
   text: string = '';
 
-  parseFrom(buffer: Buffer) {
-    const numBytes = this.db.parseFrom(buffer);
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const numBytes = this.db.parseFrom(buffer, opts);
     this.name = this.db.header.name;
     if (this.db.records.length === 0) {
       throw new Error(`PalmDOC metadata record missing`);
     }
-    this.metadata.parseFrom(this.db.records[0].data);
+    this.metadata.parseFrom(this.db.records[0].data, opts);
     this.textInDb = this.db.records
       .slice(1, this.metadata.numRecords + 1)
       .map(({data}) =>
-        (this.metadata.isCompressed ? PalmDoc.decompress(data) : data).toString(
-          'latin1'
+        decodeString(
+          this.metadata.isCompressed ? PalmDoc.decompress(data) : data,
+          opts
         )
       )
       .join('');
@@ -30,7 +32,7 @@ class PalmDoc implements Serializable {
     return numBytes;
   }
 
-  serialize() {
+  serialize(opts?: PalmDocSerializeOptions) {
     this.db.header.name = this.name;
     if (this.text !== this.textInDb) {
       this.db.records.length = 0;
@@ -38,13 +40,16 @@ class PalmDoc implements Serializable {
       // Split text into 4096-byte chunks, compress, and add to DB.
       for (let i = 0; i < this.text.length; i += PALM_DOC_RECORD_SIZE) {
         const textChunk = this.text.substr(i, PALM_DOC_RECORD_SIZE);
+        const encodedTextChunk = encodeString(textChunk, opts);
         const record = new SerializableBufferRecord();
-        record.data = PalmDoc.compress(Buffer.from(textChunk, 'latin1'));
+        record.data = opts?.enableCompression
+          ? PalmDoc.compress(encodedTextChunk)
+          : encodedTextChunk;
         this.db.records.push(record);
       }
 
       // Add metadata record.
-      this.metadata.isCompressed = true;
+      this.metadata.isCompressed = !!opts?.enableCompression;
       this.metadata.textLength = this.text.length;
       this.metadata.numRecords = this.db.records.length;
       if (
@@ -54,16 +59,16 @@ class PalmDoc implements Serializable {
         this.metadata.position = 0;
       }
       const metadataRecord = new SerializableBufferRecord();
-      metadataRecord.data = this.metadata.serialize();
+      metadataRecord.data = this.metadata.serialize(opts);
       this.db.records.unshift(metadataRecord);
 
       this.textInDb = this.text;
     }
-    return this.db.serialize();
+    return this.db.serialize(opts);
   }
 
-  get serializedLength() {
-    return this.serialize().length;
+  getSerializedLength(opts?: SerializeOptions) {
+    return this.serialize(opts).length;
   }
 
   /** Database corresponding to this document.
@@ -239,6 +244,12 @@ class PalmDoc implements Serializable {
 
 export default PalmDoc;
 
+/** Serialization options for PalmDoc. */
+export interface PalmDocSerializeOptions extends SerializeOptions {
+  /** Whether to compress the text. */
+  enableCompression?: boolean;
+}
+
 /** Maximum size of each record containing text. */
 const PALM_DOC_RECORD_SIZE = 4096;
 
@@ -253,7 +264,7 @@ export class PalmDocMetadata implements Serializable {
   /** Current reading position, as an offset into the uncompressed text. */
   position: number = 0;
 
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     const reader = SmartBuffer.fromBuffer(buffer);
 
     const compressionLevel = reader.readUInt16BE();
@@ -282,8 +293,8 @@ export class PalmDocMetadata implements Serializable {
     return reader.readOffset;
   }
 
-  serialize() {
-    const writer = SmartBuffer.fromSize(this.serializedLength);
+  serialize(opts?: SerializeOptions) {
+    const writer = SmartBuffer.fromSize(this.getSerializedLength(opts));
     writer.writeUInt16BE(this.isCompressed ? 2 : 1);
     writer.writeUInt16BE(0); // Padding bytes
     writer.writeUInt32BE(this.textLength);
@@ -293,7 +304,7 @@ export class PalmDocMetadata implements Serializable {
     return writer.toBuffer();
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 16;
   }
 }

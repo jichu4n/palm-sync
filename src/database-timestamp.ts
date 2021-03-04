@@ -1,4 +1,4 @@
-import Serializable from './serializable';
+import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 
 /** Epoch for PDB timestamps. */
 export const epochTimestamp = new Date('1904-01-01T00:00:00.000Z');
@@ -20,7 +20,7 @@ class DatabaseTimestamp implements Serializable {
    * If the time has the top bit clear, it's a signed 32-bit number counting
    * from 1st Jan 1970.
    */
-  parseFrom(buffer: Buffer) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
     let ts = buffer.readUInt32BE();
     if (ts === 0 || ts & (1 << 31)) {
       this.epochType = 'pdb';
@@ -34,7 +34,7 @@ class DatabaseTimestamp implements Serializable {
     return 4;
   }
 
-  serialize() {
+  serialize(opts?: SerializeOptions) {
     const buffer = Buffer.alloc(4);
     switch (this.epochType) {
       case 'pdb':
@@ -51,7 +51,7 @@ class DatabaseTimestamp implements Serializable {
     return buffer;
   }
 
-  get serializedLength() {
+  getSerializedLength(opts?: SerializeOptions) {
     return 4;
   }
 }
