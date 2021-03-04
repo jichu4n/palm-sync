@@ -74,7 +74,7 @@ export class ToDoAppInfo extends AppInfo<ToDoAppInfoData> {
 
 /** A ToDoDB record. */
 export class ToDoRecord extends BaseRecord {
-  /** Due date of the item, or null if no due date. */
+  /** Due date of the item (may be empty if there is no due date). */
   dueDate: OptionalDatabaseDate = new OptionalDatabaseDate();
   /** Whether the item is completed. */
   isCompleted: boolean = false;
