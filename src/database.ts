@@ -8,7 +8,7 @@ import Serializable, {
   SerializeOptions,
 } from './serializable';
 
-/** Represetation of a Palm OS PDB file. */
+/** Representation of a Palm OS PDB file. */
 class Database<
   /** Record type. */
   RecordT extends Record,

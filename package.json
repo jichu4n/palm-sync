@@ -15,7 +15,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "palm-doc": "./dist/palm-doc-cli.ts"
+    "palm-doc": "./dist/bin/palm-doc-cli.js"
   },
   "scripts": {
     "build": "tsc",
