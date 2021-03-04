@@ -1,6 +1,6 @@
 {
   "name": "palm-pdb",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Library for manipulating Palm OS PDB files",
   "repository": {
     "type": "git",
