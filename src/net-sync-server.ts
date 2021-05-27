@@ -3,7 +3,14 @@ import net, {Server, Socket} from 'net';
 import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
-} from './net-sync-stream';
+} from './net-sync-protocol';
+import {
+  DlpArg,
+  DlpRequest,
+  DlpResponse,
+  executeDlpCommand,
+} from './dlp-protocol';
+import {ParseOptions, Serializable, SerializeOptions} from 'palm-pdb';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -53,6 +60,7 @@ export class NetSyncServer {
   async onConnection(socket: Socket) {
     const connection = new NetSyncConnection(socket);
     await connection.doHandshake();
+    await connection.end();
   }
 
   private server: Server | null = null;
@@ -95,8 +103,44 @@ export class NetSyncConnection {
     this.log('Handshake complete');
   }
 
+  async end() {
+    await executeDlpCommand(
+      this.netSyncDatagramStream,
+      new DlpEndOfSyncRequest(),
+      DlpEndOfSyncResponse
+    );
+  }
+
   private log: debug.Debugger;
   private netSyncDatagramStream: NetSyncDatagramStream;
+}
+
+class SerializableUInt16 implements Serializable {
+  value: number = 0;
+
+  parseFrom(buffer: Buffer) {
+    this.value = buffer.readUInt16BE();
+    return this.getSerializedLength();
+  }
+
+  serialize() {
+    const buffer = Buffer.alloc(this.getSerializedLength());
+    buffer.writeUInt16BE(this.value);
+    return buffer;
+  }
+
+  getSerializedLength() {
+    return 2;
+  }
+}
+
+class DlpEndOfSyncRequest extends DlpRequest {
+  commandId = 0x2f;
+  args = [new DlpArg(SerializableUInt16)];
+}
+class DlpEndOfSyncResponse extends DlpResponse {
+  commandId = 0x2f;
+  args = [];
 }
 
 if (require.main === module) {
