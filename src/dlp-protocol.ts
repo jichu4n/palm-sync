@@ -1,14 +1,13 @@
+import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
-import {
-  ParseOptions,
-  Serializable,
-  SerializableBuffer,
-  SerializeOptions,
-} from 'palm-pdb';
 import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
-import debug from 'debug';
+import Serializable, {
+  ParseOptions,
+  SerializableBuffer,
+  SerializeOptions,
+} from './serializable';
 
 /** Base class for DLP requests. */
 export abstract class DlpRequest implements Serializable {
@@ -203,8 +202,7 @@ export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
 export class DlpArg<DataT extends Serializable = SerializableBuffer>
-  implements Serializable
-{
+  implements Serializable {
   /** DLP argument ID */
   argId: number = DLP_ARG_ID_BASE;
   /** Argument data. */
