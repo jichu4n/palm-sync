@@ -1,7 +1,9 @@
-import net, {Server, Socket} from 'net';
 import debug from 'debug';
-import {PromiseSocket} from 'promise-socket';
-import {SmartBuffer} from 'smart-buffer';
+import net, {Server, Socket} from 'net';
+import {
+  createNetSyncDatagramStream,
+  NetSyncDatagramStream,
+} from './net-sync-stream';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -37,16 +39,6 @@ export const HOTSYNC_HANDSHAKE_REQUEST_3 = Buffer.from([
   0x93, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 
-/** Size of HotSync message headers.
- *
- * The structure is:
- *
- * - 1 byte: data type, always 1.
- * - 1 byte: transaction ID
- * - 4 bytes: payload length
- */
-const HOTSYNC_HEADER_LENGTH = 6;
-
 export class NetSyncServer {
   start() {
     if (this.server) {
@@ -72,7 +64,7 @@ export class NetSyncConnection {
     this.log = debug('NetSyncConnection').extend(
       socket.remoteAddress ?? 'UNKNOWN'
     );
-    this.socket = new PromiseSocket(socket);
+    this.netSyncDatagramStream = createNetSyncDatagramStream(socket);
 
     this.log(`Connection received`);
 
@@ -89,61 +81,22 @@ export class NetSyncConnection {
 
   async doHandshake() {
     this.log('Starting handshake');
-    const req1 = await this.readMessage(HOTSYNC_HANDSHAKE_REQUEST_1.length);
-    this.log(`Read ${req1?.length} bytes`);
-    const resp1Size = await this.writeMessage(HOTSYNC_HANDSHAKE_RESPONSE_1);
-    this.log(`Sent ${resp1Size} bytes`);
-    const req2 = await this.readMessage(HOTSYNC_HANDSHAKE_REQUEST_2.length);
-    this.log(`Read ${req2?.length} bytes`);
-    const resp2Size = await this.writeMessage(HOTSYNC_HANDSHAKE_RESPONSE_2);
-    this.log(`Sent ${resp2Size} bytes`);
-    const req3 = await this.readMessage(HOTSYNC_HANDSHAKE_REQUEST_3.length);
-    this.log(`Read ${req3?.length} bytes`);
+    await this.netSyncDatagramStream.readAsync(
+      HOTSYNC_HANDSHAKE_REQUEST_1.length
+    );
+    this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_1);
+    await this.netSyncDatagramStream.readAsync(
+      HOTSYNC_HANDSHAKE_REQUEST_2.length
+    );
+    this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_2);
+    await this.netSyncDatagramStream.readAsync(
+      HOTSYNC_HANDSHAKE_REQUEST_3.length
+    );
     this.log('Handshake complete');
   }
 
-  async writeMessage(data: Buffer) {
-    const writer = new SmartBuffer();
-
-    // Write header.
-    writer.writeUInt8(1);
-    writer.writeUInt8(this.nextXid);
-    writer.writeUInt32BE(data.length);
-
-    // Write payload.
-    writer.writeBuffer(data);
-
-    return await this.socket.write(writer.toBuffer());
-  }
-
-  async readMessage(expectedLength: number) {
-    const header = await this.socket.read(HOTSYNC_HEADER_LENGTH);
-    if (!header || header.length < HOTSYNC_HEADER_LENGTH) {
-      throw new Error(`Failed to read message`);
-    }
-    const headerReader = SmartBuffer.fromBuffer(header as Buffer);
-    headerReader.readUInt8();
-    headerReader.readUInt8();
-    const dataLength = headerReader.readUInt32BE();
-    if (dataLength !== expectedLength) {
-      this.log(
-        `Unexpected message size: expected ${expectedLength}, actual ${dataLength}`
-      );
-    }
-
-    return await this.socket.read(dataLength);
-  }
-
-  get nextXid() {
-    this.xid = (this.xid + 1) % 0xff || 1;
-    return this.xid;
-  }
-
   private log: debug.Debugger;
-  private socket: PromiseSocket<Socket>;
-
-  /** Next transaction ID, incremented with every server response. */
-  private xid = 0;
+  private netSyncDatagramStream: NetSyncDatagramStream;
 }
 
 if (require.main === module) {
