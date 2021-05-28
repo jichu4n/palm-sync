@@ -7,35 +7,50 @@ import {
   ParseOptions,
   SBuffer,
   Serializable,
+  serializeAs,
   SerializeOptions,
+  SObject,
+  SUInt8,
 } from './serializable';
 
 /** Base class for DLP requests. */
-export abstract class DlpRequest implements Serializable {
+export abstract class DlpRequest extends SObject {
   /** DLP command ID. */
+  @serializeAs(SUInt8)
   abstract commandId: number;
+
+  /** Number of args. */
+  @serializeAs(SUInt8)
+  private argc = 0;
+
   /** DLP command arguments. To be implemented by child classes. */
   abstract args: Array<DlpArg<any>>;
 
-  parseFrom(): number {
-    throw new Error('Method not implemented.');
+  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
+    let readOffset = super.parseFrom(buffer, opts);
+    if (this.argc !== this.args.length) {
+      throw new Error(
+        'Argument count mismatch: ' +
+          `expected ${this.args.length}, got ${this.argc}`
+      );
+    }
+    for (const arg of this.args) {
+      readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
+    }
+    return readOffset;
   }
 
   serialize(opts?: SerializeOptions): Buffer {
     const serializedArgs = this.args.map((arg) => arg.serialize(opts));
-
-    const writer = new SmartBuffer();
-    writer.writeUInt8(this.commandId);
-    writer.writeUInt8(serializedArgs.length);
-    for (const serializedArg of serializedArgs) {
-      writer.writeBuffer(serializedArg);
-    }
-
-    return writer.toBuffer();
+    this.argc = serializedArgs.length;
+    return Buffer.concat([super.serialize(opts), ...serializedArgs]);
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
-    return 2 + _.sum(this.args.map((arg) => arg.getSerializedLength(opts)));
+    return (
+      super.getSerializedLength() +
+      _.sum(this.args.map((arg) => arg.getSerializedLength(opts)))
+    );
   }
 }
 
@@ -45,60 +60,70 @@ const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
 const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
 
 /** Base class for DLP responses. */
-export abstract class DlpResponse implements Serializable {
-  /** DLP command ID. */
+export abstract class DlpResponse extends SObject {
+  /** Expected DLP command ID. */
   abstract commandId: number;
-  /** DLP command arguments. To be provided by child classes and populated via parseFrom(). */
-  abstract args: Array<DlpArg<any>>;
+
+  /** Actual command ID value read / serialized. */
+  @serializeAs(SUInt8)
+  private serializedCommandId = 0;
+
+  /** Number of args. */
+  @serializeAs(SUInt8)
+  private argc = 0;
+
   /** Error code. */
+  @serializeAs(SUInt8)
   errno: number = 0;
 
-  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
-    const reader = SmartBuffer.fromBuffer(buffer);
+  /** DLP command arguments. To be provided by child classes and populated via parseFrom(). */
+  abstract args: Array<DlpArg<any>>;
 
-    const responseCommandId = reader.readUInt8();
-    if (!(responseCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
+  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
+    let readOffset = super.parseFrom(buffer, opts);
+
+    if (!(this.serializedCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
       throw new Error(
-        `Invalid response command ID: 0x${responseCommandId.toString(16)}`
+        `Invalid response command ID: 0x${this.serializedCommandId.toString(
+          16
+        )}`
       );
     }
-    const commandId = responseCommandId & DLP_RESPONSE_COMMAND_ID_BITMASK;
-    if (commandId !== this.commandId) {
+    const actualCommandId =
+      this.serializedCommandId & DLP_RESPONSE_COMMAND_ID_BITMASK;
+    if (actualCommandId !== this.commandId) {
       throw new Error(
         'Command ID mismatch: ' +
           `expected 0x${this.commandId.toString(16)}, ` +
-          `got ${commandId.toString(16)}`
+          `got ${actualCommandId.toString(16)}`
       );
     }
 
-    // TODO: Handle error case.
-    const argc = reader.readUInt8();
-    if (argc !== this.args.length) {
+    if (this.argc !== this.args.length) {
       throw new Error(
         'Argument count mismatch: ' +
-          `expected ${this.args.length}, got ${argc}`
+          `expected ${this.args.length}, got ${this.argc}`
       );
     }
-
-    this.errno = reader.readUInt8();
-
-    for (let i = 0; i < argc; ++i) {
-      const argLength = this.args[i].parseFrom(
-        buffer.slice(reader.readOffset),
-        opts
-      );
-      reader.readOffset += argLength;
+    for (const arg of this.args) {
+      readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
     }
 
-    return reader.readOffset;
+    return readOffset;
   }
 
-  serialize(): Buffer {
-    throw new Error('Method not implemented.');
+  serialize(opts?: SerializeOptions): Buffer {
+    this.serializedCommandId = this.commandId | DLP_RESPONSE_TYPE_BITMASK;
+    const serializedArgs = this.args.map((arg) => arg.serialize(opts));
+    this.argc = serializedArgs.length;
+    return Buffer.concat([super.serialize(opts), ...serializedArgs]);
   }
 
-  getSerializedLength(): number {
-    throw new Error('Method not implemented.');
+  getSerializedLength(opts?: SerializeOptions): number {
+    return (
+      super.getSerializedLength() +
+      _.sum(this.args.map((arg) => arg.getSerializedLength(opts)))
+    );
   }
 }
 
