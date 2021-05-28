@@ -8,8 +8,8 @@ import Database from './database';
 import {AppInfo} from './database-app-info';
 import DatabaseDate, {OptionalDatabaseDate} from './database-date';
 import {decodeString, encodeString} from './database-encoding';
-import {DatabaseHeader} from './database-header';
-import {BaseRecord} from './record';
+import {DatabaseHeader, RecordMetadata} from './database-header';
+import {Record} from './record';
 import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** DatebookDB database. */
@@ -68,7 +68,9 @@ export class DatebookAppInfo extends AppInfo<DatebookAppInfoData> {
 }
 
 /** A DatebookDB record. */
-export class DatebookRecord extends BaseRecord {
+export class DatebookRecord implements Record {
+  metadata: RecordMetadata = new RecordMetadata();
+
   /** Date of the event. */
   date: DatabaseDate = new DatabaseDate();
   /** Start time of event. */

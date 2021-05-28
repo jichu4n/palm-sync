@@ -5,8 +5,8 @@ import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
 import {
   ParseOptions,
+  SBuffer,
   Serializable,
-  SerializableBuffer,
   SerializeOptions,
 } from './serializable';
 
@@ -17,7 +17,7 @@ export abstract class DlpRequest implements Serializable {
   /** DLP command arguments. To be implemented by child classes. */
   abstract args: Array<DlpArg<any>>;
 
-  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
+  parseFrom(): number {
     throw new Error('Method not implemented.');
   }
 
@@ -93,11 +93,11 @@ export abstract class DlpResponse implements Serializable {
     return reader.readOffset;
   }
 
-  serialize(opts?: SerializeOptions): Buffer {
+  serialize(): Buffer {
     throw new Error('Method not implemented.');
   }
 
-  getSerializedLength(opts?: SerializeOptions): number {
+  getSerializedLength(): number {
     throw new Error('Method not implemented.');
   }
 }
@@ -202,7 +202,7 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
-export class DlpArg<DataT extends Serializable = SerializableBuffer>
+export class DlpArg<DataT extends Serializable = SBuffer>
   implements Serializable
 {
   /** DLP argument ID */

@@ -2,7 +2,7 @@ import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
-import {SerializableBufferRecord} from './record';
+import {SBufferRecord} from './record';
 import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** PalmDOC document. */
@@ -18,10 +18,10 @@ class PalmDoc implements Serializable {
     if (this.db.records.length === 0) {
       throw new Error(`PalmDOC metadata record missing`);
     }
-    this.metadata.parseFrom(this.db.records[0].data, opts);
+    this.metadata.parseFrom(this.db.records[0].value, opts);
     this.textInDb = this.db.records
       .slice(1, this.metadata.numRecords + 1)
-      .map(({data}) =>
+      .map(({value: data}) =>
         decodeString(
           this.metadata.isCompressed ? PalmDoc.decompress(data) : data,
           opts
@@ -41,8 +41,8 @@ class PalmDoc implements Serializable {
       for (let i = 0; i < this.text.length; i += PALM_DOC_RECORD_SIZE) {
         const textChunk = this.text.substr(i, PALM_DOC_RECORD_SIZE);
         const encodedTextChunk = encodeString(textChunk, opts);
-        const record = new SerializableBufferRecord();
-        record.data = opts?.enableCompression
+        const record = new SBufferRecord();
+        record.value = opts?.enableCompression
           ? PalmDoc.compress(encodedTextChunk)
           : encodedTextChunk;
         this.db.records.push(record);
@@ -58,8 +58,8 @@ class PalmDoc implements Serializable {
       ) {
         this.metadata.position = 0;
       }
-      const metadataRecord = new SerializableBufferRecord();
-      metadataRecord.data = this.metadata.serialize(opts);
+      const metadataRecord = new SBufferRecord();
+      metadataRecord.value = this.metadata.serialize(opts);
       this.db.records.unshift(metadataRecord);
 
       this.textInDb = this.text;
@@ -310,9 +310,9 @@ export class PalmDocMetadata implements Serializable {
 }
 
 /** PalmDOC database.*/
-export class PalmDocDatabase extends Database<SerializableBufferRecord> {
+export class PalmDocDatabase extends Database<SBufferRecord> {
   constructor() {
-    super({recordType: SerializableBufferRecord});
+    super({recordType: SBufferRecord});
   }
 
   get defaultHeader() {

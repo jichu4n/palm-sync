@@ -3,8 +3,8 @@ import Database from './database';
 import {AppInfo} from './database-app-info';
 import {OptionalDatabaseDate} from './database-date';
 import {decodeString, encodeString} from './database-encoding';
-import {DatabaseHeader} from './database-header';
-import {BaseRecord} from './record';
+import {DatabaseHeader, RecordMetadata} from './database-header';
+import {Record} from './record';
 import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** ToDoDB database. */
@@ -73,7 +73,9 @@ export class ToDoAppInfo extends AppInfo<ToDoAppInfoData> {
 }
 
 /** A ToDoDB record. */
-export class ToDoRecord extends BaseRecord {
+export class ToDoRecord implements Record {
+  metadata: RecordMetadata = new RecordMetadata();
+
   /** Due date of the item (may be empty if there is no due date). */
   dueDate: OptionalDatabaseDate = new OptionalDatabaseDate();
   /** Whether the item is completed. */

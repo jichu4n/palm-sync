@@ -1,16 +1,17 @@
 import {
-  SerializableObject,
   serialize,
-  serializeWithWrapper,
-  UInt16BE,
-  UInt8,
+  serializeAs,
+  SObject,
+  SUInt16BE,
+  SUInt8,
 } from '../serializable';
 
 /** Example object that exercises `serialize` and `serializeWithWrapper`. */
-class TestObject extends SerializableObject {
+class TestObject extends SObject {
   @serialize
-  prop1 = new UInt8();
-  @serializeWithWrapper(UInt16BE)
+  prop1 = new SUInt8();
+
+  @serializeAs(SUInt16BE)
   prop2 = 0;
 }
 

@@ -10,7 +10,7 @@ import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
 } from './net-sync-protocol';
-import {UInt16BE} from './serializable';
+import {SUInt16BE} from './serializable';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -117,7 +117,7 @@ export class NetSyncConnection {
 
 class DlpEndOfSyncRequest extends DlpRequest {
   commandId = 0x2f;
-  args = [new DlpArg(UInt16BE)];
+  args = [new DlpArg(SUInt16BE)];
 }
 class DlpEndOfSyncResponse extends DlpResponse {
   commandId = 0x2f;

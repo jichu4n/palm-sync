@@ -1,10 +1,5 @@
 import {RecordMetadata} from './database-header';
-import {
-  ParseOptions,
-  Serializable,
-  SerializableBuffer,
-  SerializeOptions,
-} from './serializable';
+import {SBuffer, Serializable} from './serializable';
 
 /** Interface of database records. */
 export interface Record extends Serializable {
@@ -12,23 +7,7 @@ export interface Record extends Serializable {
   metadata: RecordMetadata;
 }
 
-/** Base class for database records. */
-export abstract class BaseRecord implements Record {
-  metadata: RecordMetadata = new RecordMetadata();
-
-  abstract parseFrom(buffer: Buffer, opts?: ParseOptions): number;
-  abstract serialize(opts?: SerializeOptions): Buffer;
-  abstract getSerializedLength(opts?: SerializeOptions): number;
-}
-
-/** No-op record implementation that serializes to / from Buffers.
- *
- * Duplicate of SerializableBuffer due to TypeScript not supporting multiple
- * inheritance.
- */
-export class SerializableBufferRecord
-  extends SerializableBuffer
-  implements Record
-{
+/** No-op record implementation that serializes record to / from Buffers. */
+export class SBufferRecord extends SBuffer implements Record {
   metadata: RecordMetadata = new RecordMetadata();
 }

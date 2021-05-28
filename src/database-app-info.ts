@@ -3,8 +3,8 @@ import {SmartBuffer} from 'smart-buffer';
 import {decodeString, encodeString} from './database-encoding';
 import {
   ParseOptions,
+  SBuffer,
   Serializable,
-  SerializableBuffer,
   SerializeOptions,
 } from './serializable';
 
@@ -33,7 +33,7 @@ export const APP_INFO_CATEGORY_DATA_LENGTH = 276;
  * If data is non-null, it will be used to serialize / deserialize extra data in
  * the AppInfo block following standard category data.
  */
-export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
+export class AppInfo<AppDataT extends Serializable = SBuffer>
   implements Serializable
 {
   /** Array of category information (max 16 elements). */

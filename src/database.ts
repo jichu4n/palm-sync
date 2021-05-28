@@ -1,11 +1,11 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 import {DatabaseHeader, RecordMetadataList} from './database-header';
-import {Record, SerializableBufferRecord} from './record';
+import {Record, SBufferRecord} from './record';
 import {
   ParseOptions,
+  SBuffer,
   Serializable,
-  SerializableBuffer,
   SerializeOptions,
 } from './serializable';
 
@@ -14,9 +14,9 @@ class Database<
   /** Record type. */
   RecordT extends Record,
   /** AppInfo type. */
-  AppInfoT extends Serializable = SerializableBuffer,
+  AppInfoT extends Serializable = SBuffer,
   /** SortInfo type. */
-  SortInfoT extends Serializable = SerializableBuffer
+  SortInfoT extends Serializable = SBuffer
 > implements Serializable
 {
   /** Database header.
@@ -166,16 +166,12 @@ class Database<
 export default Database;
 
 /** Database specialization providing records, AppInfo and SortInfo as raw buffers. */
-export class RawDatabase extends Database<
-  SerializableBufferRecord,
-  SerializableBuffer,
-  SerializableBuffer
-> {
+export class RawDatabase extends Database<SBufferRecord, SBuffer, SBuffer> {
   constructor() {
     super({
-      recordType: SerializableBufferRecord,
-      appInfoType: SerializableBuffer,
-      sortInfoType: SerializableBuffer,
+      recordType: SBufferRecord,
+      appInfoType: SBuffer,
+      sortInfoType: SBuffer,
     });
   }
 }

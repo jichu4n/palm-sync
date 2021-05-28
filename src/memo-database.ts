@@ -2,8 +2,8 @@ import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
 import {AppInfo} from './database-app-info';
 import {decodeString, encodeString} from './database-encoding';
-import {DatabaseHeader} from './database-header';
-import {BaseRecord} from './record';
+import {DatabaseHeader, RecordMetadata} from './database-header';
+import {Record} from './record';
 import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** MemoDB database. */
@@ -70,7 +70,9 @@ export class MemoAppInfo extends AppInfo<MemoAppInfoData> {
 }
 
 /** A MemoDB record. */
-export class MemoRecord extends BaseRecord {
+export class MemoRecord implements Record {
+  metadata: RecordMetadata = new RecordMetadata();
+
   /** Memo content. */
   content: string = '';
 

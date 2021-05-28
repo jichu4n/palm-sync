@@ -33,28 +33,28 @@ export interface Serializable {
   getSerializedLength(opts?: SerializeOptions): number;
 }
 
-/** No-op Serializable implementation that serializes to / from Buffers. */
-export class SerializableBuffer implements Serializable {
-  data: Buffer = Buffer.alloc(0);
-
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    this.data = Buffer.alloc(buffer.length);
-    buffer.copy(this.data);
-    return this.data.length;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    return this.data;
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return this.data.length;
-  }
-}
-
-/** Interface for Serializable wrapper objects. */
+/** Interface for Serializable wrappers for a value type. */
 export interface SerializableWrapper<ValueT> extends Serializable {
   value: ValueT;
+}
+
+/** No-op Serializable implementation that serializes to / from Buffers. */
+export class SBuffer implements SerializableWrapper<Buffer> {
+  value: Buffer = Buffer.alloc(0);
+
+  parseFrom(buffer: Buffer) {
+    this.value = Buffer.alloc(buffer.length);
+    buffer.copy(this.value);
+    return this.value.length;
+  }
+
+  serialize() {
+    return this.value;
+  }
+
+  getSerializedLength() {
+    return this.value.length;
+  }
 }
 
 /** Factory for Serializable wrappers for basic data types. */
@@ -93,28 +93,34 @@ export function createSerializableScalarWrapperClass<ValueT>({
 }
 
 /** Serializable wrapper for an unsigned 8-bit integer. */
-export const UInt8 = createSerializableScalarWrapperClass({
-  readFn: Buffer.prototype.readUInt8,
-  writeFn: Buffer.prototype.writeUInt8,
-  serializedLength: 1,
-  defaultValue: 0,
-});
+export class SUInt8
+  extends createSerializableScalarWrapperClass({
+    readFn: Buffer.prototype.readUInt8,
+    writeFn: Buffer.prototype.writeUInt8,
+    serializedLength: 1,
+    defaultValue: 0,
+  })
+  implements SerializableWrapper<number> {}
 
 /** Serializable wrapper for an unsigned 16-bit integer with big endian encoding. */
-export const UInt16BE = createSerializableScalarWrapperClass({
-  readFn: Buffer.prototype.readUInt16BE,
-  writeFn: Buffer.prototype.writeUInt16BE,
-  serializedLength: 2,
-  defaultValue: 0,
-});
+export class SUInt16BE
+  extends createSerializableScalarWrapperClass({
+    readFn: Buffer.prototype.readUInt16BE,
+    writeFn: Buffer.prototype.writeUInt16BE,
+    serializedLength: 2,
+    defaultValue: 0,
+  })
+  implements SerializableWrapper<number> {}
 
 /** Serializable wrapper for an unsigned 32-bit integer with big endian encoding. */
-export const UInt32BE = createSerializableScalarWrapperClass({
-  readFn: Buffer.prototype.readUInt32BE,
-  writeFn: Buffer.prototype.writeUInt32BE,
-  serializedLength: 4,
-  defaultValue: 0,
-});
+export class SUInt32BE
+  extends createSerializableScalarWrapperClass({
+    readFn: Buffer.prototype.readUInt32BE,
+    writeFn: Buffer.prototype.writeUInt32BE,
+    serializedLength: 4,
+    defaultValue: 0,
+  })
+  implements SerializableWrapper<number> {}
 
 /** Key for storing property information on a SerializableObject. */
 const SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY = Symbol(
@@ -129,8 +135,8 @@ interface SerializablePropertySpec<ValueT = any> {
   wrapper?: SerializableWrapper<ValueT>;
 }
 
-/** Base class for Serializable object structures. */
-export class SerializableObject implements Serializable {
+/** Base class for Serializable record structures. */
+export class SObject implements Serializable {
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
     let readOffset = 0;
     for (const propertySpec of this.serializablePropertySpecs) {
@@ -159,11 +165,13 @@ export class SerializableObject implements Serializable {
     return length;
   }
 
-  private get serializablePropertySpecs() {
-    return Reflect.getMetadata(
-      SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
-      Object.getPrototypeOf(this)
-    ) as Array<SerializablePropertySpec>;
+  private get serializablePropertySpecs(): Array<SerializablePropertySpec> {
+    return (
+      Reflect.getMetadata(
+        SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
+        Object.getPrototypeOf(this)
+      ) ?? []
+    );
   }
 
   private getPropertyOrWrapper({
@@ -197,8 +205,8 @@ export function serialize<ValueT>(
   }
 }
 
-/** Decorator for Serializable properties that should use a wrapper class. */
-export function serializeWithWrapper<ValueT>(
+/** Decorator for properties to be wrapped in a Serializable wrapper class. */
+export function serializeAs<ValueT>(
   serializableWrapperClass: new () => SerializableWrapper<ValueT>
 ): PropertyDecorator {
   return function (target: Object, propertyKey: string | symbol) {
