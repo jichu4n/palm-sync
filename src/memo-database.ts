@@ -1,10 +1,16 @@
-import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
 import {AppInfo} from './database-app-info';
-import {decodeString, encodeString} from './database-encoding';
+import {SStringNT} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
 import {Record} from './record';
-import {ParseOptions, Serializable, SerializeOptions} from './serializable';
+import {
+  Serializable,
+  serializeAs,
+  SerializeOptions,
+  SObject,
+  SUInt16BE,
+  SUInt8,
+} from './serializable';
 
 /** MemoDB database. */
 class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {
@@ -29,34 +35,25 @@ class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {
 export default MemoDatabase;
 
 /** Extra data in the AppInfo block in MemoDB. */
-export class MemoAppInfoData implements Serializable {
+export class MemoAppInfoData extends SObject implements Serializable {
+  @serializeAs(SUInt16BE)
+  padding1 = 0;
+
   /** Memo sort order.
    *
    * New for 2.0 memo application. 0 = manual, 1 = alphabetical.
    */
-  sortOrder: number = 0;
+  @serializeAs(SUInt8)
+  sortOrder = 0;
 
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    reader.readUInt16BE(); // Padding bytes
-    this.sortOrder = reader.readUInt8();
-    reader.readUInt8(); // Padding byte
-    return reader.readOffset;
-  }
+  @serializeAs(SUInt8)
+  padding2 = 0;
 
   serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-    writer.writeUInt16BE(0); // Padding bytes
     if (this.sortOrder < 0 || this.sortOrder > 1) {
       throw new Error(`Invalid sort order: ${this.sortOrder}`);
     }
-    writer.writeUInt8(this.sortOrder);
-    writer.writeUInt8(0); // Padding byte
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return 4;
+    return super.serialize(opts);
   }
 }
 
@@ -70,27 +67,10 @@ export class MemoAppInfo extends AppInfo<MemoAppInfoData> {
 }
 
 /** A MemoDB record. */
-export class MemoRecord implements Record {
+export class MemoRecord extends SObject implements Record {
   metadata: RecordMetadata = new RecordMetadata();
 
   /** Memo content. */
-  content: string = '';
-
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    this.content = decodeString(
-      SmartBuffer.fromBuffer(buffer).readBufferNT(),
-      opts
-    );
-    return buffer.length;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-    writer.writeBufferNT(encodeString(this.content, opts));
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return this.content.length + 1;
-  }
+  @serializeAs(SStringNT)
+  value: string = '';
 }

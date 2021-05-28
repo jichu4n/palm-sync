@@ -13,7 +13,7 @@ describe('MemoDatabase', function () {
     expect(db.appInfo?.categories.length).toStrictEqual(3);
     expect(db.records.length).toStrictEqual(5);
     for (const record of db.records) {
-      expect(record.content.length).toBeGreaterThan(1);
+      expect(record.value.length).toBeGreaterThan(1);
     }
   });
 
@@ -26,7 +26,7 @@ describe('MemoDatabase', function () {
     ];
     for (let i = 0; i < 10; ++i) {
       const record = new MemoRecord();
-      record.content = `Memo #${i}`;
+      record.value = `Memo #${i}`;
       db1.records.push(record);
     }
 
