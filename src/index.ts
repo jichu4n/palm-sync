@@ -1,6 +1,6 @@
 // General utilities.
 export * from './serializable';
-export {default as Serializable} from './serializable';
+export {Serializable} from './serializable';
 export * from './bitmask';
 
 // Database-related utilities.

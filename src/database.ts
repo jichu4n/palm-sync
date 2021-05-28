@@ -2,8 +2,9 @@ import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 import {DatabaseHeader, RecordMetadataList} from './database-header';
 import {Record, SerializableBufferRecord} from './record';
-import Serializable, {
+import {
   ParseOptions,
+  Serializable,
   SerializableBuffer,
   SerializeOptions,
 } from './serializable';
@@ -16,7 +17,8 @@ class Database<
   AppInfoT extends Serializable = SerializableBuffer,
   /** SortInfo type. */
   SortInfoT extends Serializable = SerializableBuffer
-> implements Serializable {
+> implements Serializable
+{
   /** Database header.
    *
    * Note that some fields in the header are recomputed based on other

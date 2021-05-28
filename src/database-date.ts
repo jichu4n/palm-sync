@@ -1,5 +1,5 @@
-import Serializable, {ParseOptions, SerializeOptions} from './serializable';
 import {epochTimestamp} from './database-timestamp';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** A date (year, month, DOM) encoded as a 16-bit integer. */
 class DatabaseDate implements Serializable {

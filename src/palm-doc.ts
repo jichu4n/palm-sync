@@ -3,7 +3,7 @@ import Database from './database';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
 import {SerializableBufferRecord} from './record';
-import Serializable, {ParseOptions, SerializeOptions} from './serializable';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** PalmDOC document. */
 class PalmDoc implements Serializable {

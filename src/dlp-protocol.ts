@@ -3,8 +3,9 @@ import _ from 'lodash';
 import pEvent from 'p-event';
 import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
-import Serializable, {
+import {
   ParseOptions,
+  Serializable,
   SerializableBuffer,
   SerializeOptions,
 } from './serializable';
@@ -202,7 +203,8 @@ export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
 export class DlpArg<DataT extends Serializable = SerializableBuffer>
-  implements Serializable {
+  implements Serializable
+{
   /** DLP argument ID */
   argId: number = DLP_ARG_ID_BASE;
   /** Argument data. */

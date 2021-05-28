@@ -1,6 +1,7 @@
 import {RecordMetadata} from './database-header';
-import Serializable, {
+import {
   ParseOptions,
+  Serializable,
   SerializableBuffer,
   SerializeOptions,
 } from './serializable';
@@ -27,6 +28,7 @@ export abstract class BaseRecord implements Record {
  */
 export class SerializableBufferRecord
   extends SerializableBuffer
-  implements Record {
+  implements Record
+{
   metadata: RecordMetadata = new RecordMetadata();
 }

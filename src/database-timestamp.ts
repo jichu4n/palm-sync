@@ -1,4 +1,4 @@
-import Serializable, {ParseOptions, SerializeOptions} from './serializable';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** Epoch for PDB timestamps. */
 export const epochTimestamp = new Date('1904-01-01T00:00:00.000Z');

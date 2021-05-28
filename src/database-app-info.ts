@@ -1,8 +1,9 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 import {decodeString, encodeString} from './database-encoding';
-import Serializable, {
+import {
   ParseOptions,
+  Serializable,
   SerializableBuffer,
   SerializeOptions,
 } from './serializable';
@@ -33,7 +34,8 @@ export const APP_INFO_CATEGORY_DATA_LENGTH = 276;
  * the AppInfo block following standard category data.
  */
 export class AppInfo<AppDataT extends Serializable = SerializableBuffer>
-  implements Serializable {
+  implements Serializable
+{
   /** Array of category information (max 16 elements). */
   categories: Array<Category> = [];
   /** The last unique category ID assigned. */

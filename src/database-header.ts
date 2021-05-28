@@ -5,9 +5,9 @@ import {
   parseFromBitmask,
   serializeToBitmask,
 } from './bitmask';
-import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
 import {decodeString, encodeString} from './database-encoding';
-import Serializable, {ParseOptions, SerializeOptions} from './serializable';
+import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** PDB database header, a.k.a DatabaseHdrType. */
 export class DatabaseHeader implements Serializable {

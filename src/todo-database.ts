@@ -5,7 +5,7 @@ import {OptionalDatabaseDate} from './database-date';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
-import Serializable, {ParseOptions, SerializeOptions} from './serializable';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** ToDoDB database. */
 class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfo> {

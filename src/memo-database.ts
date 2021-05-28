@@ -4,7 +4,7 @@ import {AppInfo} from './database-app-info';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
-import Serializable, {ParseOptions, SerializeOptions} from './serializable';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** MemoDB database. */
 class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {

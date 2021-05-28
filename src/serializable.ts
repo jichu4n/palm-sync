@@ -19,7 +19,7 @@ export interface SerializeOptions {
 }
 
 /** An object that can be serialized / deserialized. */
-interface Serializable {
+export interface Serializable {
   /** Deserializes a buffer into this object.
    *
    * Returns number of bytes read.
@@ -30,8 +30,6 @@ interface Serializable {
   /** Computes the serialized length of this object. */
   getSerializedLength(opts?: SerializeOptions): number;
 }
-
-export default Serializable;
 
 /** No-op Serializable implementation that serializes to / from Buffers. */
 export class SerializableBuffer implements Serializable {

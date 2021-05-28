@@ -10,7 +10,7 @@ import DatabaseDate, {OptionalDatabaseDate} from './database-date';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
 import {BaseRecord} from './record';
-import Serializable, {ParseOptions, SerializeOptions} from './serializable';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** DatebookDB database. */
 class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfo> {
@@ -238,13 +238,14 @@ export class DatebookRecordAttrs implements Serializable {
     return 1;
   }
 
-  private static bitmaskFieldSpecMap: BitmaskFieldSpecMap<DatebookRecordAttrs> = {
-    hasAlarmSettings: {bitmask: 0x40, valueType: 'boolean'},
-    hasRepetitionSettings: {bitmask: 0x20, valueType: 'boolean'},
-    hasNote: {bitmask: 0x10, valueType: 'boolean'},
-    hasExceptionDates: {bitmask: 0x08, valueType: 'boolean'},
-    hasDescription: {bitmask: 0x04, valueType: 'boolean'},
-  };
+  private static bitmaskFieldSpecMap: BitmaskFieldSpecMap<DatebookRecordAttrs> =
+    {
+      hasAlarmSettings: {bitmask: 0x40, valueType: 'boolean'},
+      hasRepetitionSettings: {bitmask: 0x20, valueType: 'boolean'},
+      hasNote: {bitmask: 0x10, valueType: 'boolean'},
+      hasExceptionDates: {bitmask: 0x08, valueType: 'boolean'},
+      hasDescription: {bitmask: 0x04, valueType: 'boolean'},
+    };
 }
 
 /** Event start / end time. */
