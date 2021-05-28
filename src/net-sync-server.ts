@@ -10,7 +10,7 @@ import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
 } from './net-sync-protocol';
-import {Serializable} from './serializable';
+import {UInt16BE} from './serializable';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -51,7 +51,6 @@ export class NetSyncServer {
     if (this.server) {
       throw new Error('Server already started');
     }
-    this.log(`Starting server on ${HOTSYNC_DATA_PORT}`);
     this.server = net.createServer(this.onConnection.bind(this));
     this.server.listen(HOTSYNC_DATA_PORT, () => {
       this.log(`Server started on port ${HOTSYNC_DATA_PORT}`);
@@ -116,28 +115,9 @@ export class NetSyncConnection {
   private netSyncDatagramStream: NetSyncDatagramStream;
 }
 
-class SerializableUInt16 implements Serializable {
-  value: number = 0;
-
-  parseFrom(buffer: Buffer) {
-    this.value = buffer.readUInt16BE();
-    return this.getSerializedLength();
-  }
-
-  serialize() {
-    const buffer = Buffer.alloc(this.getSerializedLength());
-    buffer.writeUInt16BE(this.value);
-    return buffer;
-  }
-
-  getSerializedLength() {
-    return 2;
-  }
-}
-
 class DlpEndOfSyncRequest extends DlpRequest {
   commandId = 0x2f;
-  args = [new DlpArg(SerializableUInt16)];
+  args = [new DlpArg(UInt16BE)];
 }
 class DlpEndOfSyncResponse extends DlpResponse {
   commandId = 0x2f;
