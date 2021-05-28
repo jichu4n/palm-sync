@@ -4,7 +4,6 @@ import {SStringNT} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
 import {Record} from './record';
 import {
-  Serializable,
   serializeAs,
   SerializeOptions,
   SObject,
@@ -35,7 +34,7 @@ class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {
 export default MemoDatabase;
 
 /** Extra data in the AppInfo block in MemoDB. */
-export class MemoAppInfoData extends SObject implements Serializable {
+export class MemoAppInfoData extends SObject {
   @serializeAs(SUInt16BE)
   padding1 = 0;
 

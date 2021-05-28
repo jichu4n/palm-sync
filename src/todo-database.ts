@@ -1,11 +1,18 @@
-import {SmartBuffer} from 'smart-buffer';
 import Database from './database';
 import {AppInfo} from './database-app-info';
 import {OptionalDatabaseDate} from './database-date';
-import {decodeString, encodeString} from './database-encoding';
+import {SStringNT} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
 import {Record} from './record';
-import {ParseOptions, Serializable, SerializeOptions} from './serializable';
+import {
+  ParseOptions,
+  serialize,
+  serializeAs,
+  SerializeOptions,
+  SObject,
+  SUInt16BE,
+  SUInt8,
+} from './serializable';
 
 /** ToDoDB database. */
 class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfo> {
@@ -30,36 +37,26 @@ class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfo> {
 export default ToDoDatabase;
 
 /** Extra data in the AppInfo block in ToDoDB. */
-export class ToDoAppInfoData implements Serializable {
+export class ToDoAppInfoData extends SObject {
   /** Not sure what this is ¯\_(ツ)_/¯ */
-  dirty: number = 0;
+  @serializeAs(SUInt16BE)
+  dirty = 0;
+
   /** Item sort order.
    *
    * 0 = manual, 1 = sort by priority.
    */
-  sortOrder: number = 0;
+  @serializeAs(SUInt8)
+  sortOrder = 0;
 
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    this.dirty = reader.readUInt16BE();
-    this.sortOrder = reader.readUInt8();
-    reader.readUInt8(); // Padding byte
-    return reader.readOffset;
-  }
+  @serializeAs(SUInt8)
+  padding1 = 0;
 
   serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-    writer.writeUInt16BE(this.dirty);
     if (this.sortOrder < 0 || this.sortOrder > 1) {
       throw new Error(`Invalid sort order: ${this.sortOrder}`);
     }
-    writer.writeUInt8(this.sortOrder);
-    writer.writeUInt8(0); // Padding byte
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return 4;
+    return super.serialize(opts);
   }
 }
 
@@ -73,59 +70,46 @@ export class ToDoAppInfo extends AppInfo<ToDoAppInfoData> {
 }
 
 /** A ToDoDB record. */
-export class ToDoRecord implements Record {
+export class ToDoRecord extends SObject implements Record {
   metadata: RecordMetadata = new RecordMetadata();
 
   /** Due date of the item (may be empty if there is no due date). */
+  @serialize
   dueDate: OptionalDatabaseDate = new OptionalDatabaseDate();
-  /** Whether the item is completed. */
+
+  /** Attributes byte. */
+  @serializeAs(SUInt8)
+  private attrs = 0;
+
+  /** Whether the item is completed. Stored inside attrs. */
   isCompleted: boolean = false;
-  /** Priority of the item (max 127). */
+
+  /** Priority of the item (max 127). Stored inside attrs. */
   priority: number = 0;
+
   /** Main description. */
+  @serializeAs(SStringNT)
   description: string = '';
+
   /** Additional note. */
+  @serializeAs(SStringNT)
   note: string = '';
 
   parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-
-    this.dueDate.parseFrom(
-      reader.readBuffer(this.dueDate.getSerializedLength(opts)),
-      opts
-    );
-
-    const attrsValue = reader.readUInt8();
-    this.isCompleted = !!(attrsValue & 0x80);
-    this.priority = attrsValue & 0x7f;
-
-    this.description = decodeString(reader.readBufferNT(), opts);
-    this.note = decodeString(reader.readBufferNT(), opts);
-
-    return buffer.length;
+    const readOffset = super.parseFrom(buffer, opts);
+    this.isCompleted = !!(this.attrs & 0x80);
+    this.priority = this.attrs & 0x7f;
+    return readOffset;
   }
 
   serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-
-    writer.writeBuffer(this.dueDate.serialize(opts));
-
     if (this.priority < 0 || this.priority > 0x7f) {
       throw new Error(`Invalid priority: ${this.priority}`);
     }
-    let attrsValue = this.priority;
+    this.attrs = this.priority;
     if (this.isCompleted) {
-      attrsValue |= 0x80;
+      this.attrs |= 0x80;
     }
-    writer.writeUInt8(attrsValue);
-
-    writer.writeBufferNT(encodeString(this.description, opts));
-    writer.writeBufferNT(encodeString(this.note, opts));
-
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return 3 + (this.description.length + 1) + (this.note.length + 1);
+    return super.serialize(opts);
   }
 }
