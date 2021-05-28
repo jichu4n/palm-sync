@@ -10,7 +10,14 @@ import DatabaseDate, {OptionalDatabaseDate} from './database-date';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
 import {Record} from './record';
-import {ParseOptions, Serializable, SerializeOptions} from './serializable';
+import {
+  ParseOptions,
+  Serializable,
+  serializeAs,
+  SerializeOptions,
+  SObject,
+  SUInt8,
+} from './serializable';
 
 /** DatebookDB database. */
 class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfo> {
@@ -35,27 +42,14 @@ class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfo> {
 export default DatebookDatabase;
 
 /** Extra data in the AppInfo block in DatebookDB. */
-export class DatebookAppInfoData implements Serializable {
-  /** Day of the week to start the week on. Not sure what the format is ¯\_(ツ)_/¯ */
-  startOfWeek: number = 0;
+export class DatebookAppInfoData extends SObject {
+  /** Day of the week to start the week on. Not sure what the format is
+   * ¯\_(ツ)_/¯ */
+  @serializeAs(SUInt8)
+  startOfWeek = 0;
 
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    this.startOfWeek = reader.readUInt8();
-    reader.readUInt8(); // Padding byte
-    return reader.readOffset;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-    writer.writeUInt8(this.startOfWeek);
-    writer.writeUInt8(0); // Padding byte
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return 2;
-  }
+  @serializeAs(SUInt8)
+  padding1 = 0;
 }
 
 /** DatebookDB AppInfo block. */
