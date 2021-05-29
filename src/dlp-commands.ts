@@ -1,5 +1,5 @@
-import {DlpArg, DlpRequest, DlpResponse} from './dlp-protocol';
-import {SUInt16BE} from './serializable';
+import {dlpArg, DlpRequest, DlpResponse, DLP_ARG_ID_BASE} from './dlp-protocol';
+import {serializeAs, SUInt16BE} from './serializable';
 
 /** DLP command ID constants. */
 enum DlpCommandId {
@@ -106,11 +106,12 @@ enum DlpCommandId {
 
 export class DlpEndOfSyncResponse extends DlpResponse {
   commandId = DlpCommandId.EndOfSync;
-  args = [];
 }
 
 export class DlpEndOfSyncRequest extends DlpRequest<DlpEndOfSyncResponse> {
   commandId = DlpCommandId.EndOfSync;
-  args = [new DlpArg(SUInt16BE)];
   responseType = DlpEndOfSyncResponse;
+
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  status = 0;
 }

@@ -123,62 +123,65 @@ export class SUInt32BE
   implements SerializableWrapper<number> {}
 
 /** Key for storing property information on a SerializableObject. */
-const SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY = Symbol(
+export const SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY = Symbol(
   'serializablePropertySpecs'
 );
 
-/** Serializable object property information. */
-interface SerializablePropertySpec<ValueT = any> {
+/** Metadata stored for each serializable property on a SerializableObject. */
+export interface SerializablePropertySpec<ValueT = any> {
   /** The name of the property. */
   propertyKey: string | symbol;
-  /** The underlying wrapper, if created with serializeWithWrapper. */
+  /** The underlying wrapper, if created with serializeAs. */
   wrapper?: SerializableWrapper<ValueT>;
+}
+
+/** Extract SerializablePropertySpec's defined on an SObject. */
+export function getSerializablePropertySpecs(target: Object) {
+  return (Reflect.getMetadata(
+    SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
+    Object.getPrototypeOf(target)
+  ) ?? []) as Array<SerializablePropertySpec>;
+}
+
+/** Get the Serializable value corresponding to an SObject property. */
+export function getSerializablePropertyOrWrapper(
+  target: Object,
+  {propertyKey, wrapper}: SerializablePropertySpec
+) {
+  return wrapper ?? ((target as any)[propertyKey] as Serializable);
+}
+
+/** Get Serializable values corresponding to all the properties of an SObject. */
+export function getAllSerializablePropertiesOrWrappers(target: Object) {
+  return getSerializablePropertySpecs(target).map((propertySpec) =>
+    getSerializablePropertyOrWrapper(target, propertySpec)
+  );
 }
 
 /** Base class for Serializable record structures. */
 export class SObject implements Serializable {
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
     let readOffset = 0;
-    for (const propertySpec of this.serializablePropertySpecs) {
-      readOffset += this.getPropertyOrWrapper(propertySpec).parseFrom(
-        buffer.slice(readOffset),
-        opts
-      );
+    for (const propOrWrapper of getAllSerializablePropertiesOrWrappers(this)) {
+      readOffset += propOrWrapper.parseFrom(buffer.slice(readOffset), opts);
     }
     return readOffset;
   }
 
   serialize(opts?: SerializeOptions): Buffer {
     return Buffer.concat(
-      this.serializablePropertySpecs.map((propertySpec) =>
-        this.getPropertyOrWrapper(propertySpec).serialize(opts)
+      getAllSerializablePropertiesOrWrappers(this).map((propOrWrapper) =>
+        propOrWrapper.serialize(opts)
       )
     );
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
     let length = 0;
-    for (const propertySpec of this.serializablePropertySpecs) {
-      length +=
-        this.getPropertyOrWrapper(propertySpec).getSerializedLength(opts);
+    for (const propOrWrapper of getAllSerializablePropertiesOrWrappers(this)) {
+      length += propOrWrapper.getSerializedLength(opts);
     }
     return length;
-  }
-
-  private get serializablePropertySpecs(): Array<SerializablePropertySpec> {
-    return (
-      Reflect.getMetadata(
-        SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
-        Object.getPrototypeOf(this)
-      ) ?? []
-    );
-  }
-
-  private getPropertyOrWrapper({
-    propertyKey,
-    wrapper,
-  }: SerializablePropertySpec): Serializable {
-    return wrapper ?? ((this as any)[propertyKey] as Serializable);
   }
 }
 
@@ -192,8 +195,8 @@ export function serialize<ValueT>(
   const serializablePropertySpecs = Reflect.getMetadata(
     SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
     target
-  );
-  const propertySpec = {propertyKey, wrapper};
+  ) as Array<SerializablePropertySpec> | undefined;
+  const propertySpec: SerializablePropertySpec = {propertyKey, wrapper};
   if (serializablePropertySpecs) {
     serializablePropertySpecs.push(propertySpec);
   } else {
