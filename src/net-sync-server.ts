@@ -1,16 +1,10 @@
 import debug from 'debug';
 import net, {Server, Socket} from 'net';
-import {
-  DlpArg,
-  DlpRequest,
-  DlpResponse,
-  executeDlpCommand,
-} from './dlp-protocol';
+import {DlpEndOfSyncRequest} from './dlp-commands';
 import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
 } from './net-sync-protocol';
-import {SUInt16BE} from './serializable';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -64,14 +58,12 @@ export class NetSyncServer {
   }
 
   private server: Server | null = null;
-  private log = debug('NetSyncServer');
+  private log = debug('NetSync');
 }
 
 export class NetSyncConnection {
   constructor(socket: Socket) {
-    this.log = debug('NetSyncConnection').extend(
-      socket.remoteAddress ?? 'UNKNOWN'
-    );
+    this.log = debug('NetSync').extend(socket.remoteAddress ?? 'UNKNOWN');
     this.netSyncDatagramStream = createNetSyncDatagramStream(socket);
 
     this.log(`Connection received`);
@@ -104,24 +96,11 @@ export class NetSyncConnection {
   }
 
   async end() {
-    await executeDlpCommand(
-      this.netSyncDatagramStream,
-      new DlpEndOfSyncRequest(),
-      DlpEndOfSyncResponse
-    );
+    await new DlpEndOfSyncRequest().execute(this.netSyncDatagramStream);
   }
 
   private log: debug.Debugger;
   private netSyncDatagramStream: NetSyncDatagramStream;
-}
-
-class DlpEndOfSyncRequest extends DlpRequest {
-  commandId = 0x2f;
-  args = [new DlpArg(SUInt16BE)];
-}
-class DlpEndOfSyncResponse extends DlpResponse {
-  commandId = 0x2f;
-  args = [];
 }
 
 if (require.main === module) {

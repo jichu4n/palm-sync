@@ -14,7 +14,9 @@ import {
 } from './serializable';
 
 /** Base class for DLP requests. */
-export abstract class DlpRequest extends SObject {
+export abstract class DlpRequest<
+  DlpResponseT extends DlpResponse
+> extends SObject {
   /** DLP command ID. */
   @serializeAs(SUInt8)
   abstract commandId: number;
@@ -25,6 +27,9 @@ export abstract class DlpRequest extends SObject {
 
   /** DLP command arguments. To be implemented by child classes. */
   abstract args: Array<DlpArg<any>>;
+
+  /** The response class corresponding to this request. */
+  abstract responseType: new () => DlpResponseT;
 
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
     let readOffset = super.parseFrom(buffer, opts);
@@ -52,6 +57,27 @@ export abstract class DlpRequest extends SObject {
       _.sum(this.args.map((arg) => arg.getSerializedLength(opts)))
     );
   }
+
+  /** Execute DLP request and await the response. */
+  async execute(
+    transport: stream.Duplex,
+    {
+      requestSerializeOptions,
+      responseParseOptions,
+    }: {
+      requestSerializeOptions?: SerializeOptions;
+      responseParseOptions?: ParseOptions;
+    } = {}
+  ) {
+    this.log(`>>> ${this.constructor.name}`);
+    transport.write(this.serialize(requestSerializeOptions));
+    const rawResponse = (await pEvent(transport, 'data')) as Buffer;
+    const response = new this.responseType();
+    response.parseFrom(rawResponse, responseParseOptions);
+    return response;
+  }
+
+  private log = debug('DLP');
 }
 
 /** Command ID bitmask for DLP responses. */
@@ -227,16 +253,16 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
-export class DlpArg<DataT extends Serializable = SBuffer>
+export class DlpArg<ValueT extends Serializable = SBuffer>
   implements Serializable
 {
   /** DLP argument ID */
   argId: number = DLP_ARG_ID_BASE;
   /** Argument data. */
-  data: DataT;
+  value: ValueT;
 
-  constructor(private dataType: new () => DataT) {
-    this.data = new this.dataType();
+  constructor(private valueType: new () => ValueT) {
+    this.value = new this.valueType();
   }
 
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
@@ -262,15 +288,15 @@ export class DlpArg<DataT extends Serializable = SBuffer>
     this.argId = argId;
 
     // Read data.
-    this.data = new this.dataType();
-    this.data.parseFrom(reader.readBuffer(dataLength), opts);
+    this.value = new this.valueType();
+    this.value.parseFrom(reader.readBuffer(dataLength), opts);
 
     return reader.readOffset;
   }
 
   serialize(opts?: SerializeOptions): Buffer {
     const writer = new SmartBuffer();
-    const serializedData = this.data.serialize(opts);
+    const serializedData = this.value.serialize(opts);
     writer.writeBuffer(
       this.argTypeSpec.serializeToHeader(this.argId, serializedData.length)
     );
@@ -279,11 +305,11 @@ export class DlpArg<DataT extends Serializable = SBuffer>
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
-    return this.argTypeSpec.headerLength + this.data.getSerializedLength(opts);
+    return this.argTypeSpec.headerLength + this.value.getSerializedLength(opts);
   }
 
   get argType(): DlpArgType {
-    const dataLength = this.data.getSerializedLength();
+    const dataLength = this.value.getSerializedLength();
     const dlpArgTypesEntry = DlpArgTypesEntries.find(
       ([_, {maxLength}]) => dataLength <= maxLength
     );
@@ -296,28 +322,4 @@ export class DlpArg<DataT extends Serializable = SBuffer>
   get argTypeSpec(): DlpArgTypeSpec {
     return DlpArgTypes[this.argType];
   }
-}
-
-const logDlpCommand = debug('DLP');
-
-/** Execute a DLP command. */
-export async function executeDlpCommand<
-  RequestT extends DlpRequest,
-  ResponseT extends DlpResponse
->(
-  transport: stream.Duplex,
-  request: RequestT,
-  responseType: new () => ResponseT
-) {
-  logDlpCommand(
-    `>>> ${request.constructor.name}(` +
-      request.args.map((arg) => arg.data.constructor.name).join(', ') +
-      ')'
-  );
-
-  transport.write(request.serialize());
-  const rawResponse = (await pEvent(transport, 'data')) as Buffer;
-  const response = new responseType();
-  response.parseFrom(rawResponse);
-  return response;
 }
