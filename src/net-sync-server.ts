@@ -1,6 +1,6 @@
 import debug from 'debug';
 import net, {Server, Socket} from 'net';
-import {DlpEndOfSyncRequest} from './dlp-commands';
+import {DlpAddSyncLogEntryRequest, DlpEndOfSyncRequest} from './dlp-commands';
 import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
@@ -96,7 +96,11 @@ export class NetSyncConnection {
   }
 
   async end() {
-    await new DlpEndOfSyncRequest().execute(this.netSyncDatagramStream);
+    const req1 = new DlpAddSyncLogEntryRequest();
+    req1.message = 'Thank you for using Palmira!';
+    await req1.execute(this.netSyncDatagramStream);
+    const req2 = new DlpEndOfSyncRequest();
+    await req2.execute(this.netSyncDatagramStream);
   }
 
   private log: debug.Debugger;
