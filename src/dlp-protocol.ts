@@ -5,18 +5,15 @@ import 'reflect-metadata';
 import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
 import {
-  getSerializablePropertyOrWrapper,
-  getSerializablePropertySpecs,
   ParseOptions,
   SBuffer,
   Serializable,
   SerializablePropertySpec,
   SerializableWrapper,
   SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
+  serialize,
   serializeAs,
   SerializeOptions,
-  SObject,
-  SUInt8,
 } from './serializable';
 
 /** Key for storing DLP argument information on a DlpRequest / DlpResponse. */
@@ -35,23 +32,22 @@ export function dlpArg<ValueT>(
   serializableWrapperClass?: new () => SerializableWrapper<ValueT>
 ): PropertyDecorator {
   return function (target: Object, propertyKey: string | symbol) {
-    let dlpArgSpec: DlpArgSpec;
+    // Use serialize / serializeAs to add basic to
+    // SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY
     if (serializableWrapperClass) {
       serializeAs(serializableWrapperClass)(target, propertyKey);
-      const serializablePropertySpecs = Reflect.getMetadata(
-        SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
-        target
-      ) as Array<SerializablePropertySpec>;
-      dlpArgSpec = {
-        ...serializablePropertySpecs.pop()!,
-        argId,
-      };
     } else {
-      dlpArgSpec = {
-        propertyKey,
-        argId,
-      };
+      serialize(target, propertyKey);
     }
+    // Augment and move metadata to DLP_ARG_SPECS_METADATA_KEY.
+    const serializablePropertySpecs = Reflect.getMetadata(
+      SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
+      target
+    ) as Array<SerializablePropertySpec>;
+    const dlpArgSpec: DlpArgSpec = {
+      ...serializablePropertySpecs.pop()!,
+      argId,
+    };
     const dlpArgSpecs = Reflect.getMetadata(
       DLP_ARG_SPECS_METADATA_KEY,
       target
@@ -83,45 +79,58 @@ export function getDlpArgs(target: Object) {
 }
 
 /** Base class for DLP requests. */
-export abstract class DlpRequest<
-  DlpResponseT extends DlpResponse
-> extends SObject {
+export abstract class DlpRequest<DlpResponseT extends DlpResponse>
+  implements Serializable
+{
   /** DLP command ID. */
-  @serializeAs(SUInt8)
   abstract commandId: number;
-
-  /** Number of args. */
-  @serializeAs(SUInt8)
-  private argc = 0;
 
   /** The response class corresponding to this request. */
   abstract responseType: new () => DlpResponseT;
 
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
-    const args = getDlpArgs(this);
-    let readOffset = super.parseFrom(buffer, opts);
-    if (this.argc !== args.length) {
+    const reader = SmartBuffer.fromBuffer(buffer);
+
+    const actualCommandId = reader.readUInt8();
+    if (actualCommandId !== this.commandId) {
       throw new Error(
-        'Argument count mismatch: ' +
-          `expected ${args.length}, got ${this.argc}`
+        'Command ID mismatch: ' +
+          `expected 0x${this.commandId.toString(16)}, ` +
+          `got ${actualCommandId.toString(16)}`
       );
     }
+
+    const actualNumArgs = reader.readUInt8();
+    const args = getDlpArgs(this);
+    if (actualNumArgs !== args.length) {
+      throw new Error(
+        'Argument count mismatch: ' +
+          `expected ${args.length}, got ${actualNumArgs}`
+      );
+    }
+
+    let {readOffset} = reader;
     for (const arg of args) {
       readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
     }
+
     return readOffset;
   }
 
   serialize(opts?: SerializeOptions): Buffer {
     const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
-    this.argc = serializedArgs.length;
-    return Buffer.concat([super.serialize(opts), ...serializedArgs]);
+    const writer = new SmartBuffer();
+    writer.writeUInt8(this.commandId);
+    writer.writeUInt8(serializedArgs.length);
+    for (const serializedArg of serializedArgs) {
+      writer.writeBuffer(serializedArg);
+    }
+    return writer.toBuffer();
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
     return (
-      super.getSerializedLength() +
-      _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
+      2 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
     );
   }
 
@@ -157,34 +166,22 @@ const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
 const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
 
 /** Base class for DLP responses. */
-export abstract class DlpResponse extends SObject {
+export abstract class DlpResponse implements Serializable {
   /** Expected DLP command ID. */
   abstract commandId: number;
 
-  /** Actual command ID value read / serialized. */
-  @serializeAs(SUInt8)
-  private serializedCommandId = 0;
-
-  /** Number of args. */
-  @serializeAs(SUInt8)
-  private argc = 0;
-
   /** Error code. */
-  @serializeAs(SUInt8)
-  errno: number = 0;
+  errno = 0;
 
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
-    let readOffset = super.parseFrom(buffer, opts);
-
-    if (!(this.serializedCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
+    const reader = SmartBuffer.fromBuffer(buffer);
+    let actualCommandId = reader.readUInt8();
+    if (!(actualCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
       throw new Error(
-        `Invalid response command ID: 0x${this.serializedCommandId.toString(
-          16
-        )}`
+        `Invalid response command ID: 0x${actualCommandId.toString(16)}`
       );
     }
-    const actualCommandId =
-      this.serializedCommandId & DLP_RESPONSE_COMMAND_ID_BITMASK;
+    actualCommandId &= DLP_RESPONSE_COMMAND_ID_BITMASK;
     if (actualCommandId !== this.commandId) {
       throw new Error(
         'Command ID mismatch: ' +
@@ -193,13 +190,18 @@ export abstract class DlpResponse extends SObject {
       );
     }
 
+    const actualNumArgs = reader.readUInt8();
     const args = getDlpArgs(this);
-    if (this.argc !== args.length) {
+    if (actualNumArgs !== args.length) {
       throw new Error(
         'Argument count mismatch: ' +
-          `expected ${args.length}, got ${this.argc}`
+          `expected ${args.length}, got ${actualNumArgs}`
       );
     }
+
+    this.errno = reader.readUInt16BE();
+
+    let {readOffset} = reader;
     for (const arg of args) {
       readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
     }
@@ -208,16 +210,20 @@ export abstract class DlpResponse extends SObject {
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    this.serializedCommandId = this.commandId | DLP_RESPONSE_TYPE_BITMASK;
     const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
-    this.argc = serializedArgs.length;
-    return Buffer.concat([super.serialize(opts), ...serializedArgs]);
+    const writer = new SmartBuffer();
+    writer.writeUInt8(this.commandId | DLP_RESPONSE_TYPE_BITMASK);
+    writer.writeUInt8(serializedArgs.length);
+    writer.writeUInt16BE(this.errno);
+    for (const serializedArg of serializedArgs) {
+      writer.writeBuffer(serializedArg);
+    }
+    return writer.toBuffer();
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
     return (
-      super.getSerializedLength() +
-      _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
+      4 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
     );
   }
 }
@@ -322,9 +328,7 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
-export class DlpArg<ValueT extends Serializable = SBuffer>
-  implements Serializable
-{
+class DlpArg<ValueT extends Serializable = SBuffer> implements Serializable {
   /** DLP argument ID */
   argId: number;
   /** Argument data. */

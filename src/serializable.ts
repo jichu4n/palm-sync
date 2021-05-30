@@ -33,7 +33,7 @@ export interface Serializable {
   getSerializedLength(opts?: SerializeOptions): number;
 }
 
-/** Interface for Serializable wrappers for a value type. */
+/** Serializable implementation that simply wraps another value. */
 export interface SerializableWrapper<ValueT> extends Serializable {
   value: ValueT;
 }
@@ -122,12 +122,12 @@ export class SUInt32BE
   })
   implements SerializableWrapper<number> {}
 
-/** Key for storing property information on a SerializableObject. */
+/** Key for storing property information on an SObject's metadata. */
 export const SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY = Symbol(
   'serializablePropertySpecs'
 );
 
-/** Metadata stored for each serializable property on a SerializableObject. */
+/** Metadata stored for each serializable property on an SObject's metadata. */
 export interface SerializablePropertySpec<ValueT = any> {
   /** The name of the property. */
   propertyKey: string | symbol;
@@ -135,7 +135,7 @@ export interface SerializablePropertySpec<ValueT = any> {
   wrapper?: SerializableWrapper<ValueT>;
 }
 
-/** Extract SerializablePropertySpec's defined on an SObject. */
+/** Extract SerializablePropertySpec's defined on a SObject. */
 export function getSerializablePropertySpecs(target: Object) {
   return (Reflect.getMetadata(
     SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
@@ -208,7 +208,7 @@ export function serialize<ValueT>(
   }
 }
 
-/** Decorator for properties to be wrapped in a Serializable wrapper class. */
+/** Decorator for Serializable properties to be wrapped in a wrapper class. */
 export function serializeAs<ValueT>(
   serializableWrapperClass: new () => SerializableWrapper<ValueT>
 ): PropertyDecorator {
