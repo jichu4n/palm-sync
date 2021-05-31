@@ -1,6 +1,15 @@
 import debug from 'debug';
 import net, {Server, Socket} from 'net';
-import {DlpAddSyncLogEntryRequest, DlpEndOfSyncRequest} from './dlp-commands';
+import {
+  DlpAddSyncLogEntryRequest,
+  DlpCloseDBRequest,
+  DlpEndOfSyncRequest,
+  DlpOpenConduitRequest,
+  DlpOpenDBRequest,
+  DlpOpenMode,
+  DlpReadOpenDBInfoRequest,
+} from './dlp-commands';
+import {DlpConnection} from './dlp-protocol';
 import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
@@ -54,6 +63,23 @@ export class NetSyncServer {
   async onConnection(socket: Socket) {
     const connection = new NetSyncConnection(socket);
     await connection.doHandshake();
+
+    // TODO: Conduit framework
+    await connection.dlpConnection.execute(DlpOpenConduitRequest);
+    const {dbHandle} = await connection.dlpConnection.execute(
+      DlpOpenDBRequest,
+      {
+        mode: DlpOpenMode.READ,
+        name: 'MemoDB',
+      }
+    );
+    const {numRecords} = await connection.dlpConnection.execute(
+      DlpReadOpenDBInfoRequest,
+      {dbHandle}
+    );
+    this.log(`Number of records in MemoDB: ${numRecords}`);
+    await connection.dlpConnection.execute(DlpCloseDBRequest, {dbHandle});
+
     await connection.end();
   }
 
@@ -62,9 +88,13 @@ export class NetSyncServer {
 }
 
 export class NetSyncConnection {
+  /** DLP connection for communicating with this sync session. */
+  dlpConnection: DlpConnection;
+
   constructor(socket: Socket) {
     this.log = debug('NetSync').extend(socket.remoteAddress ?? 'UNKNOWN');
     this.netSyncDatagramStream = createNetSyncDatagramStream(socket);
+    this.dlpConnection = new DlpConnection(this.netSyncDatagramStream);
 
     this.log(`Connection received`);
 
@@ -96,11 +126,10 @@ export class NetSyncConnection {
   }
 
   async end() {
-    const req1 = new DlpAddSyncLogEntryRequest();
-    req1.message = 'Thank you for using Palmira!';
-    await req1.execute(this.netSyncDatagramStream);
-    const req2 = new DlpEndOfSyncRequest();
-    await req2.execute(this.netSyncDatagramStream);
+    await this.dlpConnection.execute(DlpAddSyncLogEntryRequest, {
+      message: 'Thank you for using Palmira!',
+    });
+    await this.dlpConnection.execute(DlpEndOfSyncRequest);
   }
 
   private log: debug.Debugger;

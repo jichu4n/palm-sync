@@ -1,6 +1,6 @@
 import {SStringNT} from './database-encoding';
 import {dlpArg, DlpRequest, DlpResponse, DLP_ARG_ID_BASE} from './dlp-protocol';
-import {SUInt16BE} from './serializable';
+import {SBuffer, serializeAs, SObject, SUInt16BE, SUInt8} from './serializable';
 
 /** DLP command ID constants. */
 enum DlpCommandId {
@@ -154,6 +154,95 @@ enum DlpCommandId {
 }
 
 // =============================================================================
+// OpenDB
+// =============================================================================
+export class DlpOpenDBRequest extends DlpRequest<DlpAddSyncLogEntryResponse> {
+  commandId = DlpCommandId.OpenDB;
+  responseType = DlpOpenDBResponse;
+
+  /** Card number (typically 0). */
+  cardId = 0;
+
+  /** Open mode (see DlpOpenMode). */
+  mode: number = DlpOpenMode.READ_WRITE;
+
+  /** Database name. */
+  name = '';
+
+  /** Constructs the single argument to DlpOpenDBRequest.  */
+  @dlpArg(DLP_ARG_ID_BASE)
+  get arg() {
+    const arg = new DlpOpenDBArg();
+    arg.cardId = this.cardId;
+    arg.mode = this.mode;
+    arg.name = this.name;
+    return arg;
+  }
+}
+
+export class DlpOpenDBResponse extends DlpResponse {
+  commandId = DlpCommandId.OpenDB;
+
+  /** Handle to opened database. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  dbHandle = 0;
+}
+
+/** DlpOpenDBRequest argument. */
+class DlpOpenDBArg extends SObject {
+  /** Card number (typically 0). */
+  @serializeAs(SUInt8)
+  cardId = 0;
+
+  /** Open mode (see DlpOpenMode). */
+  @serializeAs(SUInt8)
+  mode: number = DlpOpenMode.READ;
+
+  /** Database name. */
+  @serializeAs(SStringNT)
+  name = '';
+}
+
+/** Database open modes, used in DlpOpenDBRequest. */
+export enum DlpOpenMode {
+  /** Show secret records */
+  SECRET = 0x10,
+  /** Open database with exclusive access */
+  EXCLUSIVE = 0x20,
+  /** Open database for writing */
+  WRITE = 0x40,
+  /** Open database for reading */
+  READ = 0x80,
+  /** Open database for both reading and writing (same as READ | WRITE) */
+  READ_WRITE = 0xc0,
+}
+
+// =============================================================================
+// CloseDB
+// =============================================================================
+export class DlpCloseDBRequest extends DlpRequest<DlpCloseDBResponse> {
+  commandId = DlpCommandId.CloseDB;
+  responseType = DlpCloseDBResponse;
+
+  /** Handle to opened database. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  dbHandle = 0;
+}
+
+export class DlpCloseAllDBsRequest extends DlpRequest<DlpCloseDBResponse> {
+  commandId = DlpCommandId.CloseDB;
+  responseType = DlpCloseDBResponse;
+
+  /** Handle to opened database. */
+  @dlpArg(DLP_ARG_ID_BASE + 1)
+  dummy = new SBuffer();
+}
+
+export class DlpCloseDBResponse extends DlpResponse {
+  commandId = DlpCommandId.CloseDB;
+}
+
+// =============================================================================
 // AddSyncLogEntry
 // =============================================================================
 export class DlpAddSyncLogEntryRequest extends DlpRequest<DlpAddSyncLogEntryResponse> {
@@ -166,6 +255,26 @@ export class DlpAddSyncLogEntryRequest extends DlpRequest<DlpAddSyncLogEntryResp
 
 export class DlpAddSyncLogEntryResponse extends DlpResponse {
   commandId = DlpCommandId.AddSyncLogEntry;
+}
+
+// =============================================================================
+// ReadOpenDBInfo
+// =============================================================================
+export class DlpReadOpenDBInfoRequest extends DlpRequest<DlpReadOpenDBInfoResponse> {
+  commandId = DlpCommandId.ReadOpenDBInfo;
+  responseType = DlpReadOpenDBInfoResponse;
+
+  /** Handle to opened database. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  dbHandle = 0;
+}
+
+export class DlpReadOpenDBInfoResponse extends DlpResponse {
+  commandId = DlpCommandId.ReadOpenDBInfo;
+
+  /** Number of records in database. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  numRecords = 0;
 }
 
 // =============================================================================
@@ -188,7 +297,7 @@ export class DlpEndOfSyncRequest extends DlpRequest<DlpEndOfSyncResponse> {
   responseType = DlpEndOfSyncResponse;
 
   @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
-  status = DlpEndOfSyncStatus.NORMAL;
+  status = DlpEndOfSyncStatus.OK;
 }
 
 export class DlpEndOfSyncResponse extends DlpResponse {
@@ -198,11 +307,11 @@ export class DlpEndOfSyncResponse extends DlpResponse {
 /** Status codes for DlpEndOfSyncResponse. */
 export enum DlpEndOfSyncStatus {
   /** Normal termination. */
-  NORMAL = 0,
+  OK = 0x00,
   /** Ended due to low memory on device */
-  OUT_OF_MEMORY = 1,
+  ERROR_OUT_OF_MEMORY = 0x01,
   /** Cancelled by user. */
-  USER_CANCELLED = 2,
+  ERROR_USER_CANCELLED = 0x02,
   /** Any other reason. */
-  OTHER = 3,
+  ERROR_UNKNOWN = 0x03,
 }

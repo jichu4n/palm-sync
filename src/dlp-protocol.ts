@@ -16,6 +16,238 @@ import {
   SerializeOptions,
 } from './serializable';
 
+/** Representation of a DLP connection over an underlying transport. */
+export class DlpConnection {
+  constructor(
+    /** Underlying transport stream. */
+    private transport: stream.Duplex,
+    /** Additional options. */
+    private opts: {
+      requestSerializeOptions?: SerializeOptions;
+      responseParseOptions?: ParseOptions;
+    } = {}
+  ) {}
+
+  async execute<DlpRequestT extends DlpRequest<any>>(
+    requestType: new () => DlpRequestT,
+    requestProps: Partial<DlpRequestT> = {}
+  ): Promise<DlpResponseType<DlpRequestT>> {
+    const request = new requestType();
+    Object.assign(request, requestProps);
+    const serializedRequest = request.serialize(
+      this.opts.requestSerializeOptions
+    );
+    this.log(`>>> ${requestType.name} ${serializedRequest.toString('hex')}`);
+
+    this.transport.write(serializedRequest);
+    const rawResponse = (await pEvent(this.transport, 'data')) as Buffer;
+
+    this.log(`<<< ${request.responseType.name} ${rawResponse.toString('hex')}`);
+    const response: DlpResponseType<DlpRequestT> = new request.responseType();
+    try {
+      response.parseFrom(rawResponse, this.opts.responseParseOptions);
+    } catch (e) {
+      this.log(`    Error parsing ${request.responseType.name}: ${e.message}`);
+      throw e;
+    }
+
+    return response;
+  }
+
+  private log = debug('DLP');
+}
+
+/** Base class for DLP requests. */
+export abstract class DlpRequest<DlpResponseT extends DlpResponse>
+  implements Serializable
+{
+  /** DLP command ID. */
+  abstract commandId: number;
+
+  /** The response class corresponding to this request. */
+  abstract responseType: new () => DlpResponseT;
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
+    const reader = SmartBuffer.fromBuffer(buffer);
+
+    const actualCommandId = reader.readUInt8();
+    if (actualCommandId !== this.commandId) {
+      throw new Error(
+        'Command ID mismatch: ' +
+          `expected 0x${this.commandId.toString(16)}, ` +
+          `got ${actualCommandId.toString(16)}`
+      );
+    }
+
+    const actualNumArgs = reader.readUInt8();
+    const args = getDlpArgs(this);
+    if (actualNumArgs !== args.length) {
+      throw new Error(
+        'Argument count mismatch: ' +
+          `expected ${args.length}, got ${actualNumArgs}`
+      );
+    }
+
+    let {readOffset} = reader;
+    for (const arg of args) {
+      readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
+    }
+
+    return readOffset;
+  }
+
+  serialize(opts?: SerializeOptions): Buffer {
+    const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
+    const writer = new SmartBuffer();
+    writer.writeUInt8(this.commandId);
+    writer.writeUInt8(serializedArgs.length);
+    for (const serializedArg of serializedArgs) {
+      writer.writeBuffer(serializedArg);
+    }
+    return writer.toBuffer();
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return (
+      2 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
+    );
+  }
+}
+
+/** Extract the DlpResponse type corresponding to a DlpRequest type. */
+export type DlpResponseType<T> = T extends DlpRequest<infer DlpResponseT>
+  ? DlpResponseT
+  : never;
+
+/** DLP response status codes. */
+export enum DlpResponseStatus {
+  /** No error */
+  OK = 0x00,
+  /** General system error on the Palm device */
+  ERROR_SYSTEM = 0x01,
+  /** Illegal command ID, not supported by this version of DLP */
+  ERROR_ILLEGAL_REQUEST = 0x02,
+  /** Not enough memory */
+  ERROR_OUT_OF_MEMORY = 0x03,
+  /** Invalid parameter */
+  ERROR_INVALID_ARG = 0x04,
+  /** File, database or record not found */
+  ERROR_NOT_FOUND = 0x05,
+  /** No databases opened */
+  ERROR_NONE_OPEN = 0x06,
+  /** Database already open */
+  ERROR_ALREADY_OPEN = 0x07,
+  /** Too many open databases */
+  ERROR_TOO_MANY_OPEN = 0x08,
+  /** Database already exists */
+  ERROR_ALREADY_EXISTS = 0x09,
+  /** Can't open database */
+  ERROR_OPEN = 0x0a,
+  /** Record is deleted */
+  ERROR_DELETED = 0x0b,
+  /** Record busy */
+  ERROR_BUSY = 0x0c,
+  /** Requested operation not supported on given database type */
+  ERROR_UNSUPPORTED = 0x0d,
+  /** Unused */
+  UNUSED1 = 0x0e,
+  /** No write access or database is read-only */
+  ERROR_READONLY = 0x0f,
+  /** Not enough space left on device */
+  ERROR_SPACE = 0x10,
+  /** Size limit exceeded */
+  ERROR_LIMIT = 0x11,
+  /** Cancelled by user */
+  ERROR_USER_CANCELLED = 0x12,
+  /** Bad DLC argument wrapper */
+  ERROR_INVALID_ARG_WRAPPER = 0x13,
+  /** Required argument not provided */
+  ERROR_MISSING_ARG = 0x14,
+  /** Invalid argument size */
+  ERROR_INVALID_ARG_SIZE = 0x15,
+  /** Unknown error (0x7F) */
+  ERROR_UNKNOWN = 0x7f,
+}
+
+/** Command ID bitmask for DLP responses. */
+const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
+/** Bitmask for extracting the raw command ID from a DLP response command ID. */
+const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
+
+/** Base class for DLP responses. */
+export abstract class DlpResponse implements Serializable {
+  /** Expected DLP command ID. */
+  abstract commandId: number;
+
+  /** Error code. */
+  status = DlpResponseStatus.OK;
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
+    const reader = SmartBuffer.fromBuffer(buffer);
+    let actualCommandId = reader.readUInt8();
+    if (!(actualCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
+      throw new Error(
+        `Invalid response command ID: 0x${actualCommandId.toString(16)}`
+      );
+    }
+    actualCommandId &= DLP_RESPONSE_COMMAND_ID_BITMASK;
+    if (actualCommandId !== this.commandId) {
+      throw new Error(
+        'Command ID mismatch: ' +
+          `expected 0x${this.commandId.toString(16)}, ` +
+          `got ${actualCommandId.toString(16)}`
+      );
+    }
+
+    const actualNumArgs = reader.readUInt8();
+    this.status = reader.readUInt16BE();
+
+    let {readOffset} = reader;
+    if (this.status === DlpResponseStatus.OK) {
+      const args = getDlpArgs(this);
+      if (actualNumArgs !== args.length) {
+        throw new Error(
+          'Argument count mismatch: ' +
+            `expected ${args.length}, got ${actualNumArgs}`
+        );
+      }
+      for (const arg of args) {
+        readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
+      }
+    } else {
+      if (actualNumArgs !== 0) {
+        throw new Error(
+          `Error response with non-zero arguments: ${actualNumArgs}`
+        );
+      }
+      throw new Error(
+        'DLP response status ' +
+          `0x${this.status.toString(16)} (${DlpResponseStatus[this.status]})`
+      );
+    }
+
+    return readOffset;
+  }
+
+  serialize(opts?: SerializeOptions): Buffer {
+    const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
+    const writer = new SmartBuffer();
+    writer.writeUInt8(this.commandId | DLP_RESPONSE_TYPE_BITMASK);
+    writer.writeUInt8(serializedArgs.length);
+    writer.writeUInt16BE(this.status);
+    for (const serializedArg of serializedArgs) {
+      writer.writeBuffer(serializedArg);
+    }
+    return writer.toBuffer();
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return (
+      4 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
+    );
+  }
+}
+
 /** Key for storing DLP argument information on a DlpRequest / DlpResponse. */
 export const DLP_ARG_SPECS_METADATA_KEY = Symbol('dlpArgSpecs');
 
@@ -76,156 +308,6 @@ export function getDlpArgs(target: Object) {
       wrapper ?? ((target as any)[propertyKey] as Serializable);
     return new DlpArg(argId, propOrWrapper);
   });
-}
-
-/** Base class for DLP requests. */
-export abstract class DlpRequest<DlpResponseT extends DlpResponse>
-  implements Serializable
-{
-  /** DLP command ID. */
-  abstract commandId: number;
-
-  /** The response class corresponding to this request. */
-  abstract responseType: new () => DlpResponseT;
-
-  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
-    const reader = SmartBuffer.fromBuffer(buffer);
-
-    const actualCommandId = reader.readUInt8();
-    if (actualCommandId !== this.commandId) {
-      throw new Error(
-        'Command ID mismatch: ' +
-          `expected 0x${this.commandId.toString(16)}, ` +
-          `got ${actualCommandId.toString(16)}`
-      );
-    }
-
-    const actualNumArgs = reader.readUInt8();
-    const args = getDlpArgs(this);
-    if (actualNumArgs !== args.length) {
-      throw new Error(
-        'Argument count mismatch: ' +
-          `expected ${args.length}, got ${actualNumArgs}`
-      );
-    }
-
-    let {readOffset} = reader;
-    for (const arg of args) {
-      readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
-    }
-
-    return readOffset;
-  }
-
-  serialize(opts?: SerializeOptions): Buffer {
-    const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
-    const writer = new SmartBuffer();
-    writer.writeUInt8(this.commandId);
-    writer.writeUInt8(serializedArgs.length);
-    for (const serializedArg of serializedArgs) {
-      writer.writeBuffer(serializedArg);
-    }
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions): number {
-    return (
-      2 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
-    );
-  }
-
-  /** Execute DLP request and await the response. */
-  async execute(
-    transport: stream.Duplex,
-    {
-      requestSerializeOptions,
-      responseParseOptions,
-    }: {
-      requestSerializeOptions?: SerializeOptions;
-      responseParseOptions?: ParseOptions;
-    } = {}
-  ) {
-    const serializedRequest = this.serialize(requestSerializeOptions);
-    this.log(
-      `>>> ${this.constructor.name} ${serializedRequest.toString('hex')}`
-    );
-    transport.write(serializedRequest);
-    const rawResponse = (await pEvent(transport, 'data')) as Buffer;
-    this.log(`<<< ${this.responseType.name} ${rawResponse.toString('hex')}`);
-    const response = new this.responseType();
-    response.parseFrom(rawResponse, responseParseOptions);
-    return response;
-  }
-
-  private log = debug('DLP');
-}
-
-/** Command ID bitmask for DLP responses. */
-const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
-/** Bitmask for extracting the raw command ID from a DLP response command ID. */
-const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
-
-/** Base class for DLP responses. */
-export abstract class DlpResponse implements Serializable {
-  /** Expected DLP command ID. */
-  abstract commandId: number;
-
-  /** Error code. */
-  errno = 0;
-
-  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    let actualCommandId = reader.readUInt8();
-    if (!(actualCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
-      throw new Error(
-        `Invalid response command ID: 0x${actualCommandId.toString(16)}`
-      );
-    }
-    actualCommandId &= DLP_RESPONSE_COMMAND_ID_BITMASK;
-    if (actualCommandId !== this.commandId) {
-      throw new Error(
-        'Command ID mismatch: ' +
-          `expected 0x${this.commandId.toString(16)}, ` +
-          `got ${actualCommandId.toString(16)}`
-      );
-    }
-
-    const actualNumArgs = reader.readUInt8();
-    const args = getDlpArgs(this);
-    if (actualNumArgs !== args.length) {
-      throw new Error(
-        'Argument count mismatch: ' +
-          `expected ${args.length}, got ${actualNumArgs}`
-      );
-    }
-
-    this.errno = reader.readUInt16BE();
-
-    let {readOffset} = reader;
-    for (const arg of args) {
-      readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
-    }
-
-    return readOffset;
-  }
-
-  serialize(opts?: SerializeOptions): Buffer {
-    const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
-    const writer = new SmartBuffer();
-    writer.writeUInt8(this.commandId | DLP_RESPONSE_TYPE_BITMASK);
-    writer.writeUInt8(serializedArgs.length);
-    writer.writeUInt16BE(this.errno);
-    for (const serializedArg of serializedArgs) {
-      writer.writeBuffer(serializedArg);
-    }
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions): number {
-    return (
-      4 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
-    );
-  }
 }
 
 /** DLP argument type, as determined by the payload size. */
@@ -328,7 +410,9 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
-class DlpArg<ValueT extends Serializable = SBuffer> implements Serializable {
+export class DlpArg<ValueT extends Serializable = SBuffer>
+  implements Serializable
+{
   /** DLP argument ID */
   argId: number;
   /** Argument data. */
