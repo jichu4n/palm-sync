@@ -131,35 +131,50 @@ export const SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY = Symbol(
 export interface SerializablePropertySpec<ValueT = any> {
   /** The name of the property. */
   propertyKey: string | symbol;
-  /** The underlying wrapper, if created with serializeAs. */
-  wrapper?: SerializableWrapper<ValueT>;
+  /** Extract the underlying wrapper for a property (if defined with serializeAs). */
+  getOrCreateWrapper?: (targetInstance: any) => SerializableWrapper<ValueT>;
 }
 
 /** Extract SerializablePropertySpec's defined on a SObject. */
-export function getSerializablePropertySpecs(target: Object) {
+export function getSerializablePropertySpecs(targetInstance: Object) {
   return (Reflect.getMetadata(
     SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
-    Object.getPrototypeOf(target)
+    Object.getPrototypeOf(targetInstance)
   ) ?? []) as Array<SerializablePropertySpec>;
 }
 
 /** Get the Serializable value corresponding to an SObject property. */
 export function getSerializablePropertyOrWrapper(
-  target: Object,
-  {propertyKey, wrapper}: SerializablePropertySpec
+  targetInstance: Object,
+  {propertyKey, getOrCreateWrapper}: SerializablePropertySpec
 ) {
-  return wrapper ?? ((target as any)[propertyKey] as Serializable);
+  return getOrCreateWrapper
+    ? getOrCreateWrapper(targetInstance)
+    : ((targetInstance as any)[propertyKey] as Serializable);
 }
 
 /** Get Serializable values corresponding to all the properties of an SObject. */
-export function getAllSerializablePropertiesOrWrappers(target: Object) {
-  return getSerializablePropertySpecs(target).map((propertySpec) =>
-    getSerializablePropertyOrWrapper(target, propertySpec)
+export function getAllSerializablePropertiesOrWrappers(targetInstance: Object) {
+  return getSerializablePropertySpecs(targetInstance).map((propertySpec) =>
+    getSerializablePropertyOrWrapper(targetInstance, propertySpec)
   );
 }
 
+/** Provides a create() factory method that instantiates properties. */
+export abstract class Creatable {
+  /** Create a new instance with the provided initial properties. */
+  static create<T extends Creatable>(
+    this: new () => T,
+    props: Partial<T> = {}
+  ): T {
+    const instance = new this();
+    Object.assign(instance, props);
+    return instance;
+  }
+}
+
 /** Base class for Serializable record structures. */
-export class SObject implements Serializable {
+export class SObject extends Creatable implements Serializable {
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
     let readOffset = 0;
     for (const propOrWrapper of getAllSerializablePropertiesOrWrappers(this)) {
@@ -190,13 +205,16 @@ export function serialize<ValueT>(
   target: any,
   propertyKey: string | symbol,
   // Used by serializeWithWrapper
-  wrapper?: SerializableWrapper<ValueT>
+  getOrCreateWrapper?: (targetInstance: any) => SerializableWrapper<ValueT>
 ) {
   const serializablePropertySpecs = Reflect.getMetadata(
     SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
     target
   ) as Array<SerializablePropertySpec> | undefined;
-  const propertySpec: SerializablePropertySpec = {propertyKey, wrapper};
+  const propertySpec: SerializablePropertySpec = {
+    propertyKey,
+    getOrCreateWrapper,
+  };
   if (serializablePropertySpecs) {
     serializablePropertySpecs.push(propertySpec);
   } else {
@@ -213,15 +231,23 @@ export function serializeAs<ValueT>(
   serializableWrapperClass: new () => SerializableWrapper<ValueT>
 ): PropertyDecorator {
   return function (target: Object, propertyKey: string | symbol) {
-    const wrapper = new serializableWrapperClass();
+    const wrapperPropertyKey = Symbol(
+      `__serializablePropertyWrapper_${propertyKey.toString()}`
+    );
+    const getOrCreateWrapper = function (targetInstance: any) {
+      return (
+        targetInstance[wrapperPropertyKey] ??
+        (targetInstance[wrapperPropertyKey] = new serializableWrapperClass())
+      );
+    };
     Object.defineProperty(target, propertyKey, {
       get() {
-        return wrapper.value;
+        return getOrCreateWrapper(this).value;
       },
       set(v: ValueT) {
-        wrapper.value = v;
+        getOrCreateWrapper(this).value = v;
       },
     });
-    serialize(target, propertyKey, wrapper);
+    serialize(target, propertyKey, getOrCreateWrapper);
   };
 }

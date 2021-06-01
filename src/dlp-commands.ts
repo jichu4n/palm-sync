@@ -1,6 +1,14 @@
+import {SmartBuffer} from 'smart-buffer';
 import {SStringNT} from './database-encoding';
 import {dlpArg, DlpRequest, DlpResponse, DLP_ARG_ID_BASE} from './dlp-protocol';
-import {SBuffer, serializeAs, SObject, SUInt16BE, SUInt8} from './serializable';
+import {
+  SBuffer,
+  Serializable,
+  serializeAs,
+  SObject,
+  SUInt16BE,
+  SUInt8,
+} from './serializable';
 
 /** DLP command ID constants. */
 enum DlpCommandId {
@@ -160,24 +168,9 @@ export class DlpOpenDBRequest extends DlpRequest<DlpAddSyncLogEntryResponse> {
   commandId = DlpCommandId.OpenDB;
   responseType = DlpOpenDBResponse;
 
-  /** Card number (typically 0). */
-  cardId = 0;
-
-  /** Open mode (see DlpOpenMode). */
-  mode: number = DlpOpenMode.READ_WRITE;
-
-  /** Database name. */
-  name = '';
-
-  /** Constructs the single argument to DlpOpenDBRequest.  */
+  /** Single argument to DlpOpenDBRequest.  */
   @dlpArg(DLP_ARG_ID_BASE)
-  get arg() {
-    const arg = new DlpOpenDBArg();
-    arg.cardId = this.cardId;
-    arg.mode = this.mode;
-    arg.name = this.name;
-    return arg;
-  }
+  arg = DlpOpenDBRequestArg.create();
 }
 
 export class DlpOpenDBResponse extends DlpResponse {
@@ -189,7 +182,7 @@ export class DlpOpenDBResponse extends DlpResponse {
 }
 
 /** DlpOpenDBRequest argument. */
-class DlpOpenDBArg extends SObject {
+export class DlpOpenDBRequestArg extends SObject {
   /** Card number (typically 0). */
   @serializeAs(SUInt8)
   cardId = 0;
@@ -314,4 +307,84 @@ export enum DlpEndOfSyncStatus {
   ERROR_USER_CANCELLED = 0x02,
   /** Any other reason. */
   ERROR_UNKNOWN = 0x03,
+}
+
+// =============================================================================
+// ReadRecordIDList
+// =============================================================================
+export class DlpReadRecordIDListRequest extends DlpRequest<DlpReadRecordIDListResponse> {
+  commandId = DlpCommandId.ReadRecordIDList;
+  responseType = DlpReadRecordIDListResponse;
+
+  /** Single argument to DlpReadRecordIDListRequest.  */
+  @dlpArg(DLP_ARG_ID_BASE)
+  arg = new DlpReadRecordIDListRequestArg();
+}
+
+export class DlpReadRecordIDListResponse extends DlpResponse {
+  commandId = DlpCommandId.ReadRecordIDList;
+
+  /** Single argument to DlpReadRecordIDListResponse.  */
+  @dlpArg(DLP_ARG_ID_BASE)
+  arg = new DlpReadRecordIDListResponseArg();
+}
+
+/** DlpReadRecordIDListRequest argument. */
+export class DlpReadRecordIDListRequestArg extends SObject {
+  /** Handle to opened database. */
+  @serializeAs(SUInt8)
+  dbHandle = 0;
+
+  /** Whether to return records in sorted order.
+   *
+   * If true, the on-device application with the same DB creator will be called
+   * to re-sort the records first.
+   */
+  shouldSort = false;
+
+  /** Computed attrs. */
+  @serializeAs(SUInt8)
+  private get attrs() {
+    return this.shouldSort ? 0x80 : 0;
+  }
+
+  /** Index of first record ID to return. */
+  @serializeAs(SUInt16BE)
+  startIndex = 0;
+
+  /** Maximum number of records to return.
+   *
+   * According to Coldsync, this command apparently only returns up to 500
+   * record IDs at a time as of PalmOS 3.3 even if this value is set higher.
+   */
+  @serializeAs(SUInt16BE)
+  maxNumRecords = 0;
+}
+
+/** DlpReadRecordIDListResponse argument. */
+export class DlpReadRecordIDListResponseArg implements Serializable {
+  recordIds: Array<number> = [];
+
+  parseFrom(buffer: Buffer) {
+    const reader = SmartBuffer.fromBuffer(buffer);
+    const numRecordIds = reader.readUInt16BE();
+    this.recordIds.length = 0;
+    for (let i = 0; i < numRecordIds; ++i) {
+      this.recordIds.push(reader.readUInt32BE());
+    }
+    return reader.readOffset;
+  }
+
+  serialize() {
+    const writer = new SmartBuffer();
+    writer.writeUInt16BE(this.recordIds.length);
+    for (const recordId of this.recordIds) {
+      writer.writeUInt32BE(recordId);
+    }
+    return writer.toBuffer();
+  }
+
+  getSerializedLength() {
+    return 2 + this.recordIds.length * 4;
+  }
 }

@@ -5,9 +5,12 @@ import {
   DlpCloseDBRequest,
   DlpEndOfSyncRequest,
   DlpOpenConduitRequest,
+  DlpOpenDBRequestArg,
   DlpOpenDBRequest,
   DlpOpenMode,
   DlpReadOpenDBInfoRequest,
+  DlpReadRecordIDListRequestArg,
+  DlpReadRecordIDListRequest,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
 import {
@@ -65,20 +68,33 @@ export class NetSyncServer {
     await connection.doHandshake();
 
     // TODO: Conduit framework
-    await connection.dlpConnection.execute(DlpOpenConduitRequest);
+    await connection.dlpConnection.execute(DlpOpenConduitRequest.create());
     const {dbHandle} = await connection.dlpConnection.execute(
-      DlpOpenDBRequest,
-      {
-        mode: DlpOpenMode.READ,
-        name: 'MemoDB',
-      }
+      DlpOpenDBRequest.create({
+        arg: DlpOpenDBRequestArg.create({
+          mode: DlpOpenMode.READ,
+          name: 'MemoDB',
+        }),
+      })
     );
     const {numRecords} = await connection.dlpConnection.execute(
-      DlpReadOpenDBInfoRequest,
-      {dbHandle}
+      DlpReadOpenDBInfoRequest.create({dbHandle})
     );
     this.log(`Number of records in MemoDB: ${numRecords}`);
-    await connection.dlpConnection.execute(DlpCloseDBRequest, {dbHandle});
+    const {recordIds} = (
+      await connection.dlpConnection.execute(
+        DlpReadRecordIDListRequest.create({
+          arg: DlpReadRecordIDListRequestArg.create({
+            dbHandle,
+            maxNumRecords: 500,
+          }),
+        })
+      )
+    ).arg;
+    this.log(`Record IDs: ${recordIds.join(' ')}`);
+    await connection.dlpConnection.execute(
+      DlpCloseDBRequest.create({dbHandle})
+    );
 
     await connection.end();
   }
@@ -126,10 +142,12 @@ export class NetSyncConnection {
   }
 
   async end() {
-    await this.dlpConnection.execute(DlpAddSyncLogEntryRequest, {
-      message: 'Thank you for using Palmira!',
-    });
-    await this.dlpConnection.execute(DlpEndOfSyncRequest);
+    await this.dlpConnection.execute(
+      DlpAddSyncLogEntryRequest.create({
+        message: 'Thank you for using Palmira!',
+      })
+    );
+    await this.dlpConnection.execute(DlpEndOfSyncRequest.create());
   }
 
   private log: debug.Debugger;

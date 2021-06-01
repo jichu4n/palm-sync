@@ -5,6 +5,7 @@ import 'reflect-metadata';
 import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
 import {
+  Creatable,
   ParseOptions,
   SBuffer,
   Serializable,
@@ -29,15 +30,14 @@ export class DlpConnection {
   ) {}
 
   async execute<DlpRequestT extends DlpRequest<any>>(
-    requestType: new () => DlpRequestT,
-    requestProps: Partial<DlpRequestT> = {}
+    request: DlpRequestT
   ): Promise<DlpResponseType<DlpRequestT>> {
-    const request = new requestType();
-    Object.assign(request, requestProps);
     const serializedRequest = request.serialize(
       this.opts.requestSerializeOptions
     );
-    this.log(`>>> ${requestType.name} ${serializedRequest.toString('hex')}`);
+    this.log(
+      `>>> ${request.constructor.name} ${serializedRequest.toString('hex')}`
+    );
 
     this.transport.write(serializedRequest);
     const rawResponse = (await pEvent(this.transport, 'data')) as Buffer;
@@ -59,6 +59,7 @@ export class DlpConnection {
 
 /** Base class for DLP requests. */
 export abstract class DlpRequest<DlpResponseT extends DlpResponse>
+  extends Creatable
   implements Serializable
 {
   /** DLP command ID. */
@@ -175,7 +176,7 @@ const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
 const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
 
 /** Base class for DLP responses. */
-export abstract class DlpResponse implements Serializable {
+export abstract class DlpResponse extends Creatable implements Serializable {
   /** Expected DLP command ID. */
   abstract commandId: number;
 
@@ -293,19 +294,20 @@ export function dlpArg<ValueT>(
 }
 
 /** Extract DlpArgSpec's defined via dlpArg on a DlpRequest or DlpResponse. */
-export function getDlpArgSpecs(target: Object) {
+export function getDlpArgSpecs(targetInstance: Object) {
   return (Reflect.getMetadata(
     DLP_ARG_SPECS_METADATA_KEY,
-    Object.getPrototypeOf(target)
+    Object.getPrototypeOf(targetInstance)
   ) ?? []) as Array<DlpArgSpec>;
 }
 
 /** Constructs DlpArg's on a DlpRequest or DlpResponse. */
-export function getDlpArgs(target: Object) {
-  const dlpArgSpecs = getDlpArgSpecs(target);
-  return dlpArgSpecs.map(({propertyKey, argId, wrapper}) => {
-    const propOrWrapper =
-      wrapper ?? ((target as any)[propertyKey] as Serializable);
+export function getDlpArgs(targetInstance: Object) {
+  const dlpArgSpecs = getDlpArgSpecs(targetInstance);
+  return dlpArgSpecs.map(({propertyKey, argId, getOrCreateWrapper}) => {
+    const propOrWrapper = getOrCreateWrapper
+      ? getOrCreateWrapper(targetInstance)
+      : ((targetInstance as any)[propertyKey] as Serializable);
     return new DlpArg(argId, propOrWrapper);
   });
 }
