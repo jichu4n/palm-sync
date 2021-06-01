@@ -1,5 +1,6 @@
 import {SmartBuffer} from 'smart-buffer';
 import {SStringNT} from './database-encoding';
+import {RecordAttrs} from './database-header';
 import {dlpArg, DlpRequest, DlpResponse, DLP_ARG_ID_BASE} from './dlp-protocol';
 import {
   SBuffer,
@@ -10,6 +11,8 @@ import {
   Serializable,
   ParseOptions,
   SerializeOptions,
+  SUInt32BE,
+  serialize,
 } from './serializable';
 
 /** DLP command ID constants. */
@@ -228,6 +231,65 @@ export class DlpCloseAllDBsRequest extends DlpRequest<DlpCloseDBResponse> {
 
 export class DlpCloseDBResponse extends DlpResponse {
   commandId = DlpCommandId.CloseDB;
+}
+
+// =============================================================================
+// ReadRecordByID
+// =============================================================================
+export class DlpReadRecordByIDRequest extends DlpRequest<DlpCloseDBResponse> {
+  commandId = DlpCommandId.ReadRecord;
+  responseType = DlpReadRecordByIDResponse;
+
+  /** Handle to opened database. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  dbHandle = 0;
+
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  private padding1 = 0;
+
+  /** Record ID to read. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt32BE)
+  recordId = 0;
+
+  /** Offset into record data to start reading. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  offset = 0;
+
+  /** Maximum length to read. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  maxLength = 0xffff;
+}
+export class DlpReadRecordByIDResponse extends DlpResponse {
+  commandId = DlpCommandId.ReadRecord;
+
+  @dlpArg(DLP_ARG_ID_BASE)
+  metadata = DlpRecordMetadata.create();
+
+  @dlpArg(DLP_ARG_ID_BASE)
+  data = SBuffer.create();
+}
+
+/** Record metadata in DLP requests and responses. */
+export class DlpRecordMetadata extends SObject {
+  /** Record ID. */
+  @serializeAs(SUInt32BE)
+  recordId = 0;
+
+  /** Index of record in database. */
+  @serializeAs(SUInt16BE)
+  index = 0;
+
+  /** Size of record data. */
+  @serializeAs(SUInt16BE)
+  length = 0;
+
+  /** Record attributes. */
+  @serialize
+  attributes: RecordAttrs = new RecordAttrs();
+
+  /** Record category. */
+  @serializeAs(SUInt8)
+  category = 0;
 }
 
 // =============================================================================

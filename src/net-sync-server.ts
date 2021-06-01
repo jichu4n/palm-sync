@@ -8,9 +8,11 @@ import {
   DlpOpenDBRequest,
   DlpOpenMode,
   DlpReadOpenDBInfoRequest,
+  DlpReadRecordByIDRequest,
   DlpReadRecordIDListRequest,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
+import {MemoRecord} from './memo-database';
 import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
@@ -66,19 +68,20 @@ export class NetSyncServer {
     await connection.doHandshake();
 
     // TODO: Conduit framework
-    await connection.dlpConnection.execute(DlpOpenConduitRequest.create());
+    const {dlpConnection} = connection;
+    await dlpConnection.execute(DlpOpenConduitRequest.create());
     const {dbHandle} = await connection.dlpConnection.execute(
       DlpOpenDBRequest.create({
         mode: DlpOpenMode.READ,
         name: 'MemoDB',
       })
     );
-    const {numRecords} = await connection.dlpConnection.execute(
+    const {numRecords} = await dlpConnection.execute(
       DlpReadOpenDBInfoRequest.create({dbHandle})
     );
     this.log(`Number of records in MemoDB: ${numRecords}`);
     const {recordIds} = (
-      await connection.dlpConnection.execute(
+      await dlpConnection.execute(
         DlpReadRecordIDListRequest.create({
           dbHandle,
           maxNumRecords: 500,
@@ -86,9 +89,23 @@ export class NetSyncServer {
       )
     ).arg;
     this.log(`Record IDs: ${recordIds.join(' ')}`);
-    await connection.dlpConnection.execute(
-      DlpCloseDBRequest.create({dbHandle})
-    );
+    for (const recordId of recordIds) {
+      const resp = await dlpConnection.execute(
+        DlpReadRecordByIDRequest.create({
+          dbHandle,
+          recordId,
+        })
+      );
+      const memoRecord = new MemoRecord();
+      memoRecord.parseFrom(resp.data.value, {encoding: 'gb2312'});
+      this.log(
+        JSON.stringify({
+          metadata: resp.metadata,
+          text: memoRecord.value,
+        })
+      );
+    }
+    await dlpConnection.execute(DlpCloseDBRequest.create({dbHandle}));
 
     await connection.end();
   }
