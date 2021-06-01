@@ -3,11 +3,13 @@ import {SStringNT} from './database-encoding';
 import {dlpArg, DlpRequest, DlpResponse, DLP_ARG_ID_BASE} from './dlp-protocol';
 import {
   SBuffer,
-  Serializable,
   serializeAs,
   SObject,
   SUInt16BE,
   SUInt8,
+  Serializable,
+  ParseOptions,
+  SerializeOptions,
 } from './serializable';
 
 /** DLP command ID constants. */
@@ -168,9 +170,17 @@ export class DlpOpenDBRequest extends DlpRequest<DlpAddSyncLogEntryResponse> {
   commandId = DlpCommandId.OpenDB;
   responseType = DlpOpenDBResponse;
 
-  /** Single argument to DlpOpenDBRequest.  */
-  @dlpArg(DLP_ARG_ID_BASE)
-  arg = DlpOpenDBRequestArg.create();
+  /** Card number (typically 0). */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  cardId = 0;
+
+  /** Open mode (see DlpOpenMode). */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  mode: number = DlpOpenMode.READ;
+
+  /** Database name. */
+  @dlpArg(DLP_ARG_ID_BASE, SStringNT)
+  name = '';
 }
 
 export class DlpOpenDBResponse extends DlpResponse {
@@ -179,21 +189,6 @@ export class DlpOpenDBResponse extends DlpResponse {
   /** Handle to opened database. */
   @dlpArg(DLP_ARG_ID_BASE, SUInt8)
   dbHandle = 0;
-}
-
-/** DlpOpenDBRequest argument. */
-export class DlpOpenDBRequestArg extends SObject {
-  /** Card number (typically 0). */
-  @serializeAs(SUInt8)
-  cardId = 0;
-
-  /** Open mode (see DlpOpenMode). */
-  @serializeAs(SUInt8)
-  mode: number = DlpOpenMode.READ;
-
-  /** Database name. */
-  @serializeAs(SStringNT)
-  name = '';
 }
 
 /** Database open modes, used in DlpOpenDBRequest. */
@@ -316,23 +311,8 @@ export class DlpReadRecordIDListRequest extends DlpRequest<DlpReadRecordIDListRe
   commandId = DlpCommandId.ReadRecordIDList;
   responseType = DlpReadRecordIDListResponse;
 
-  /** Single argument to DlpReadRecordIDListRequest.  */
-  @dlpArg(DLP_ARG_ID_BASE)
-  arg = new DlpReadRecordIDListRequestArg();
-}
-
-export class DlpReadRecordIDListResponse extends DlpResponse {
-  commandId = DlpCommandId.ReadRecordIDList;
-
-  /** Single argument to DlpReadRecordIDListResponse.  */
-  @dlpArg(DLP_ARG_ID_BASE)
-  arg = new DlpReadRecordIDListResponseArg();
-}
-
-/** DlpReadRecordIDListRequest argument. */
-export class DlpReadRecordIDListRequestArg extends SObject {
   /** Handle to opened database. */
-  @serializeAs(SUInt8)
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
   dbHandle = 0;
 
   /** Whether to return records in sorted order.
@@ -343,13 +323,13 @@ export class DlpReadRecordIDListRequestArg extends SObject {
   shouldSort = false;
 
   /** Computed attrs. */
-  @serializeAs(SUInt8)
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
   private get attrs() {
     return this.shouldSort ? 0x80 : 0;
   }
 
   /** Index of first record ID to return. */
-  @serializeAs(SUInt16BE)
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
   startIndex = 0;
 
   /** Maximum number of records to return.
@@ -357,8 +337,16 @@ export class DlpReadRecordIDListRequestArg extends SObject {
    * According to Coldsync, this command apparently only returns up to 500
    * record IDs at a time as of PalmOS 3.3 even if this value is set higher.
    */
-  @serializeAs(SUInt16BE)
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
   maxNumRecords = 0;
+}
+
+export class DlpReadRecordIDListResponse extends DlpResponse {
+  commandId = DlpCommandId.ReadRecordIDList;
+
+  /** Single argument to DlpReadRecordIDListResponse.  */
+  @dlpArg(DLP_ARG_ID_BASE)
+  arg = new DlpReadRecordIDListResponseArg();
 }
 
 /** DlpReadRecordIDListResponse argument. */

@@ -5,11 +5,9 @@ import {
   DlpCloseDBRequest,
   DlpEndOfSyncRequest,
   DlpOpenConduitRequest,
-  DlpOpenDBRequestArg,
   DlpOpenDBRequest,
   DlpOpenMode,
   DlpReadOpenDBInfoRequest,
-  DlpReadRecordIDListRequestArg,
   DlpReadRecordIDListRequest,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
@@ -71,10 +69,8 @@ export class NetSyncServer {
     await connection.dlpConnection.execute(DlpOpenConduitRequest.create());
     const {dbHandle} = await connection.dlpConnection.execute(
       DlpOpenDBRequest.create({
-        arg: DlpOpenDBRequestArg.create({
-          mode: DlpOpenMode.READ,
-          name: 'MemoDB',
-        }),
+        mode: DlpOpenMode.READ,
+        name: 'MemoDB',
       })
     );
     const {numRecords} = await connection.dlpConnection.execute(
@@ -84,10 +80,8 @@ export class NetSyncServer {
     const {recordIds} = (
       await connection.dlpConnection.execute(
         DlpReadRecordIDListRequest.create({
-          arg: DlpReadRecordIDListRequestArg.create({
-            dbHandle,
-            maxNumRecords: 500,
-          }),
+          dbHandle,
+          maxNumRecords: 500,
         })
       )
     ).arg;

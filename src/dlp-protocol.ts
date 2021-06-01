@@ -7,6 +7,7 @@ import stream from 'stream';
 import {
   Creatable,
   ParseOptions,
+  SArray,
   SBuffer,
   Serializable,
   SerializablePropertySpec,
@@ -303,13 +304,20 @@ export function getDlpArgSpecs(targetInstance: Object) {
 
 /** Constructs DlpArg's on a DlpRequest or DlpResponse. */
 export function getDlpArgs(targetInstance: Object) {
-  const dlpArgSpecs = getDlpArgSpecs(targetInstance);
-  return dlpArgSpecs.map(({propertyKey, argId, getOrCreateWrapper}) => {
-    const propOrWrapper = getOrCreateWrapper
-      ? getOrCreateWrapper(targetInstance)
-      : ((targetInstance as any)[propertyKey] as Serializable);
-    return new DlpArg(argId, propOrWrapper);
-  });
+  return _(getDlpArgSpecs(targetInstance))
+    .groupBy('argId')
+    .entries()
+    .map(([_, dlpArgSpecs]) => {
+      const valueArray = SArray.create({
+        values: dlpArgSpecs.map(({propertyKey, getOrCreateWrapper}) =>
+          getOrCreateWrapper
+            ? getOrCreateWrapper(targetInstance)
+            : ((targetInstance as any)[propertyKey] as Serializable)
+        ),
+      });
+      return new DlpArg(dlpArgSpecs[0].argId, valueArray);
+    })
+    .value();
 }
 
 /** DLP argument type, as determined by the payload size. */

@@ -33,13 +33,26 @@ export interface Serializable {
   getSerializedLength(opts?: SerializeOptions): number;
 }
 
+/** A class with a create() factory method for initializing properties. */
+export abstract class Creatable {
+  /** Create a new instance with the provided initial properties. */
+  static create<T extends Creatable>(
+    this: new () => T,
+    props: Partial<T> = {}
+  ): T {
+    const instance = new this();
+    Object.assign(instance, props);
+    return instance;
+  }
+}
+
 /** Serializable implementation that simply wraps another value. */
 export interface SerializableWrapper<ValueT> extends Serializable {
   value: ValueT;
 }
 
 /** No-op Serializable implementation that serializes to / from Buffers. */
-export class SBuffer implements SerializableWrapper<Buffer> {
+export class SBuffer extends Creatable implements SerializableWrapper<Buffer> {
   value: Buffer = Buffer.alloc(0);
 
   parseFrom(buffer: Buffer) {
@@ -70,6 +83,7 @@ export function createSerializableScalarWrapperClass<ValueT>({
   defaultValue: ValueT;
 }) {
   const SerializableScalarWrapperClass = class
+    extends Creatable
     implements SerializableWrapper<ValueT>
   {
     value: ValueT = defaultValue;
@@ -122,6 +136,35 @@ export class SUInt32BE
   })
   implements SerializableWrapper<number> {}
 
+/** A Serializable that represents a concatenation of other Serializables. */
+export class SArray<ValueT extends Serializable = SBuffer>
+  extends Creatable
+  implements Serializable
+{
+  /** Array of Serializables. */
+  values: Array<ValueT> = [];
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
+    let readOffset = 0;
+    for (const value of this.values) {
+      readOffset += value.parseFrom(buffer.slice(readOffset), opts);
+    }
+    return readOffset;
+  }
+
+  serialize(opts?: SerializeOptions): Buffer {
+    return Buffer.concat(this.values.map((value) => value.serialize(opts)));
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    let length = 0;
+    for (const value of this.values) {
+      length += value.getSerializedLength(opts);
+    }
+    return length;
+  }
+}
+
 /** Key for storing property information on an SObject's metadata. */
 export const SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY = Symbol(
   'serializablePropertySpecs'
@@ -160,43 +203,25 @@ export function getAllSerializablePropertiesOrWrappers(targetInstance: Object) {
   );
 }
 
-/** Provides a create() factory method that instantiates properties. */
-export abstract class Creatable {
-  /** Create a new instance with the provided initial properties. */
-  static create<T extends Creatable>(
-    this: new () => T,
-    props: Partial<T> = {}
-  ): T {
-    const instance = new this();
-    Object.assign(instance, props);
-    return instance;
-  }
-}
-
-/** Base class for Serializable record structures. */
+/** Serializable record where props are defined via serialize and serializeAs. */
 export class SObject extends Creatable implements Serializable {
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
-    let readOffset = 0;
-    for (const propOrWrapper of getAllSerializablePropertiesOrWrappers(this)) {
-      readOffset += propOrWrapper.parseFrom(buffer.slice(readOffset), opts);
-    }
-    return readOffset;
+    return this.toSArray().parseFrom(buffer, opts);
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    return Buffer.concat(
-      getAllSerializablePropertiesOrWrappers(this).map((propOrWrapper) =>
-        propOrWrapper.serialize(opts)
-      )
-    );
+    return this.toSArray().serialize(opts);
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
-    let length = 0;
-    for (const propOrWrapper of getAllSerializablePropertiesOrWrappers(this)) {
-      length += propOrWrapper.getSerializedLength(opts);
-    }
-    return length;
+    return this.toSArray().getSerializedLength(opts);
+  }
+
+  /** Converts this object to an SArray<Serializable>. */
+  toSArray() {
+    return SArray.create({
+      values: getAllSerializablePropertiesOrWrappers(this),
+    });
   }
 }
 
