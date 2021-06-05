@@ -4,15 +4,13 @@ import {RecordAttrs} from './database-header';
 import {dlpArg, DlpRequest, DlpResponse, DLP_ARG_ID_BASE} from './dlp-protocol';
 import {
   SBuffer,
+  Serializable,
+  serialize,
   serializeAs,
   SObject,
   SUInt16BE,
-  SUInt8,
-  Serializable,
-  ParseOptions,
-  SerializeOptions,
   SUInt32BE,
-  serialize,
+  SUInt8,
 } from './serializable';
 
 /** DLP command ID constants. */
@@ -169,7 +167,7 @@ enum DlpCommandId {
 // =============================================================================
 // OpenDB
 // =============================================================================
-export class DlpOpenDBRequest extends DlpRequest<DlpAddSyncLogEntryResponse> {
+export class DlpOpenDBRequest extends DlpRequest<DlpOpenDBResponse> {
   commandId = DlpCommandId.OpenDB;
   responseType = DlpOpenDBResponse;
 
@@ -236,7 +234,7 @@ export class DlpCloseDBResponse extends DlpResponse {
 // =============================================================================
 // ReadRecordByID
 // =============================================================================
-export class DlpReadRecordByIDRequest extends DlpRequest<DlpCloseDBResponse> {
+export class DlpReadRecordByIDRequest extends DlpRequest<DlpReadRecordByIDResponse> {
   commandId = DlpCommandId.ReadRecord;
   responseType = DlpReadRecordByIDResponse;
 
@@ -257,7 +255,7 @@ export class DlpReadRecordByIDRequest extends DlpRequest<DlpCloseDBResponse> {
 
   /** Maximum length to read. */
   @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
-  maxLength = 0xffff;
+  maxLength = MAX_RECORD_DATA_LENGTH;
 }
 export class DlpReadRecordByIDResponse extends DlpResponse {
   commandId = DlpCommandId.ReadRecord;
@@ -268,6 +266,9 @@ export class DlpReadRecordByIDResponse extends DlpResponse {
   @dlpArg(DLP_ARG_ID_BASE)
   data = SBuffer.create();
 }
+
+/** Maximum data length that can be returned in one ReadRecord request. */
+export const MAX_RECORD_DATA_LENGTH = 0xffff;
 
 /** Record metadata in DLP requests and responses. */
 export class DlpRecordMetadata extends SObject {
