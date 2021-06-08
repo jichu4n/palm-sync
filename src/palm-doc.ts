@@ -1,8 +1,8 @@
 import {SmartBuffer} from 'smart-buffer';
-import Database from './database';
+import {PdbDatabase} from './database';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader} from './database-header';
-import {SBufferRecord} from './record';
+import {PdbSBufferRecord} from './record';
 import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** PalmDOC document. */
@@ -41,7 +41,7 @@ class PalmDoc implements Serializable {
       for (let i = 0; i < this.text.length; i += PALM_DOC_RECORD_SIZE) {
         const textChunk = this.text.substr(i, PALM_DOC_RECORD_SIZE);
         const encodedTextChunk = encodeString(textChunk, opts);
-        const record = new SBufferRecord();
+        const record = new PdbSBufferRecord();
         record.value = opts?.enableCompression
           ? PalmDoc.compress(encodedTextChunk)
           : encodedTextChunk;
@@ -58,7 +58,7 @@ class PalmDoc implements Serializable {
       ) {
         this.metadata.position = 0;
       }
-      const metadataRecord = new SBufferRecord();
+      const metadataRecord = new PdbSBufferRecord();
       metadataRecord.value = this.metadata.serialize(opts);
       this.db.records.unshift(metadataRecord);
 
@@ -310,9 +310,9 @@ export class PalmDocMetadata implements Serializable {
 }
 
 /** PalmDOC database.*/
-export class PalmDocDatabase extends Database<SBufferRecord> {
+export class PalmDocDatabase extends PdbDatabase<PdbSBufferRecord> {
   constructor() {
-    super({recordType: SBufferRecord});
+    super({recordType: PdbSBufferRecord});
   }
 
   get defaultHeader() {

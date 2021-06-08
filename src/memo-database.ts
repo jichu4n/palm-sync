@@ -1,8 +1,8 @@
-import Database from './database';
+import {PdbDatabase} from './database';
 import {AppInfo} from './database-app-info';
 import {SStringNT} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
-import {Record} from './record';
+import {PdbRecord} from './record';
 import {
   serializeAs,
   SerializeOptions,
@@ -12,7 +12,7 @@ import {
 } from './serializable';
 
 /** MemoDB database. */
-class MemoDatabase extends Database<MemoRecord, MemoAppInfo> {
+class MemoDatabase extends PdbDatabase<MemoRecord, MemoAppInfo> {
   constructor() {
     super({
       recordType: MemoRecord,
@@ -66,7 +66,7 @@ export class MemoAppInfo extends AppInfo<MemoAppInfoData> {
 }
 
 /** A MemoDB record. */
-export class MemoRecord extends SObject implements Record {
+export class MemoRecord extends SObject implements PdbRecord {
   metadata: RecordMetadata = new RecordMetadata();
 
   /** Memo content. */

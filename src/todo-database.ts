@@ -1,9 +1,9 @@
-import Database from './database';
+import {PdbDatabase} from './database';
 import {AppInfo} from './database-app-info';
 import {OptionalDatabaseDate} from './database-date';
 import {SStringNT} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
-import {Record} from './record';
+import {PdbRecord} from './record';
 import {
   ParseOptions,
   serialize,
@@ -15,7 +15,7 @@ import {
 } from './serializable';
 
 /** ToDoDB database. */
-class ToDoDatabase extends Database<ToDoRecord, ToDoAppInfo> {
+class ToDoDatabase extends PdbDatabase<ToDoRecord, ToDoAppInfo> {
   constructor() {
     super({
       recordType: ToDoRecord,
@@ -70,7 +70,7 @@ export class ToDoAppInfo extends AppInfo<ToDoAppInfoData> {
 }
 
 /** A ToDoDB record. */
-export class ToDoRecord extends SObject implements Record {
+export class ToDoRecord extends SObject implements PdbRecord {
   metadata: RecordMetadata = new RecordMetadata();
 
   /** Due date of the item (may be empty if there is no due date). */

@@ -43,9 +43,7 @@ export class AppInfo<AppDataT extends Serializable = SBuffer>
   /** Extra data in the AppInfo block following standard category data. */
   appData: AppDataT | null = null;
 
-  constructor(appDataType?: new () => AppDataT) {
-    this.appDataType = appDataType;
-  }
+  constructor(private readonly appDataType?: new () => AppDataT) {}
 
   /** Finds the category with the given unique ID. */
   getCategoryByUniqId(uniqId: number): Category | null {
@@ -148,6 +146,4 @@ export class AppInfo<AppDataT extends Serializable = SBuffer>
       (this.appData ? this.appData.getSerializedLength(opts) : 0)
     );
   }
-
-  private readonly appDataType?: new () => AppDataT;
 }

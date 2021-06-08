@@ -1,13 +1,31 @@
-import {RecordMetadata} from './database-header';
+import {RecordMetadata, ResourceMetadata} from './database-header';
 import {SBuffer, Serializable} from './serializable';
 
 /** Interface of database records. */
-export interface Record extends Serializable {
+export interface Record<MetadataT extends RecordMetadata | ResourceMetadata>
+  extends Serializable {
   /** Metadata corresponding to this record. */
-  metadata: RecordMetadata;
+  metadata: MetadataT;
 }
 
-/** No-op record implementation that serializes record to / from Buffers. */
-export class SBufferRecord extends SBuffer implements Record {
+/** A record in a PDB database. */
+export type PdbRecord = Record<RecordMetadata>;
+
+/** A record in a PRC database. */
+export type PrcRecord = Record<ResourceMetadata>;
+
+/** No-op PDB database record implementation that serializes record to / from Buffers. */
+export class PdbSBufferRecord
+  extends SBuffer
+  implements Record<RecordMetadata>
+{
   metadata: RecordMetadata = new RecordMetadata();
+}
+
+/** No-op PRC database record implementation that serializes record to / from Buffers. */
+export class PrcSBufferRecord
+  extends SBuffer
+  implements Record<ResourceMetadata>
+{
+  metadata: ResourceMetadata = new ResourceMetadata();
 }

@@ -4,12 +4,12 @@ import {
   parseFromBitmask,
   serializeToBitmask,
 } from './bitmask';
-import Database from './database';
+import {PdbDatabase} from './database';
 import {AppInfo} from './database-app-info';
 import DatabaseDate, {OptionalDatabaseDate} from './database-date';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
-import {Record} from './record';
+import {PdbRecord} from './record';
 import {
   ParseOptions,
   Serializable,
@@ -20,7 +20,7 @@ import {
 } from './serializable';
 
 /** DatebookDB database. */
-class DatebookDatabase extends Database<DatebookRecord, DatebookAppInfo> {
+class DatebookDatabase extends PdbDatabase<DatebookRecord, DatebookAppInfo> {
   constructor() {
     super({
       recordType: DatebookRecord,
@@ -62,7 +62,7 @@ export class DatebookAppInfo extends AppInfo<DatebookAppInfoData> {
 }
 
 /** A DatebookDB record. */
-export class DatebookRecord implements Record {
+export class DatebookRecord implements PdbRecord {
   metadata: RecordMetadata = new RecordMetadata();
 
   /** Date of the event. */

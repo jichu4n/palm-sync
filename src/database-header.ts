@@ -7,7 +7,34 @@ import {
 } from './bitmask';
 import {decodeString, encodeString} from './database-encoding';
 import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
-import {ParseOptions, Serializable, SerializeOptions} from './serializable';
+import {
+  createSerializableScalarWrapperClass,
+  ParseOptions,
+  Serializable,
+  SerializableWrapper,
+  serializeAs,
+  SerializeOptions,
+  SObject,
+  SUInt16BE,
+  SUInt32BE,
+} from './serializable';
+
+/** Serializable wrapper for a 32-bit type ID mapped to a 4-character string. */
+export class TypeId
+  extends createSerializableScalarWrapperClass<string>({
+    readFn(this: Buffer) {
+      return this.toString('ascii', 0, 4);
+    },
+    writeFn(this: Buffer, value: string) {
+      if (value.length !== 4) {
+        throw new Error(`Type ID value must be exactly 4 bytes: "${value}"`);
+      }
+      this.write(value, 'ascii');
+    },
+    serializedLength: 4,
+    defaultValue: 'AAAA',
+  })
+  implements SerializableWrapper<string> {}
 
 /** PDB database header, a.k.a DatabaseHdrType. */
 export class DatabaseHeader implements Serializable {
@@ -85,50 +112,6 @@ export class DatabaseHeader implements Serializable {
   }
 }
 
-/** Record metadata list, a.k.a RecordListType. */
-export class RecordMetadataList implements Serializable {
-  /** Offset of next RecordList structure. (Unsupported) */
-  nextRecordListId: number = 0;
-  /** Number of records in list. */
-  numRecords: number = 0;
-  /** Array of record metadata. */
-  values: Array<RecordMetadata> = [];
-
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    this.nextRecordListId = reader.readUInt32BE();
-    if (this.nextRecordListId !== 0) {
-      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
-    }
-    this.numRecords = reader.readUInt16BE();
-    for (let i = 0; i < this.numRecords; ++i) {
-      const recordMetadata = new RecordMetadata();
-      recordMetadata.parseFrom(reader.readBuffer(8), opts);
-      this.values.push(recordMetadata);
-    }
-    return reader.readOffset;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-    if (this.nextRecordListId !== 0) {
-      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
-    }
-    writer.writeUInt32BE(this.nextRecordListId);
-    this.numRecords = this.values.length;
-    writer.writeUInt16BE(this.numRecords);
-    for (const recordMetadata of this.values) {
-      writer.writeBuffer(recordMetadata.serialize(opts));
-    }
-    writer.writeUInt16BE(0); // 2 placeholder bytes.
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return 6 + this.values.length * 8 + 2;
-  }
-}
-
 /** Record metadata for PDB files, a.k.a. RecordEntryType. */
 export class RecordMetadata implements Serializable {
   /** Offset to raw record data. */
@@ -164,12 +147,73 @@ export class RecordMetadata implements Serializable {
   }
 }
 
+/** Record metadata for PRC files, a.k.a. RsrcEntryType. */
+export class ResourceMetadata extends SObject {
+  /** Resource type identifier (max 4 bytes). */
+  @serializeAs(TypeId)
+  type = '';
+
+  /** Resource ID. */
+  @serializeAs(SUInt16BE)
+  resourceId = 0;
+
+  /** Offset to raw record data. */
+  @serializeAs(SUInt32BE)
+  localChunkId = 0;
+}
+
+/** Record metadata list, a.k.a RecordListType. */
+export class MetadataList<MetadataT extends RecordMetadata | ResourceMetadata>
+  implements Serializable
+{
+  /** Offset of next RecordList structure. (Unsupported) */
+  nextRecordListId: number = 0;
+  /** Array of record metadata. */
+  values: Array<MetadataT> = [];
+
+  constructor(private readonly metadataType: new () => MetadataT) {}
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const reader = SmartBuffer.fromBuffer(buffer);
+    this.nextRecordListId = reader.readUInt32BE();
+    if (this.nextRecordListId !== 0) {
+      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
+    }
+    const numRecords = reader.readUInt16BE();
+    let {readOffset} = reader;
+    for (let i = 0; i < numRecords; ++i) {
+      const recordMetadata = new this.metadataType();
+      readOffset += recordMetadata.parseFrom(buffer.slice(readOffset));
+      this.values.push(recordMetadata);
+    }
+    return readOffset;
+  }
+
+  serialize(opts?: SerializeOptions) {
+    const writer = new SmartBuffer();
+    if (this.nextRecordListId !== 0) {
+      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
+    }
+    writer.writeUInt32BE(this.nextRecordListId);
+    writer.writeUInt16BE(this.values.length);
+    for (const recordMetadata of this.values) {
+      writer.writeBuffer(recordMetadata.serialize(opts));
+    }
+    writer.writeUInt16BE(0); // 2 placeholder bytes.
+    return writer.toBuffer();
+  }
+
+  getSerializedLength(opts?: SerializeOptions) {
+    return 6 + _.sum(this.values.map((v) => v.getSerializedLength(opts))) + 2;
+  }
+}
+
 /** Database attribute flags.
  *
  * Source: https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
  */
 export class DatabaseAttrs implements Serializable {
-  /** Resource database. */
+  /** Whether this is a resource database (i.e. PRC). */
   resDB: boolean = false;
   /** Read Only database. */
   readOnly: boolean = false;

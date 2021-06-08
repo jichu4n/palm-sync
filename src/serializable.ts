@@ -78,7 +78,7 @@ export function createSerializableScalarWrapperClass<ValueT>({
   defaultValue,
 }: {
   readFn: () => ValueT;
-  writeFn: (value: ValueT) => number;
+  writeFn: (value: ValueT) => void;
   serializedLength: number;
   defaultValue: ValueT;
 }) {

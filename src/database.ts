@@ -1,7 +1,12 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
-import {DatabaseHeader, RecordMetadataList} from './database-header';
-import {Record, SBufferRecord} from './record';
+import {
+  DatabaseHeader,
+  MetadataList,
+  RecordMetadata,
+  ResourceMetadata,
+} from './database-header';
+import {PdbSBufferRecord, PrcSBufferRecord, Record} from './record';
 import {
   ParseOptions,
   SBuffer,
@@ -10,9 +15,11 @@ import {
 } from './serializable';
 
 /** Representation of a Palm OS PDB file. */
-class Database<
+export class Database<
+  /** Metadata type. */
+  MetadataT extends RecordMetadata | ResourceMetadata,
   /** Record type. */
-  RecordT extends Record,
+  RecordT extends Record<MetadataT>,
   /** AppInfo type. */
   AppInfoT extends Serializable = SBuffer,
   /** SortInfo type. */
@@ -33,10 +40,13 @@ class Database<
   records: Array<RecordT> = [];
 
   constructor({
+    metadataType,
     recordType,
     appInfoType,
     sortInfoType,
   }: {
+    /** Metadata type constructor. */
+    metadataType: new () => MetadataT;
     /** Record type constructor. */
     recordType: new () => RecordT;
     /** AppInfo type constructor. */
@@ -44,6 +54,7 @@ class Database<
     /** SortInfo type constructor. */
     sortInfoType?: new () => SortInfoT;
   }) {
+    this.metadataType = metadataType;
     this.recordType = recordType;
     this.appInfoType = appInfoType;
     this.sortInfoType = sortInfoType;
@@ -57,7 +68,7 @@ class Database<
   /** Parses a PDB file. */
   parseFrom(buffer: Buffer, opts?: ParseOptions) {
     this.header.parseFrom(buffer, opts);
-    const recordList = new RecordMetadataList();
+    const recordList = new MetadataList(this.metadataType);
     recordList.parseFrom(
       buffer.slice(this.header.getSerializedLength(opts)),
       opts
@@ -66,7 +77,7 @@ class Database<
     if (this.appInfoType && this.header.appInfoId) {
       const appInfoEnd =
         this.header.sortInfoId ||
-        (recordList.numRecords > 0
+        (recordList.values.length > 0
           ? recordList.values[0].localChunkId
           : buffer.length);
       this.appInfo = new this.appInfoType();
@@ -80,7 +91,7 @@ class Database<
 
     if (this.sortInfoType && this.header.sortInfoId) {
       const sortInfoEnd =
-        recordList.numRecords > 0
+        recordList.values.length > 0
           ? recordList.values[0].localChunkId
           : buffer.length;
       this.sortInfo = new this.sortInfoType();
@@ -94,10 +105,10 @@ class Database<
 
     this.records.length = 0;
     let lastRecordEnd = 0;
-    for (let i = 0; i < recordList.numRecords; ++i) {
+    for (let i = 0; i < recordList.values.length; ++i) {
       const recordStart = recordList.values[i].localChunkId;
       const recordEnd =
-        i < recordList.numRecords - 1
+        i < recordList.values.length - 1
           ? recordList.values[i + 1].localChunkId
           : buffer.length;
       const record = new this.recordType();
@@ -114,8 +125,7 @@ class Database<
   //   - appInfoId
   //   - sortInfoId
   serialize(opts?: SerializeOptions) {
-    const recordList = new RecordMetadataList();
-    recordList.numRecords = this.records.length;
+    const recordList = new MetadataList(this.metadataType);
     recordList.values = _.map(this.records, 'metadata');
 
     let offset =
@@ -158,6 +168,7 @@ class Database<
     return this.serialize(opts).length;
   }
 
+  private readonly metadataType: new () => MetadataT;
   private readonly recordType: new () => RecordT;
   private readonly appInfoType?: new () => AppInfoT;
   private readonly sortInfoType?: new () => SortInfoT;
@@ -165,11 +176,92 @@ class Database<
 
 export default Database;
 
-/** Database specialization providing records, AppInfo and SortInfo as raw buffers. */
-export class RawDatabase extends Database<SBufferRecord, SBuffer, SBuffer> {
+/** PDB databases. */
+export class PdbDatabase<
+  /** Record type. */
+  RecordT extends Record<RecordMetadata>,
+  /** AppInfo type. */
+  AppInfoT extends Serializable = SBuffer,
+  /** SortInfo type. */
+  SortInfoT extends Serializable = SBuffer
+> extends Database<RecordMetadata, RecordT, AppInfoT, SortInfoT> {
+  constructor({
+    recordType,
+    appInfoType,
+    sortInfoType,
+  }: {
+    /** Record type constructor. */
+    recordType: new () => RecordT;
+    /** AppInfo type constructor. */
+    appInfoType?: new () => AppInfoT;
+    /** SortInfo type constructor. */
+    sortInfoType?: new () => SortInfoT;
+  }) {
+    super({
+      metadataType: RecordMetadata,
+      recordType,
+      appInfoType,
+      sortInfoType,
+    });
+    this.header.attributes.resDB = false;
+  }
+}
+
+/** PRC databases. */
+export class PrcDatabase<
+  /** Record type. */
+  RecordT extends Record<ResourceMetadata>,
+  /** AppInfo type. */
+  AppInfoT extends Serializable = SBuffer,
+  /** SortInfo type. */
+  SortInfoT extends Serializable = SBuffer
+> extends Database<ResourceMetadata, RecordT, AppInfoT, SortInfoT> {
+  constructor({
+    recordType,
+    appInfoType,
+    sortInfoType,
+  }: {
+    /** Record type constructor. */
+    recordType: new () => RecordT;
+    /** AppInfo type constructor. */
+    appInfoType?: new () => AppInfoT;
+    /** SortInfo type constructor. */
+    sortInfoType?: new () => SortInfoT;
+  }) {
+    super({
+      metadataType: ResourceMetadata,
+      recordType,
+      appInfoType,
+      sortInfoType,
+    });
+    this.header.attributes.resDB = true;
+  }
+}
+
+/** PDB database providing records, AppInfo and SortInfo as raw buffers. */
+export class RawPdbDatabase extends PdbDatabase<
+  PdbSBufferRecord,
+  SBuffer,
+  SBuffer
+> {
   constructor() {
     super({
-      recordType: SBufferRecord,
+      recordType: PdbSBufferRecord,
+      appInfoType: SBuffer,
+      sortInfoType: SBuffer,
+    });
+  }
+}
+
+/** PRC database providing records, AppInfo and SortInfo as raw buffers. */
+export class RawPrcDatabase extends PrcDatabase<
+  PrcSBufferRecord,
+  SBuffer,
+  SBuffer
+> {
+  constructor() {
+    super({
+      recordType: PrcSBufferRecord,
       appInfoType: SBuffer,
       sortInfoType: SBuffer,
     });
