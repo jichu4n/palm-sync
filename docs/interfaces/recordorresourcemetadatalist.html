@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>MetadataList | palmira</title>
+	<title>RecordOrResourceMetadataList | palmira</title>
 	<meta name="description" content="Documentation for palmira">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">:root {
@@ -2704,26 +2704,20 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-class tsd-has-type-parameter">
-			<a href="metadatalist.html" class="tsd-kind-icon">Metadata<wbr>List</a>
+		<li class="current tsd-kind-interface tsd-has-type-parameter">
+			<a href="recordorresourcemetadatalist.html" class="tsd-kind-icon">Record<wbr>OrResource<wbr>Metadata<wbr>List</a>
 			<ul>
-				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter">
-					<a href="metadatalist.html#constructor" class="tsd-kind-icon">constructor</a>
+				<li class=" tsd-kind-property tsd-parent-kind-interface">
+					<a href="recordorresourcemetadatalist.html#values" class="tsd-kind-icon">values</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-class">
-					<a href="metadatalist.html#nextrecordlistid" class="tsd-kind-icon">next<wbr>Record<wbr>List<wbr>Id</a>
+				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<a href="recordorresourcemetadatalist.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-class">
-					<a href="metadatalist.html#values" class="tsd-kind-icon">values</a>
+				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<a href="recordorresourcemetadatalist.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a>
 				</li>
-				<li class=" tsd-kind-method tsd-parent-kind-class">
-					<a href="metadatalist.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a>
-				</li>
-				<li class=" tsd-kind-method tsd-parent-kind-class">
-					<a href="metadatalist.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a>
-				</li>
-				<li class=" tsd-kind-method tsd-parent-kind-class">
-					<a href="metadatalist.html#serialize" class="tsd-kind-icon">serialize</a>
+				<li class=" tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<a href="recordorresourcemetadatalist.html#serialize" class="tsd-kind-icon">serialize</a>
 				</li>
 			</ul>
 		</li>
@@ -2734,7 +2728,7 @@ img {
 		<section class="tsd-panel tsd-comment">
 			<div class="tsd-comment tsd-typography">
 				<div class="lead">
-					<p>Record metadata list, a.k.a RecordListType.</p>
+					<p>Record or resource metadata list.</p>
 				</div>
 			</div>
 		</section>
@@ -2742,7 +2736,7 @@ img {
 			<h3>Type parameters</h3>
 			<ul class="tsd-type-parameters">
 				<li>
-					<h4>MetadataT<span class="tsd-signature-symbol">: </span><a href="recordmetadata.html" class="tsd-signature-type" data-tsd-kind="Class">RecordMetadata</a><span class="tsd-signature-symbol"> | </span><a href="resourcemetadata.html" class="tsd-signature-type" data-tsd-kind="Class">ResourceMetadata</a></h4>
+					<h4>MetadataT<span class="tsd-signature-symbol">: </span><a href="../classes/recordmetadata.html" class="tsd-signature-type" data-tsd-kind="Class">RecordMetadata</a><span class="tsd-signature-symbol"> | </span><a href="../classes/resourcemetadata.html" class="tsd-signature-type" data-tsd-kind="Class">ResourceMetadata</a></h4>
 				</li>
 			</ul>
 		</section>
@@ -2750,14 +2744,20 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">MetadataList</span>
+					<a href="serializable.html" class="tsd-signature-type" data-tsd-kind="Interface">Serializable</a>
+					<ul class="tsd-hierarchy">
+						<li>
+							<span class="target">RecordOrResourceMetadataList</span>
+						</li>
+					</ul>
 				</li>
 			</ul>
 		</section>
 		<section class="tsd-panel">
-			<h3>Implements</h3>
+			<h3>Implemented by</h3>
 			<ul class="tsd-hierarchy">
-				<li><a href="../interfaces/serializable.html" class="tsd-signature-type" data-tsd-kind="Interface">Serializable</a></li>
+				<li><a href="../classes/recordmetadatalist.html" class="tsd-signature-type" data-tsd-kind="Class">RecordMetadataList</a></li>
+				<li><a href="../classes/resourcemetadatalist.html" class="tsd-signature-type" data-tsd-kind="Class">ResourceMetadataList</a></li>
 			</ul>
 		</section>
 		<section class="tsd-panel-group tsd-index-group">
@@ -2765,120 +2765,49 @@ img {
 			<section class="tsd-panel tsd-index-panel">
 				<div class="tsd-index-content">
 					<section class="tsd-index-section ">
-						<h3>Constructors</h3>
-						<ul class="tsd-index-list">
-							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter"><a href="metadatalist.html#constructor" class="tsd-kind-icon">constructor</a></li>
-						</ul>
-					</section>
-					<section class="tsd-index-section ">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-class"><a href="metadatalist.html#nextrecordlistid" class="tsd-kind-icon">next<wbr>Record<wbr>List<wbr>Id</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-class"><a href="metadatalist.html#values" class="tsd-kind-icon">values</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="recordorresourcemetadatalist.html#values" class="tsd-kind-icon">values</a></li>
 						</ul>
 					</section>
-					<section class="tsd-index-section ">
+					<section class="tsd-index-section tsd-is-inherited">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-method tsd-parent-kind-class"><a href="metadatalist.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class"><a href="metadatalist.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class"><a href="metadatalist.html#serialize" class="tsd-kind-icon">serialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="recordorresourcemetadatalist.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="recordorresourcemetadatalist.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-interface tsd-is-inherited"><a href="recordorresourcemetadatalist.html#serialize" class="tsd-kind-icon">serialize</a></li>
 						</ul>
 					</section>
 				</div>
-			</section>
-		</section>
-		<section class="tsd-panel-group tsd-member-group ">
-			<h2>Constructors</h2>
-			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter">
-				<a name="constructor" class="tsd-anchor"></a>
-				<h3>constructor</h3>
-				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Metadata<wbr>List&lt;MetadataT&gt;<span class="tsd-signature-symbol">(</span>metadataType<span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">MetadataT</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="metadatalist.html" class="tsd-signature-type" data-tsd-kind="Class">MetadataList</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MetadataT</span><span class="tsd-signature-symbol">&gt;</span></li>
-				</ul>
-				<ul class="tsd-descriptions">
-					<li class="tsd-description">
-						<aside class="tsd-sources">
-							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-header.ts#L172">src/database-header.ts:172</a></li>
-							</ul>
-						</aside>
-						<h4 class="tsd-type-parameters-title">Type parameters</h4>
-						<ul class="tsd-type-parameters">
-							<li>
-								<h4>MetadataT<span class="tsd-signature-symbol">: </span><a href="recordmetadata.html" class="tsd-signature-type" data-tsd-kind="Class">RecordMetadata</a><span class="tsd-signature-symbol"> | </span><a href="resourcemetadata.html" class="tsd-signature-type" data-tsd-kind="Class">ResourceMetadata</a></h4>
-							</li>
-						</ul>
-						<h4 class="tsd-parameters-title">Parameters</h4>
-						<ul class="tsd-parameters">
-							<li>
-								<h5>metadataType: <span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">MetadataT</span></h5>
-								<ul class="tsd-parameters">
-									<li class="tsd-parameter-signature">
-										<ul class="tsd-signatures tsd-kind-constructor">
-											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">MetadataT</span></li>
-										</ul>
-										<ul class="tsd-descriptions">
-											<li class="tsd-description">
-												<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">MetadataT</span></h4>
-											</li>
-										</ul>
-									</li>
-								</ul>
-							</li>
-						</ul>
-						<h4 class="tsd-returns-title">Returns <a href="metadatalist.html" class="tsd-signature-type" data-tsd-kind="Class">MetadataList</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">MetadataT</span><span class="tsd-signature-symbol">&gt;</span></h4>
-					</li>
-				</ul>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-				<a name="nextrecordlistid" class="tsd-anchor"></a>
-				<h3>next<wbr>Record<wbr>List<wbr>Id</h3>
-				<div class="tsd-signature tsd-kind-icon">next<wbr>Record<wbr>List<wbr>Id<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
-				<aside class="tsd-sources">
-					<ul>
-						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-header.ts#L170">src/database-header.ts:170</a></li>
-					</ul>
-				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Offset of next RecordList structure. (Unsupported)</p>
-					</div>
-				</div>
-			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
 				<a name="values" class="tsd-anchor"></a>
 				<h3>values</h3>
-				<div class="tsd-signature tsd-kind-icon">values<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MetadataT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div>
+				<div class="tsd-signature tsd-kind-icon">values<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">MetadataT</span><span class="tsd-signature-symbol">[]</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-header.ts#L172">src/database-header.ts:172</a></li>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/database-header.ts#L120">src/database-header.ts:120</a></li>
 					</ul>
 				</aside>
-				<div class="tsd-comment tsd-typography">
-					<div class="lead">
-						<p>Array of record metadata.</p>
-					</div>
-				</div>
 			</section>
 		</section>
-		<section class="tsd-panel-group tsd-member-group ">
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
 			<h2>Methods</h2>
-			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 				<a name="getserializedlength" class="tsd-anchor"></a>
 				<h3>get<wbr>Serialized<wbr>Length</h3>
-				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">get<wbr>Serialized<wbr>Length<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">get<wbr>Serialized<wbr>Length<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Implementation of <a href="../interfaces/serializable.html">Serializable</a>.<a href="../interfaces/serializable.html#getserializedlength">getSerializedLength</a></p>
+							<p>Inherited from <a href="serializable.html">Serializable</a>.<a href="serializable.html#getserializedlength">getSerializedLength</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-header.ts#L206">src/database-header.ts:206</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L34">src/serializable.ts:34</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2889,25 +2818,25 @@ img {
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a></h5>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a></h5>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
 					</li>
 				</ul>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 				<a name="parsefrom" class="tsd-anchor"></a>
 				<h3>parse<wbr>From</h3>
-				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">parse<wbr>From<span class="tsd-signature-symbol">(</span>buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span>, opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/parseoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ParseOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">parse<wbr>From<span class="tsd-signature-symbol">(</span>buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span>, opts<span class="tsd-signature-symbol">?: </span><a href="parseoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ParseOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Implementation of <a href="../interfaces/serializable.html">Serializable</a>.<a href="../interfaces/serializable.html#parsefrom">parseFrom</a></p>
+							<p>Inherited from <a href="serializable.html">Serializable</a>.<a href="serializable.html#parsefrom">parseFrom</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-header.ts#L176">src/database-header.ts:176</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L30">src/serializable.ts:30</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2922,25 +2851,25 @@ img {
 								<h5>buffer: <span class="tsd-signature-type">Buffer</span></h5>
 							</li>
 							<li>
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/parseoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ParseOptions</a></h5>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="parseoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ParseOptions</a></h5>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
 					</li>
 				</ul>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
 				<a name="serialize" class="tsd-anchor"></a>
 				<h3>serialize</h3>
-				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
-					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span></li>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-interface tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Implementation of <a href="../interfaces/serializable.html">Serializable</a>.<a href="../interfaces/serializable.html#serialize">serialize</a></p>
+							<p>Inherited from <a href="serializable.html">Serializable</a>.<a href="serializable.html#serialize">serialize</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-header.ts#L192">src/database-header.ts:192</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L32">src/serializable.ts:32</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2951,7 +2880,7 @@ img {
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
-								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a></h5>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a></h5>
 							</li>
 						</ul>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>

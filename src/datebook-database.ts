@@ -22,12 +22,8 @@ import {
 
 /** DatebookDB database. */
 class DatebookDatabase extends PdbDatabase<DatebookRecord, DatebookAppInfo> {
-  constructor() {
-    super({
-      recordType: DatebookRecord,
-      appInfoType: DatebookAppInfo,
-    });
-  }
+  recordType = DatebookRecord;
+  appInfoType = DatebookAppInfo;
 
   get defaultHeader() {
     const header = new DatabaseHeader();

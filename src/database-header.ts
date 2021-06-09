@@ -10,6 +10,7 @@ import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
 import {
   createSerializableScalarWrapperClass,
   ParseOptions,
+  SDynamicArray,
   Serializable,
   SerializableWrapper,
   serializeAs,
@@ -112,6 +113,13 @@ export class DatabaseHeader implements Serializable {
   }
 }
 
+/** Record or resource metadata list. */
+export interface RecordOrResourceMetadataList<
+  MetadataT extends RecordMetadata | ResourceMetadata
+> extends Serializable {
+  values: Array<MetadataT>;
+}
+
 /** Record metadata for PDB files, a.k.a. RecordEntryType. */
 export class RecordMetadata implements Serializable {
   /** Offset to raw record data. */
@@ -147,7 +155,29 @@ export class RecordMetadata implements Serializable {
   }
 }
 
-/** Record metadata for PRC files, a.k.a. RsrcEntryType. */
+/** Record metadata list for PDB databases, a.k.a RecordListType. */
+export class RecordMetadataList
+  extends SObject
+  implements RecordOrResourceMetadataList<RecordMetadata>
+{
+  /** Offset of next RecordMetadataList structure. Unsupported - must be 0. */
+  @serializeAs(SUInt32BE)
+  private nextListId = 0;
+
+  /** Array of record metadata. */
+  @serializeAs(
+    class extends SDynamicArray<SUInt16BE, RecordMetadata> {
+      lengthType = SUInt16BE;
+      valueType = RecordMetadata;
+    }
+  )
+  values: Array<RecordMetadata> = [];
+
+  @serializeAs(SUInt16BE)
+  private padding1 = 0;
+}
+
+/** Resource metadata for PRC files, a.k.a. RsrcEntryType. */
 export class ResourceMetadata extends SObject {
   /** Resource type identifier (max 4 bytes). */
   @serializeAs(TypeId)
@@ -162,50 +192,26 @@ export class ResourceMetadata extends SObject {
   localChunkId = 0;
 }
 
-/** Record metadata list, a.k.a RecordListType. */
-export class MetadataList<MetadataT extends RecordMetadata | ResourceMetadata>
-  implements Serializable
+/** Resource metadata list for PRC databases. */
+export class ResourceMetadataList
+  extends SObject
+  implements RecordOrResourceMetadataList<ResourceMetadata>
 {
-  /** Offset of next RecordList structure. (Unsupported) */
-  nextRecordListId: number = 0;
-  /** Array of record metadata. */
-  values: Array<MetadataT> = [];
+  /** Offset of next ResourceMetadataList structure. Unsupported - must be 0. */
+  @serializeAs(SUInt32BE)
+  private nextListId = 0;
 
-  constructor(private readonly metadataType: new () => MetadataT) {}
+  /** Array of resource metadata. */
+  @serializeAs(
+    class extends SDynamicArray<SUInt16BE, ResourceMetadata> {
+      lengthType = SUInt16BE;
+      valueType = ResourceMetadata;
+    }
+  )
+  values: Array<ResourceMetadata> = [];
 
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    this.nextRecordListId = reader.readUInt32BE();
-    if (this.nextRecordListId !== 0) {
-      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
-    }
-    const numRecords = reader.readUInt16BE();
-    let {readOffset} = reader;
-    for (let i = 0; i < numRecords; ++i) {
-      const recordMetadata = new this.metadataType();
-      readOffset += recordMetadata.parseFrom(buffer.slice(readOffset));
-      this.values.push(recordMetadata);
-    }
-    return readOffset;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-    if (this.nextRecordListId !== 0) {
-      throw new Error(`Unsupported nextRecordListid: ${this.nextRecordListId}`);
-    }
-    writer.writeUInt32BE(this.nextRecordListId);
-    writer.writeUInt16BE(this.values.length);
-    for (const recordMetadata of this.values) {
-      writer.writeBuffer(recordMetadata.serialize(opts));
-    }
-    writer.writeUInt16BE(0); // 2 placeholder bytes.
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return 6 + _.sum(this.values.map((v) => v.getSerializedLength(opts))) + 2;
-  }
+  @serializeAs(SUInt16BE)
+  private padding1 = 0;
 }
 
 /** Database attribute flags.

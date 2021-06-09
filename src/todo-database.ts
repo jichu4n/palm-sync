@@ -16,12 +16,8 @@ import {
 
 /** ToDoDB database. */
 class ToDoDatabase extends PdbDatabase<ToDoRecord, ToDoAppInfo> {
-  constructor() {
-    super({
-      recordType: ToDoRecord,
-      appInfoType: ToDoAppInfo,
-    });
-  }
+  recordType = ToDoRecord;
+  appInfoType = ToDoAppInfo;
 
   get defaultHeader() {
     const header = new DatabaseHeader();

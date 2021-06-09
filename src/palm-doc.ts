@@ -311,9 +311,7 @@ export class PalmDocMetadata implements Serializable {
 
 /** PalmDOC database.*/
 export class PalmDocDatabase extends PdbDatabase<PdbSBufferRecord> {
-  constructor() {
-    super({recordType: PdbSBufferRecord});
-  }
+  recordType = PdbSBufferRecord;
 
   get defaultHeader() {
     const header = new DatabaseHeader();

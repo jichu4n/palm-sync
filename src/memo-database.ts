@@ -14,12 +14,8 @@ import {
 
 /** MemoDB database. */
 class MemoDatabase extends PdbDatabase<MemoRecord, MemoAppInfo> {
-  constructor() {
-    super({
-      recordType: MemoRecord,
-      appInfoType: MemoAppInfo,
-    });
-  }
+  recordType = MemoRecord;
+  appInfoType = MemoAppInfo;
 
   get defaultHeader() {
     const header = new DatabaseHeader();

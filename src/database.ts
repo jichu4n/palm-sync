@@ -2,9 +2,11 @@ import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 import {
   DatabaseHeader,
-  MetadataList,
   RecordMetadata,
+  RecordMetadataList,
+  RecordOrResourceMetadataList,
   ResourceMetadata,
+  ResourceMetadataList,
 } from './database-header';
 import {PdbSBufferRecord, PrcSBufferRecord, Record} from './record';
 import {
@@ -15,8 +17,8 @@ import {
 } from './serializable';
 
 /** Representation of a Palm OS PDB file. */
-export class Database<
-  /** Metadata type. */
+export abstract class Database<
+  /** MetadataList type. */
   MetadataT extends RecordMetadata | ResourceMetadata,
   /** Record type. */
   RecordT extends Record<MetadataT>,
@@ -39,36 +41,23 @@ export class Database<
   /** Record values. */
   records: Array<RecordT> = [];
 
-  constructor({
-    metadataType,
-    recordType,
-    appInfoType,
-    sortInfoType,
-  }: {
-    /** Metadata type constructor. */
-    metadataType: new () => MetadataT;
-    /** Record type constructor. */
-    recordType: new () => RecordT;
-    /** AppInfo type constructor. */
-    appInfoType?: new () => AppInfoT;
-    /** SortInfo type constructor. */
-    sortInfoType?: new () => SortInfoT;
-  }) {
-    this.metadataType = metadataType;
-    this.recordType = recordType;
-    this.appInfoType = appInfoType;
-    this.sortInfoType = sortInfoType;
-  }
+  /** Metadata type constructor, to be provided by child classes. */
+  protected abstract metadataListType: new () => RecordOrResourceMetadataList<MetadataT>;
+  /** Record type constructor, to be provided by child classes. */
+  protected abstract recordType: new () => RecordT;
+  /** AppInfo type constructor, to be provided by child classes. */
+  protected appInfoType?: new () => AppInfoT;
+  /** SortInfo type constructor, to be provided by child classes. */
+  protected sortInfoType?: new () => SortInfoT;
 
   /** Generates the default header for a new database. */
-  get defaultHeader() {
+  protected get defaultHeader() {
     return new DatabaseHeader();
   }
 
-  /** Parses a PDB file. */
   parseFrom(buffer: Buffer, opts?: ParseOptions) {
     this.header.parseFrom(buffer, opts);
-    const recordList = new MetadataList(this.metadataType);
+    const recordList = new this.metadataListType();
     recordList.parseFrom(
       buffer.slice(this.header.getSerializedLength(opts)),
       opts
@@ -125,7 +114,7 @@ export class Database<
   //   - appInfoId
   //   - sortInfoId
   serialize(opts?: SerializeOptions) {
-    const recordList = new MetadataList(this.metadataType);
+    const recordList = new this.metadataListType();
     recordList.values = _.map(this.records, 'metadata');
 
     let offset =
@@ -167,15 +156,10 @@ export class Database<
   getSerializedLength(opts?: SerializeOptions) {
     return this.serialize(opts).length;
   }
-
-  private readonly metadataType: new () => MetadataT;
-  private readonly recordType: new () => RecordT;
-  private readonly appInfoType?: new () => AppInfoT;
-  private readonly sortInfoType?: new () => SortInfoT;
 }
 
 /** PDB databases. */
-export class PdbDatabase<
+export abstract class PdbDatabase<
   /** Record type. */
   RecordT extends Record<RecordMetadata>,
   /** AppInfo type. */
@@ -183,30 +167,16 @@ export class PdbDatabase<
   /** SortInfo type. */
   SortInfoT extends Serializable = SBuffer
 > extends Database<RecordMetadata, RecordT, AppInfoT, SortInfoT> {
-  constructor({
-    recordType,
-    appInfoType,
-    sortInfoType,
-  }: {
-    /** Record type constructor. */
-    recordType: new () => RecordT;
-    /** AppInfo type constructor. */
-    appInfoType?: new () => AppInfoT;
-    /** SortInfo type constructor. */
-    sortInfoType?: new () => SortInfoT;
-  }) {
-    super({
-      metadataType: RecordMetadata,
-      recordType,
-      appInfoType,
-      sortInfoType,
-    });
+  constructor() {
+    super();
     this.header.attributes.resDB = false;
   }
+
+  metadataListType = RecordMetadataList;
 }
 
 /** PRC databases. */
-export class PrcDatabase<
+export abstract class PrcDatabase<
   /** Record type. */
   RecordT extends Record<ResourceMetadata>,
   /** AppInfo type. */
@@ -214,26 +184,12 @@ export class PrcDatabase<
   /** SortInfo type. */
   SortInfoT extends Serializable = SBuffer
 > extends Database<ResourceMetadata, RecordT, AppInfoT, SortInfoT> {
-  constructor({
-    recordType,
-    appInfoType,
-    sortInfoType,
-  }: {
-    /** Record type constructor. */
-    recordType: new () => RecordT;
-    /** AppInfo type constructor. */
-    appInfoType?: new () => AppInfoT;
-    /** SortInfo type constructor. */
-    sortInfoType?: new () => SortInfoT;
-  }) {
-    super({
-      metadataType: ResourceMetadata,
-      recordType,
-      appInfoType,
-      sortInfoType,
-    });
+  constructor() {
+    super();
     this.header.attributes.resDB = true;
   }
+
+  metadataListType = ResourceMetadataList;
 }
 
 /** PDB database providing records, AppInfo and SortInfo as raw buffers. */
@@ -242,13 +198,9 @@ export class RawPdbDatabase extends PdbDatabase<
   SBuffer,
   SBuffer
 > {
-  constructor() {
-    super({
-      recordType: PdbSBufferRecord,
-      appInfoType: SBuffer,
-      sortInfoType: SBuffer,
-    });
-  }
+  recordType = PdbSBufferRecord;
+  appInfoType = SBuffer;
+  sortInfoType = SBuffer;
 }
 
 /** PRC database providing records, AppInfo and SortInfo as raw buffers. */
@@ -257,11 +209,7 @@ export class RawPrcDatabase extends PrcDatabase<
   SBuffer,
   SBuffer
 > {
-  constructor() {
-    super({
-      recordType: PrcSBufferRecord,
-      appInfoType: SBuffer,
-      sortInfoType: SBuffer,
-    });
-  }
+  recordType = PrcSBufferRecord;
+  appInfoType = SBuffer;
+  sortInfoType = SBuffer;
 }
