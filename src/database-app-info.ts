@@ -1,12 +1,7 @@
 import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 import {decodeString, encodeString} from './database-encoding';
-import {
-  ParseOptions,
-  SBuffer,
-  Serializable,
-  SerializeOptions,
-} from './serializable';
+import {ParseOptions, Serializable, SerializeOptions} from './serializable';
 
 /** Information about a category. */
 export interface Category {
@@ -26,24 +21,14 @@ export interface Category {
 }
 
 /** Length of standard category data. */
-export const APP_INFO_CATEGORY_DATA_LENGTH = 276;
+export const STANDARD_APP_INFO_LENGTH = 276;
 
-/** AppInfo block for standard category data, a.k.a AppInfoType.
- *
- * If data is non-null, it will be used to serialize / deserialize extra data in
- * the AppInfo block following standard category data.
- */
-export class AppInfo<AppDataT extends Serializable = SBuffer>
-  implements Serializable
-{
+/** AppInfo block for standard category data, a.k.a AppInfoType. */
+export class CategoryInfo implements Serializable {
   /** Array of category information (max 16 elements). */
   categories: Array<Category> = [];
   /** The last unique category ID assigned. */
   lastUniqId: number = 0;
-  /** Extra data in the AppInfo block following standard category data. */
-  appData: AppDataT | null = null;
-
-  constructor(private readonly appDataType?: new () => AppDataT) {}
 
   /** Finds the category with the given unique ID. */
   getCategoryByUniqId(uniqId: number): Category | null {
@@ -85,13 +70,6 @@ export class AppInfo<AppDataT extends Serializable = SBuffer>
       });
     }
 
-    if (this.appDataType && reader.remaining()) {
-      this.appData = new this.appDataType();
-      this.appData.parseFrom(reader.readBuffer(), opts);
-    } else {
-      this.appData = null;
-    }
-
     return reader.readOffset;
   }
 
@@ -130,20 +108,12 @@ export class AppInfo<AppDataT extends Serializable = SBuffer>
     }
 
     writer.writeUInt8(this.lastUniqId);
-
     writer.writeUInt8(0); // Padding byte.
-
-    if (this.appData) {
-      writer.writeBuffer(this.appData.serialize(opts));
-    }
 
     return writer.toBuffer();
   }
 
   getSerializedLength(opts?: SerializeOptions) {
-    return (
-      APP_INFO_CATEGORY_DATA_LENGTH +
-      (this.appData ? this.appData.getSerializedLength(opts) : 0)
-    );
+    return STANDARD_APP_INFO_LENGTH;
   }
 }

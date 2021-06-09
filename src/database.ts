@@ -174,8 +174,6 @@ export class Database<
   private readonly sortInfoType?: new () => SortInfoT;
 }
 
-export default Database;
-
 /** PDB databases. */
 export class PdbDatabase<
   /** Record type. */

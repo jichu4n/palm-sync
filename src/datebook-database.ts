@@ -5,7 +5,7 @@ import {
   serializeToBitmask,
 } from './bitmask';
 import {PdbDatabase} from './database';
-import {AppInfo} from './database-app-info';
+import {CategoryInfo} from './database-app-info';
 import DatabaseDate, {OptionalDatabaseDate} from './database-date';
 import {decodeString, encodeString} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
@@ -13,6 +13,7 @@ import {PdbRecord} from './record';
 import {
   ParseOptions,
   Serializable,
+  serialize,
   serializeAs,
   SerializeOptions,
   SObject,
@@ -41,8 +42,11 @@ class DatebookDatabase extends PdbDatabase<DatebookRecord, DatebookAppInfo> {
 
 export default DatebookDatabase;
 
-/** Extra data in the AppInfo block in DatebookDB. */
-export class DatebookAppInfoData extends SObject {
+/** DatebookDB AppInfo block. */
+export class DatebookAppInfo extends SObject {
+  @serialize
+  categoryInfo = new CategoryInfo();
+
   /** Day of the week to start the week on. Not sure what the format is
    * ¯\_(ツ)_/¯ */
   @serializeAs(SUInt8)
@@ -50,15 +54,6 @@ export class DatebookAppInfoData extends SObject {
 
   @serializeAs(SUInt8)
   padding1 = 0;
-}
-
-/** DatebookDB AppInfo block. */
-export class DatebookAppInfo extends AppInfo<DatebookAppInfoData> {
-  constructor() {
-    super(DatebookAppInfoData);
-  }
-
-  appData = new DatebookAppInfoData();
 }
 
 /** A DatebookDB record. */

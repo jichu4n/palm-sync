@@ -1,5 +1,5 @@
 import {PdbDatabase} from './database';
-import {AppInfo} from './database-app-info';
+import {CategoryInfo} from './database-app-info';
 import {OptionalDatabaseDate} from './database-date';
 import {SStringNT} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
@@ -36,8 +36,11 @@ class ToDoDatabase extends PdbDatabase<ToDoRecord, ToDoAppInfo> {
 
 export default ToDoDatabase;
 
-/** Extra data in the AppInfo block in ToDoDB. */
-export class ToDoAppInfoData extends SObject {
+/** ToDoDB AppInfo block. */
+export class ToDoAppInfo extends SObject {
+  @serialize
+  categoryInfo = new CategoryInfo();
+
   /** Not sure what this is ¯\_(ツ)_/¯ */
   @serializeAs(SUInt16BE)
   dirty = 0;
@@ -58,15 +61,6 @@ export class ToDoAppInfoData extends SObject {
     }
     return super.serialize(opts);
   }
-}
-
-/** ToDoDB AppInfo block. */
-export class ToDoAppInfo extends AppInfo<ToDoAppInfoData> {
-  constructor() {
-    super(ToDoAppInfoData);
-  }
-
-  appData = new ToDoAppInfoData();
 }
 
 /** A ToDoDB record. */

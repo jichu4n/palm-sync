@@ -11,7 +11,7 @@ describe('ToDoDatabase', function () {
     const db = new ToDoDatabase();
     db.parseFrom(buffer);
 
-    expect(db.appInfo?.categories.length).toStrictEqual(3);
+    expect(db.appInfo?.categoryInfo.categories.length).toStrictEqual(3);
     expect(db.records.length).toStrictEqual(3);
     for (const record of db.records) {
       expect(record.description.length).toBeGreaterThan(1);
@@ -30,7 +30,7 @@ describe('ToDoDatabase', function () {
   test('serialize', async function () {
     // Create db1.
     const db1 = new ToDoDatabase();
-    db1.appInfo.categories = [
+    db1.appInfo.categoryInfo.categories = [
       {label: 'Unfiled', uniqId: 0, isRenamed: false},
       {label: 'Personal', uniqId: 1, isRenamed: false},
     ];
@@ -52,7 +52,9 @@ describe('ToDoDatabase', function () {
     db2.parseFrom(buffer);
 
     // Check db2 contents.
-    expect(db2.appInfo?.categories).toStrictEqual(db1.appInfo.categories);
+    expect(db2.appInfo?.categoryInfo.categories).toStrictEqual(
+      db1.appInfo.categoryInfo.categories
+    );
     expect(db2.records.length).toStrictEqual(db1.records.length);
     for (let i = 0; i < db1.records.length; ++i) {
       expect(db2.records[i]).toStrictEqual(db1.records[i]);

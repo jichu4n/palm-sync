@@ -11,7 +11,6 @@ export * from './database-encoding';
 
 // Database and related structures.
 export * from './database';
-export {default as Database} from './database';
 export * from './record';
 export * from './database-header';
 export * from './database-app-info';

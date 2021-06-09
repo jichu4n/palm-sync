@@ -1,9 +1,10 @@
 import {PdbDatabase} from './database';
-import {AppInfo} from './database-app-info';
+import {CategoryInfo} from './database-app-info';
 import {SStringNT} from './database-encoding';
 import {DatabaseHeader, RecordMetadata} from './database-header';
 import {PdbRecord} from './record';
 import {
+  serialize,
   serializeAs,
   SerializeOptions,
   SObject,
@@ -33,8 +34,11 @@ class MemoDatabase extends PdbDatabase<MemoRecord, MemoAppInfo> {
 
 export default MemoDatabase;
 
-/** Extra data in the AppInfo block in MemoDB. */
-export class MemoAppInfoData extends SObject {
+/** MemoDB AppInfo block. */
+export class MemoAppInfo extends SObject {
+  @serialize
+  categoryInfo = new CategoryInfo();
+
   @serializeAs(SUInt16BE)
   padding1 = 0;
 
@@ -54,15 +58,6 @@ export class MemoAppInfoData extends SObject {
     }
     return super.serialize(opts);
   }
-}
-
-/** MemoDB AppInfo block. */
-export class MemoAppInfo extends AppInfo<MemoAppInfoData> {
-  constructor() {
-    super(MemoAppInfoData);
-  }
-
-  appData = new MemoAppInfoData();
 }
 
 /** A MemoDB record. */
