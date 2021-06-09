@@ -7,6 +7,9 @@ import {
   DlpOpenConduitRequest,
   DlpOpenDBRequest,
   DlpOpenMode,
+  DlpReadDBListMode,
+  DlpReadDBListRequest,
+  DlpReadDBListResponse,
   DlpReadOpenDBInfoRequest,
   DlpReadRecordByIDRequest,
   DlpReadRecordIDListRequest,
@@ -69,6 +72,25 @@ export class NetSyncServer {
 
     // TODO: Conduit framework
     const {dlpConnection} = connection;
+
+    const readDbListResp = await dlpConnection.execute(
+      DlpReadDBListRequest.create({
+        mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+      })
+    );
+    this.log(
+      `readDbListResp: ${readDbListResp.metadataList.map(
+        ({name, type, creator, index, creationDate}) =>
+          JSON.stringify({
+            creationDate: creationDate.value,
+            name,
+            type,
+            creator,
+            index,
+          })
+      )}`
+    );
+
     await dlpConnection.execute(DlpOpenConduitRequest.create());
     const {dbHandle} = await connection.dlpConnection.execute(
       DlpOpenDBRequest.create({

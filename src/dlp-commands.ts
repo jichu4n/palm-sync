@@ -1,12 +1,22 @@
+import _ from 'lodash';
 import {SmartBuffer} from 'smart-buffer';
 import {SStringNT} from './database-encoding';
-import {RecordAttrs} from './database-header';
-import {dlpArg, DlpRequest, DlpResponse, DLP_ARG_ID_BASE} from './dlp-protocol';
+import {DatabaseAttrs, RecordAttrs, TypeId} from './database-header';
 import {
+  dlpArg,
+  DlpRequest,
+  DlpResponse,
+  DlpTimestamp,
+  DLP_ARG_ID_BASE,
+} from './dlp-protocol';
+import {
+  ParseOptions,
+  SArray,
   SBuffer,
   Serializable,
   serialize,
   serializeAs,
+  SerializeOptions,
   SObject,
   SUInt16BE,
   SUInt32BE,
@@ -165,6 +175,91 @@ enum DlpCommandId {
 }
 
 // =============================================================================
+// ReadDBList
+// =============================================================================
+export class DlpReadDBListRequest extends DlpRequest<DlpReadDBListResponse> {
+  commandId = DlpCommandId.ReadDBList;
+  responseType = DlpReadDBListResponse;
+
+  /** Flags (see DlpReadDBListMode). */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  mode: number = DlpReadDBListMode.LIST_RAM;
+
+  /** Card number (typically 0). */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  cardId = 0;
+
+  /** Index of first database to return. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  startIndex = 0;
+}
+
+export class DlpReadDBListResponse extends DlpResponse {
+  commandId = DlpCommandId.ReadDBList;
+
+  /** Index of last database in response. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  lastIndex = 0;
+
+  /** Flags - TODO */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  private flags = 0;
+
+  /** Number of databases in response. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  private numDBs = 0;
+
+  /** Array of database metadata results. */
+  metadataList: Array<DlpDatabaseMetadata> = [];
+
+  /** Raw buffer backing metadataList. */
+  @dlpArg(DLP_ARG_ID_BASE)
+  private rawMetadataList = new SBuffer();
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const readOffset = super.parseFrom(buffer, opts);
+    this.metadataList = _.range(this.numDBs).map(
+      () => new DlpDatabaseMetadata()
+    );
+    SArray.create({value: this.metadataList}).parseFrom(
+      this.rawMetadataList.value,
+      opts
+    );
+    return readOffset;
+  }
+
+  serialize(opts?: SerializeOptions) {
+    this.numDBs = this.metadataList.length;
+    this.rawMetadataList.value = SArray.create({
+      value: this.metadataList,
+    }).serialize(opts);
+    return super.serialize(opts);
+  }
+
+  getSerializedLength(opts?: SerializeOptions) {
+    return this.serialize(opts).length;
+  }
+}
+
+/** Database search flags, used in DlpReadDBListRequest. */
+export enum DlpReadDBListMode {
+  /** List databases in RAM. */
+  LIST_RAM = 0x80,
+  /** List databases in ROM. */
+  LIST_ROM = 0x40,
+  /** Return as many databases as possible at once (DLP 1.2+). */
+  LIST_MULTIPLE = 0x20,
+}
+
+/** Misc flags in DlpDatabaseMetadata. */
+export enum DlpDatabaseMiscFlags {
+  /** Exclude this database from sync (DLP 1.1+). */
+  EXCLUDE_FROM_SYNC = 0x80,
+  /** This database is in RAM (DLP 1.2+). */
+  IS_IN_RAM = 0x40,
+}
+
+// =============================================================================
 // OpenDB
 // =============================================================================
 export class DlpOpenDBRequest extends DlpRequest<DlpOpenDBResponse> {
@@ -257,6 +352,7 @@ export class DlpReadRecordByIDRequest extends DlpRequest<DlpReadRecordByIDRespon
   @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
   maxLength = MAX_RECORD_DATA_LENGTH;
 }
+
 export class DlpReadRecordByIDResponse extends DlpResponse {
   commandId = DlpCommandId.ReadRecord;
 
@@ -265,32 +361,6 @@ export class DlpReadRecordByIDResponse extends DlpResponse {
 
   @dlpArg(DLP_ARG_ID_BASE)
   data = SBuffer.create();
-}
-
-/** Maximum data length that can be returned in one ReadRecord request. */
-export const MAX_RECORD_DATA_LENGTH = 0xffff;
-
-/** Record metadata in DLP requests and responses. */
-export class DlpRecordMetadata extends SObject {
-  /** Record ID. */
-  @serializeAs(SUInt32BE)
-  recordId = 0;
-
-  /** Index of record in database. */
-  @serializeAs(SUInt16BE)
-  index = 0;
-
-  /** Size of record data. */
-  @serializeAs(SUInt16BE)
-  length = 0;
-
-  /** Record attributes. */
-  @serialize
-  attributes: RecordAttrs = new RecordAttrs();
-
-  /** Record category. */
-  @serializeAs(SUInt8)
-  category = 0;
 }
 
 // =============================================================================
@@ -438,4 +508,95 @@ export class DlpReadRecordIDListResponseArg implements Serializable {
   getSerializedLength() {
     return 2 + this.recordIds.length * 4;
   }
+}
+
+// =============================================================================
+// Common structures
+// =============================================================================
+
+/** Database metadata in DLP requests and responses. */
+export class DlpDatabaseMetadata extends SObject {
+  /** Total length of metadata structure. */
+  @serializeAs(SUInt8)
+  private length = 0;
+
+  /** Misc flags (see DlpDatabaseMiscFlags). */
+  @serializeAs(SUInt8)
+  miscFlags = 0;
+
+  /** Database attribute flags. */
+  @serialize
+  attributes = new DatabaseAttrs();
+
+  /** Database type identifier (max 4 bytes). */
+  @serializeAs(TypeId)
+  type = 'AAAA';
+
+  /** Database creator identifier (max 4 bytes). */
+  @serializeAs(TypeId)
+  creator = 'AAAA';
+
+  /** Database version (integer). */
+  @serializeAs(SUInt16BE)
+  version = 0;
+
+  /** Modification number (integer). */
+  @serializeAs(SUInt32BE)
+  modificationNumber = 0;
+
+  /** Database creation timestamp. */
+  @serialize
+  creationDate = new DlpTimestamp();
+
+  /** Database modification timestamp. */
+  @serialize
+  modificationDate = new DlpTimestamp();
+
+  /** Last backup timestamp. */
+  @serialize
+  lastBackupDate = new DlpTimestamp();
+
+  /** Index of database in the response. */
+  @serializeAs(SUInt16BE)
+  index = 0;
+
+  /** Database name (max 31 bytes). */
+  @serializeAs(SStringNT)
+  name = '';
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    super.parseFrom(buffer, opts);
+    return this.length;
+  }
+
+  serialize(opts?: SerializeOptions) {
+    this.length = this.getSerializedLength(opts);
+    return super.serialize(opts);
+  }
+}
+
+/** Maximum data length that can be returned in one ReadRecord request. */
+export const MAX_RECORD_DATA_LENGTH = 0xffff;
+
+/** Record metadata in DLP requests and responses. */
+export class DlpRecordMetadata extends SObject {
+  /** Record ID. */
+  @serializeAs(SUInt32BE)
+  recordId = 0;
+
+  /** Index of record in database. */
+  @serializeAs(SUInt16BE)
+  index = 0;
+
+  /** Size of record data. */
+  @serializeAs(SUInt16BE)
+  length = 0;
+
+  /** Record attributes. */
+  @serialize
+  attributes: RecordAttrs = new RecordAttrs();
+
+  /** Record category. */
+  @serializeAs(SUInt8)
+  category = 0;
 }

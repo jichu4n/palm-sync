@@ -139,30 +139,59 @@ export class SUInt32BE
 /** A Serializable that represents a concatenation of other Serializables. */
 export class SArray<ValueT extends Serializable = SBuffer>
   extends Creatable
-  implements Serializable
+  implements SerializableWrapper<Array<ValueT>>
 {
   /** Array of Serializables. */
-  values: Array<ValueT> = [];
+  value: Array<ValueT> = [];
 
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
     let readOffset = 0;
-    for (const value of this.values) {
-      readOffset += value.parseFrom(buffer.slice(readOffset), opts);
-    }
+    this.map((element) => {
+      readOffset += element.parseFrom(buffer.slice(readOffset), opts);
+    });
     return readOffset;
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    return Buffer.concat(this.values.map((value) => value.serialize(opts)));
+    return Buffer.concat(this.map((element) => element.serialize(opts)));
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
     let length = 0;
-    for (const value of this.values) {
-      length += value.getSerializedLength(opts);
-    }
+    this.map((element) => {
+      length += element.getSerializedLength(opts);
+    });
     return length;
   }
+
+  private map<FnT extends (element: ValueT, index: number) => any>(
+    fn: FnT
+  ): Array<ReturnType<FnT>> {
+    return this.value.map((element, index) => {
+      try {
+        return fn(element, index);
+      } catch (e) {
+        if (e instanceof Error) {
+          const e2 = e as SArrayError<ValueT>;
+          e2.isSArrayError = true;
+          e2.element = element;
+          e2.index = index;
+        }
+        throw e;
+      }
+    });
+  }
+}
+
+/** Error augmented by SArray with index information. */
+export interface SArrayError<ValueT extends Serializable = SBuffer>
+  extends Error {
+  /** Indicates this is an SArrayError. */
+  isSArrayError: true;
+  /** The element that raised the error. */
+  element: ValueT;
+  /** Index of the element that raised the error. */
+  index: number;
 }
 
 /** Key for storing property information on an SObject's metadata. */
@@ -206,23 +235,48 @@ export function getAllSerializablePropertiesOrWrappers(targetInstance: Object) {
 /** Serializable record where props are defined via serialize and serializeAs. */
 export class SObject extends Creatable implements Serializable {
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
-    return this.toSArray().parseFrom(buffer, opts);
+    return this.wrapSArrayError(() => this.toSArray().parseFrom(buffer, opts));
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    return this.toSArray().serialize(opts);
+    return this.wrapSArrayError(() => this.toSArray().serialize(opts));
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
-    return this.toSArray().getSerializedLength(opts);
+    return this.wrapSArrayError(() =>
+      this.toSArray().getSerializedLength(opts)
+    );
   }
 
   /** Converts this object to an SArray<Serializable>. */
   toSArray() {
     return SArray.create({
-      values: getAllSerializablePropertiesOrWrappers(this),
+      value: getAllSerializablePropertiesOrWrappers(this),
     });
   }
+
+  private wrapSArrayError<FnT extends () => any>(fn: FnT): ReturnType<FnT> {
+    try {
+      return fn();
+    } catch (e) {
+      if (e instanceof Error && 'isSArrayError' in e && e['isSArrayError']) {
+        const e2 = e as SObjectError;
+        e2.isSObjectError = true;
+        e2.propertyKey =
+          getSerializablePropertySpecs(this)[e2.index].propertyKey;
+        e2.message = `${e2.propertyKey.toString()}: ${e2.message}`;
+      }
+      throw e;
+    }
+  }
+}
+
+/** Error augmented by SObject with property information. */
+export interface SObjectError extends SArrayError {
+  /** Indicates this is an SObjectError. */
+  isSObjectError: true;
+  /** The property that raised the error. */
+  propertyKey: string | symbol;
 }
 
 /** Decorator for Serializable properties. */

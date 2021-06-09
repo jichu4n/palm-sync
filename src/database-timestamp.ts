@@ -1,10 +1,15 @@
-import {ParseOptions, Serializable, SerializeOptions} from './serializable';
+import {
+  Creatable,
+  ParseOptions,
+  Serializable,
+  SerializeOptions,
+} from './serializable';
 
 /** Epoch for PDB timestamps. */
 export const epochTimestamp = new Date('1904-01-01T00:00:00.000Z');
 
 /** Wrapper around a `Date` value with PDB-specific attributes. */
-class DatabaseTimestamp implements Serializable {
+export class DatabaseTimestamp extends Creatable implements Serializable {
   /** JavaScript Date value corresponding to the time. */
   value: Date = new Date();
   /** The epoch to use when serializing this date. */

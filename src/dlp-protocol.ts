@@ -4,6 +4,7 @@ import pEvent from 'p-event';
 import 'reflect-metadata';
 import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
+import {epochDatabaseTimestamp} from './database-timestamp';
 import {
   Creatable,
   ParseOptions,
@@ -16,6 +17,9 @@ import {
   serialize,
   serializeAs,
   SerializeOptions,
+  SObject,
+  SUInt16BE,
+  SUInt8,
 } from './serializable';
 
 /** Representation of a DLP connection over an underlying transport. */
@@ -309,7 +313,7 @@ export function getDlpArgs(targetInstance: Object) {
     .entries()
     .map(([_, dlpArgSpecs]) => {
       const valueArray = SArray.create({
-        values: dlpArgSpecs.map(({propertyKey, getOrCreateWrapper}) =>
+        value: dlpArgSpecs.map(({propertyKey, getOrCreateWrapper}) =>
           getOrCreateWrapper
             ? getOrCreateWrapper(targetInstance)
             : ((targetInstance as any)[propertyKey] as Serializable)
@@ -488,5 +492,68 @@ export class DlpArg<ValueT extends Serializable = SBuffer>
 
   get argTypeSpec(): DlpArgTypeSpec {
     return DlpArgTypes[this.argType];
+  }
+}
+
+/** Timestamp value in DLP requests and responses.
+ *
+ * Unlike normal database timestamps found in database files and Palm OS APIs,
+ * timestamps in the DLP layer are actual date and time values without timezone
+ * info.
+ */
+export class DlpTimestamp extends SObject implements SerializableWrapper<Date> {
+  /** JavaScript Date value corresponding to the time. */
+  value: Date = new Date();
+
+  @serializeAs(SUInt16BE)
+  private year = 0;
+
+  @serializeAs(SUInt8)
+  private month = 0;
+
+  @serializeAs(SUInt8)
+  private day = 0;
+
+  @serializeAs(SUInt8)
+  private hour = 0;
+
+  @serializeAs(SUInt8)
+  private minute = 0;
+
+  @serializeAs(SUInt8)
+  private second = 0;
+
+  @serializeAs(SUInt8)
+  private padding1 = 0;
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions): number {
+    const readOffset = super.parseFrom(buffer, opts);
+    if (this.year === 0) {
+      this.value = epochDatabaseTimestamp.value;
+    } else {
+      this.value.setFullYear(this.year, this.month - 1, this.day);
+      this.value.setHours(this.hour, this.minute, this.second);
+      this.value.setMilliseconds(0);
+    }
+    return readOffset;
+  }
+
+  serialize(opts?: SerializeOptions): Buffer {
+    if (this.value === epochDatabaseTimestamp.value) {
+      this.year = 0;
+      this.month = 0;
+      this.day = 0;
+      this.hour = 0;
+      this.minute = 0;
+      this.second = 0;
+    } else {
+      this.year = this.value.getFullYear();
+      this.month = this.value.getMonth() + 1;
+      this.day = this.value.getDay();
+      this.hour = this.value.getHours();
+      this.minute = this.value.getMinutes();
+      this.second = this.value.getSeconds();
+    }
+    return super.serialize();
   }
 }
