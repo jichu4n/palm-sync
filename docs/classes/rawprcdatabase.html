@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>SerializeOptions | palmira</title>
+	<title>RawPrcDatabase | palmira</title>
 	<meta name="description" content="Documentation for palmira">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">:root {
@@ -2704,11 +2704,35 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-interface">
-			<a href="serializeoptions.html" class="tsd-kind-icon">Serialize<wbr>Options</a>
+		<li class="current tsd-kind-class">
+			<a href="rawprcdatabase.html" class="tsd-kind-icon">Raw<wbr>Prc<wbr>Database</a>
 			<ul>
-				<li class=" tsd-kind-property tsd-parent-kind-interface">
-					<a href="serializeoptions.html#encoding" class="tsd-kind-icon">encoding</a>
+				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+					<a href="rawprcdatabase.html#constructor" class="tsd-kind-icon">constructor</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#appinfo" class="tsd-kind-icon">app<wbr>Info</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#header" class="tsd-kind-icon">header</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#records" class="tsd-kind-icon">records</a>
+				</li>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#sortinfo" class="tsd-kind-icon">sort<wbr>Info</a>
+				</li>
+				<li class=" tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#defaultheader" class="tsd-kind-icon">default<wbr>Header</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="rawprcdatabase.html#serialize" class="tsd-kind-icon">serialize</a>
 				</li>
 			</ul>
 		</li>
@@ -2719,7 +2743,7 @@ img {
 		<section class="tsd-panel tsd-comment">
 			<div class="tsd-comment tsd-typography">
 				<div class="lead">
-					<p>Common options to Serializable.serialize().</p>
+					<p>PRC database providing records, AppInfo and SortInfo as raw buffers.</p>
 				</div>
 			</div>
 		</section>
@@ -2727,10 +2751,10 @@ img {
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<span class="target">SerializeOptions</span>
+					<a href="prcdatabase.html" class="tsd-signature-type" data-tsd-kind="Class">PrcDatabase</a><span class="tsd-signature-symbol">&lt;</span><a href="prcsbufferrecord.html" class="tsd-signature-type" data-tsd-kind="Class">PrcSBufferRecord</a><span class="tsd-signature-symbol">, </span><a href="sbuffer.html" class="tsd-signature-type" data-tsd-kind="Class">SBuffer</a><span class="tsd-signature-symbol">, </span><a href="sbuffer.html" class="tsd-signature-type" data-tsd-kind="Class">SBuffer</a><span class="tsd-signature-symbol">&gt;</span>
 					<ul class="tsd-hierarchy">
 						<li>
-							<a href="palmdocserializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">PalmDocSerializeOptions</a>
+							<span class="target">RawPrcDatabase</span>
 						</li>
 					</ul>
 				</li>
@@ -2741,32 +2765,233 @@ img {
 			<section class="tsd-panel tsd-index-panel">
 				<div class="tsd-index-content">
 					<section class="tsd-index-section ">
+						<h3>Constructors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite"><a href="rawprcdatabase.html#constructor" class="tsd-kind-icon">constructor</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-inherited">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-interface"><a href="serializeoptions.html#encoding" class="tsd-kind-icon">encoding</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#appinfo" class="tsd-kind-icon">app<wbr>Info</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#header" class="tsd-kind-icon">header</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#records" class="tsd-kind-icon">records</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#sortinfo" class="tsd-kind-icon">sort<wbr>Info</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section ">
+						<h3>Accessors</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#defaultheader" class="tsd-kind-icon">default<wbr>Header</a></li>
+						</ul>
+					</section>
+					<section class="tsd-index-section tsd-is-inherited">
+						<h3>Methods</h3>
+						<ul class="tsd-index-list">
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="rawprcdatabase.html#serialize" class="tsd-kind-icon">serialize</a></li>
 						</ul>
 					</section>
 				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
+			<h2>Constructors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+				<a name="constructor" class="tsd-anchor"></a>
+				<h3>constructor</h3>
+				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-overwrite">
+					<li class="tsd-signature tsd-kind-icon">new <wbr>Raw<wbr>Prc<wbr>Database<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="rawprcdatabase.html" class="tsd-signature-type" data-tsd-kind="Class">RawPrcDatabase</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Overrides <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#constructor">constructor</a></p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L259">database.ts:259</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <a href="rawprcdatabase.html" class="tsd-signature-type" data-tsd-kind="Class">RawPrcDatabase</a></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-interface">
-				<a name="encoding" class="tsd-anchor"></a>
-				<h3><span class="tsd-flag ts-flagOptional">Optional</span> encoding</h3>
-				<div class="tsd-signature tsd-kind-icon">encoding<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+				<a name="appinfo" class="tsd-anchor"></a>
+				<h3>app<wbr>Info</h3>
+				<div class="tsd-signature tsd-kind-icon">app<wbr>Info<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><a href="sbuffer.html" class="tsd-signature-type" data-tsd-kind="Class">SBuffer</a><span class="tsd-signature-symbol"> = null</span></div>
 				<aside class="tsd-sources">
+					<p>Inherited from <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#appinfo">appInfo</a></p>
 					<ul>
-						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/serializable.ts#L20">serializable.ts:20</a></li>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L36">database.ts:36</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>Text encoding.</p>
+						<p>AppInfo value.</p>
 					</div>
-					<p>Available list of encodings:
-					<a href="https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings">https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings</a></p>
 				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+				<a name="header" class="tsd-anchor"></a>
+				<h3>header</h3>
+				<div class="tsd-signature tsd-kind-icon">header<span class="tsd-signature-symbol">:</span> <a href="databaseheader.html" class="tsd-signature-type" data-tsd-kind="Class">DatabaseHeader</a><span class="tsd-signature-symbol"> = ...</span></div>
+				<aside class="tsd-sources">
+					<p>Inherited from <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#header">header</a></p>
+					<ul>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L34">database.ts:34</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Database header.</p>
+					</div>
+					<p>Note that some fields in the header are recomputed based on other
+					properties during serialization. See <code>serialize()</code> for details.</p>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+				<a name="records" class="tsd-anchor"></a>
+				<h3>records</h3>
+				<div class="tsd-signature tsd-kind-icon">records<span class="tsd-signature-symbol">:</span> <a href="prcsbufferrecord.html" class="tsd-signature-type" data-tsd-kind="Class">PrcSBufferRecord</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div>
+				<aside class="tsd-sources">
+					<p>Inherited from <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#records">records</a></p>
+					<ul>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L40">database.ts:40</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Record values.</p>
+					</div>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+				<a name="sortinfo" class="tsd-anchor"></a>
+				<h3>sort<wbr>Info</h3>
+				<div class="tsd-signature tsd-kind-icon">sort<wbr>Info<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">null</span><span class="tsd-signature-symbol"> | </span><a href="sbuffer.html" class="tsd-signature-type" data-tsd-kind="Class">SBuffer</a><span class="tsd-signature-symbol"> = null</span></div>
+				<aside class="tsd-sources">
+					<p>Inherited from <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#sortinfo">sortInfo</a></p>
+					<ul>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L38">database.ts:38</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>SortInfo value.</p>
+					</div>
+				</div>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group ">
+			<h2>Accessors</h2>
+			<section class="tsd-panel tsd-member tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+				<a name="defaultheader" class="tsd-anchor"></a>
+				<h3>default<wbr>Header</h3>
+				<ul class="tsd-signatures tsd-kind-get-signature tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">get</span> defaultHeader<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="databaseheader.html" class="tsd-signature-type" data-tsd-kind="Class">DatabaseHeader</a></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<ul>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L64">database.ts:64</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Generates the default header for a new database.</p>
+							</div>
+						</div>
+						<h4 class="tsd-returns-title">Returns <a href="databaseheader.html" class="tsd-signature-type" data-tsd-kind="Class">DatabaseHeader</a></h4>
+					</li>
+				</ul>
+			</section>
+		</section>
+		<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
+			<h2>Methods</h2>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="getserializedlength" class="tsd-anchor"></a>
+				<h3>get<wbr>Serialized<wbr>Length</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">get<wbr>Serialized<wbr>Length<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#getserializedlength">getSerializedLength</a></p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L167">database.ts:167</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="parsefrom" class="tsd-anchor"></a>
+				<h3>parse<wbr>From</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">parse<wbr>From<span class="tsd-signature-symbol">(</span>buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span>, opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/parseoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ParseOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#parsefrom">parseFrom</a></p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L69">database.ts:69</a></li>
+							</ul>
+						</aside>
+						<div class="tsd-comment tsd-typography">
+							<div class="lead">
+								<p>Parses a PDB file.</p>
+							</div>
+						</div>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5>buffer: <span class="tsd-signature-type">Buffer</span></h5>
+							</li>
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/parseoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ParseOptions</a></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="serialize" class="tsd-anchor"></a>
+				<h3>serialize</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from <a href="prcdatabase.html">PrcDatabase</a>.<a href="prcdatabase.html#serialize">serialize</a></p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/ab225c7/src/database.ts#L127">database.ts:127</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-parameters-title">Parameters</h4>
+						<ul class="tsd-parameters">
+							<li>
+								<h5><span class="tsd-flag ts-flagOptional">Optional</span> opts: <a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a></h5>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>
+					</li>
+				</ul>
 			</section>
 		</section>
 		<footer class="with-border-bottom">
