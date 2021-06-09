@@ -11,8 +11,8 @@ import {
 } from './dlp-protocol';
 import {
   ParseOptions,
-  SArray,
   SBuffer,
+  SDynamicArray,
   Serializable,
   serialize,
   serializeAs,
@@ -205,36 +205,15 @@ export class DlpReadDBListResponse extends DlpResponse {
   @dlpArg(DLP_ARG_ID_BASE, SUInt8)
   private flags = 0;
 
-  /** Number of databases in response. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
-  private numDBs = 0;
-
   /** Array of database metadata results. */
+  @dlpArg(
+    DLP_ARG_ID_BASE,
+    class extends SDynamicArray<SUInt8, DlpDatabaseMetadata> {
+      lengthType = SUInt8;
+      valueType = DlpDatabaseMetadata;
+    }
+  )
   metadataList: Array<DlpDatabaseMetadata> = [];
-
-  /** Raw buffer backing metadataList. */
-  @dlpArg(DLP_ARG_ID_BASE)
-  private rawMetadataList = new SBuffer();
-
-  parseFrom(buffer: Buffer, opts?: ParseOptions) {
-    const readOffset = super.parseFrom(buffer, opts);
-    this.metadataList = _.range(this.numDBs).map(
-      () => new DlpDatabaseMetadata()
-    );
-    SArray.create({value: this.metadataList}).parseFrom(
-      this.rawMetadataList.value,
-      opts
-    );
-    return readOffset;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    this.numDBs = this.metadataList.length;
-    this.rawMetadataList.value = SArray.create({
-      value: this.metadataList,
-    }).serialize(opts);
-    return super.serialize(opts);
-  }
 
   getSerializedLength(opts?: SerializeOptions) {
     return this.serialize(opts).length;
@@ -478,35 +457,21 @@ export class DlpReadRecordIDListResponse extends DlpResponse {
   commandId = DlpCommandId.ReadRecordIDList;
 
   /** Single argument to DlpReadRecordIDListResponse.  */
-  @dlpArg(DLP_ARG_ID_BASE)
-  arg = new DlpReadRecordIDListResponseArg();
-}
-
-/** DlpReadRecordIDListResponse argument. */
-export class DlpReadRecordIDListResponseArg implements Serializable {
-  recordIds: Array<number> = [];
-
-  parseFrom(buffer: Buffer) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    const numRecordIds = reader.readUInt16BE();
-    this.recordIds.length = 0;
-    for (let i = 0; i < numRecordIds; ++i) {
-      this.recordIds.push(reader.readUInt32BE());
+  @dlpArg(
+    DLP_ARG_ID_BASE,
+    class extends SDynamicArray<SUInt16BE, SUInt32BE> {
+      lengthType = SUInt16BE;
+      valueType = SUInt32BE;
     }
-    return reader.readOffset;
+  )
+  private recordIdWrappers: Array<SUInt32BE> = [];
+
+  get recordIds() {
+    return _.map(this.recordIdWrappers, 'value');
   }
 
-  serialize() {
-    const writer = new SmartBuffer();
-    writer.writeUInt16BE(this.recordIds.length);
-    for (const recordId of this.recordIds) {
-      writer.writeUInt32BE(recordId);
-    }
-    return writer.toBuffer();
-  }
-
-  getSerializedLength() {
-    return 2 + this.recordIds.length * 4;
+  set recordIds(values: Array<number>) {
+    this.recordIdWrappers = values.map((value) => SUInt32BE.create({value}));
   }
 }
 

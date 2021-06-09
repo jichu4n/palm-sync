@@ -102,14 +102,12 @@ export class NetSyncServer {
       DlpReadOpenDBInfoRequest.create({dbHandle})
     );
     this.log(`Number of records in MemoDB: ${numRecords}`);
-    const {recordIds} = (
-      await dlpConnection.execute(
-        DlpReadRecordIDListRequest.create({
-          dbHandle,
-          maxNumRecords: 500,
-        })
-      )
-    ).arg;
+    const {recordIds} = await dlpConnection.execute(
+      DlpReadRecordIDListRequest.create({
+        dbHandle,
+        maxNumRecords: 500,
+      })
+    );
     this.log(`Record IDs: ${recordIds.join(' ')}`);
     for (const recordId of recordIds) {
       const resp = await dlpConnection.execute(

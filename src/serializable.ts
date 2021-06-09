@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import 'reflect-metadata';
 
 /** Common options to Serializable.parseFrom(). */
@@ -329,4 +330,35 @@ export function serializeAs<ValueT>(
     });
     serialize(target, propertyKey, getOrCreateWrapper);
   };
+}
+
+/** An array encoded as a number N followed by N elements. */
+export abstract class SDynamicArray<
+  LengthT extends SerializableWrapper<number>,
+  ValueT extends Serializable = SBuffer
+> extends SArray<ValueT> {
+  /** Length type, to be provided by child classes. */
+  protected abstract lengthType: new () => LengthT;
+  /** Element type, to be provided by child classes. */
+  protected abstract valueType: new () => ValueT;
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const length = new this.lengthType();
+    let readOffset = length.parseFrom(buffer, opts);
+    this.value = _.times(length.value, () => new this.valueType());
+    readOffset += super.parseFrom(buffer.slice(readOffset), opts);
+    return readOffset;
+  }
+
+  serialize(opts?: SerializeOptions) {
+    const length = new this.lengthType();
+    length.value = this.value.length;
+    return Buffer.concat([length.serialize(opts), super.serialize(opts)]);
+  }
+
+  getSerializedLength(opts?: SerializeOptions) {
+    const length = new this.lengthType();
+    length.value = this.value.length;
+    return length.getSerializedLength(opts) + super.getSerializedLength(opts);
+  }
 }

@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>DatabaseTimestamp | palmira</title>
+	<title>SDynamicArray | palmira</title>
 	<meta name="description" content="Documentation for palmira">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<style type="text/css">:root {
@@ -2704,29 +2704,32 @@ img {
 </header>
 <nav class="tsd-navigation secondary">
 	<ul>
-		<li class="current tsd-kind-class">
-			<a href="databasetimestamp.html" class="tsd-kind-icon">Database<wbr>Timestamp</a>
+		<li class="current tsd-kind-class tsd-has-type-parameter">
+			<a href="sdynamicarray.html" class="tsd-kind-icon">SDynamic<wbr>Array</a>
 			<ul>
-				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
-					<a href="databasetimestamp.html#constructor" class="tsd-kind-icon">constructor</a>
+				<li class=" tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
+					<a href="sdynamicarray.html#constructor" class="tsd-kind-icon">constructor</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-class">
-					<a href="databasetimestamp.html#epochtype" class="tsd-kind-icon">epoch<wbr>Type</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a href="sdynamicarray.html#lengthtype" class="tsd-kind-icon">length<wbr>Type</a>
 				</li>
-				<li class=" tsd-kind-property tsd-parent-kind-class">
-					<a href="databasetimestamp.html#value" class="tsd-kind-icon">value</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+					<a href="sdynamicarray.html#value" class="tsd-kind-icon">value</a>
 				</li>
-				<li class=" tsd-kind-method tsd-parent-kind-class">
-					<a href="databasetimestamp.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a>
+				<li class=" tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+					<a href="sdynamicarray.html#valuetype" class="tsd-kind-icon">value<wbr>Type</a>
 				</li>
-				<li class=" tsd-kind-method tsd-parent-kind-class">
-					<a href="databasetimestamp.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
+					<a href="sdynamicarray.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a>
 				</li>
-				<li class=" tsd-kind-method tsd-parent-kind-class">
-					<a href="databasetimestamp.html#serialize" class="tsd-kind-icon">serialize</a>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
+					<a href="sdynamicarray.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a>
+				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
+					<a href="sdynamicarray.html#serialize" class="tsd-kind-icon">serialize</a>
 				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static">
-					<a href="databasetimestamp.html#create" class="tsd-kind-icon">create</a>
+					<a href="sdynamicarray.html#create" class="tsd-kind-icon">create</a>
 				</li>
 			</ul>
 		</li>
@@ -2737,27 +2740,32 @@ img {
 		<section class="tsd-panel tsd-comment">
 			<div class="tsd-comment tsd-typography">
 				<div class="lead">
-					<p>Wrapper around a <code>Date</code> value with PDB-specific attributes.</p>
+					<p>An array encoded as a number N followed by N elements.</p>
 				</div>
 			</div>
+		</section>
+		<section class="tsd-panel tsd-type-parameters">
+			<h3>Type parameters</h3>
+			<ul class="tsd-type-parameters">
+				<li>
+					<h4>LengthT<span class="tsd-signature-symbol">: </span><a href="../interfaces/serializablewrapper.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializableWrapper</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4>
+				</li>
+				<li>
+					<h4>ValueT<span class="tsd-signature-symbol">: </span><a href="../interfaces/serializable.html" class="tsd-signature-type" data-tsd-kind="Interface">Serializable</a> = <a href="sbuffer.html" class="tsd-signature-type" data-tsd-kind="Class">SBuffer</a></h4>
+				</li>
+			</ul>
 		</section>
 		<section class="tsd-panel tsd-hierarchy">
 			<h3>Hierarchy</h3>
 			<ul class="tsd-hierarchy">
 				<li>
-					<a href="creatable.html" class="tsd-signature-type" data-tsd-kind="Class">Creatable</a>
+					<a href="sarray.html" class="tsd-signature-type" data-tsd-kind="Class">SArray</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">ValueT</span><span class="tsd-signature-symbol">&gt;</span>
 					<ul class="tsd-hierarchy">
 						<li>
-							<span class="target">DatabaseTimestamp</span>
+							<span class="target">SDynamicArray</span>
 						</li>
 					</ul>
 				</li>
-			</ul>
-		</section>
-		<section class="tsd-panel">
-			<h3>Implements</h3>
-			<ul class="tsd-hierarchy">
-				<li><a href="../interfaces/serializable.html" class="tsd-signature-type" data-tsd-kind="Interface">Serializable</a></li>
 			</ul>
 		</section>
 		<section class="tsd-panel-group tsd-index-group">
@@ -2767,23 +2775,24 @@ img {
 					<section class="tsd-index-section tsd-is-inherited">
 						<h3>Constructors</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><a href="databasetimestamp.html#constructor" class="tsd-kind-icon">constructor</a></li>
+							<li class="tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited"><a href="sdynamicarray.html#constructor" class="tsd-kind-icon">constructor</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section ">
 						<h3>Properties</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-property tsd-parent-kind-class"><a href="databasetimestamp.html#epochtype" class="tsd-kind-icon">epoch<wbr>Type</a></li>
-							<li class="tsd-kind-property tsd-parent-kind-class"><a href="databasetimestamp.html#value" class="tsd-kind-icon">value</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="sdynamicarray.html#lengthtype" class="tsd-kind-icon">length<wbr>Type</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><a href="sdynamicarray.html#value" class="tsd-kind-icon">value</a></li>
+							<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><a href="sdynamicarray.html#valuetype" class="tsd-kind-icon">value<wbr>Type</a></li>
 						</ul>
 					</section>
 					<section class="tsd-index-section ">
 						<h3>Methods</h3>
 						<ul class="tsd-index-list">
-							<li class="tsd-kind-method tsd-parent-kind-class"><a href="databasetimestamp.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class"><a href="databasetimestamp.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class"><a href="databasetimestamp.html#serialize" class="tsd-kind-icon">serialize</a></li>
-							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static"><a href="databasetimestamp.html#create" class="tsd-kind-icon">create</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite"><a href="sdynamicarray.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite"><a href="sdynamicarray.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-overwrite"><a href="sdynamicarray.html#serialize" class="tsd-kind-icon">serialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static"><a href="sdynamicarray.html#create" class="tsd-kind-icon">create</a></li>
 						</ul>
 					</section>
 				</div>
@@ -2791,76 +2800,126 @@ img {
 		</section>
 		<section class="tsd-panel-group tsd-member-group tsd-is-inherited">
 			<h2>Constructors</h2>
-			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
+			<section class="tsd-panel tsd-member tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
 				<a name="constructor" class="tsd-anchor"></a>
 				<h3>constructor</h3>
-				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
-					<li class="tsd-signature tsd-kind-icon">new <wbr>Database<wbr>Timestamp<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="databasetimestamp.html" class="tsd-signature-type" data-tsd-kind="Class">DatabaseTimestamp</a></li>
+				<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">new SDynamic<wbr>Array&lt;LengthT, ValueT&gt;<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="sdynamicarray.html" class="tsd-signature-type" data-tsd-kind="Class">SDynamicArray</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">LengthT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">ValueT</span><span class="tsd-signature-symbol">&gt;</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Inherited from <a href="creatable.html">Creatable</a>.<a href="creatable.html#constructor">constructor</a></p>
+							<p>Inherited from <a href="sarray.html">SArray</a>.<a href="sarray.html#constructor">constructor</a></p>
 						</aside>
-						<h4 class="tsd-returns-title">Returns <a href="databasetimestamp.html" class="tsd-signature-type" data-tsd-kind="Class">DatabaseTimestamp</a></h4>
+						<h4 class="tsd-type-parameters-title">Type parameters</h4>
+						<ul class="tsd-type-parameters">
+							<li>
+								<h4>LengthT<span class="tsd-signature-symbol">: </span><a href="../interfaces/serializablewrapper.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializableWrapper</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">LengthT</span><span class="tsd-signature-symbol">&gt;</span></h4>
+							</li>
+							<li>
+								<h4>ValueT<span class="tsd-signature-symbol">: </span><a href="../interfaces/serializable.html" class="tsd-signature-type" data-tsd-kind="Interface">Serializable</a> = <a href="sbuffer.html" class="tsd-signature-type" data-tsd-kind="Class">SBuffer</a></h4>
+							</li>
+						</ul>
+						<h4 class="tsd-returns-title">Returns <a href="sdynamicarray.html" class="tsd-signature-type" data-tsd-kind="Class">SDynamicArray</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">LengthT</span><span class="tsd-signature-symbol">, </span><span class="tsd-signature-type">ValueT</span><span class="tsd-signature-symbol">&gt;</span></h4>
 					</li>
 				</ul>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Properties</h2>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-				<a name="epochtype" class="tsd-anchor"></a>
-				<h3>epoch<wbr>Type</h3>
-				<div class="tsd-signature tsd-kind-icon">epoch<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">&quot;pdb&quot;</span><span class="tsd-signature-symbol"> | </span><span class="tsd-signature-type">&quot;unix&quot;</span><span class="tsd-signature-symbol"> = &#x27;pdb&#x27;</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<a name="lengthtype" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> <span class="tsd-flag ts-flagAbstract">Abstract</span> length<wbr>Type</h3>
+				<div class="tsd-signature tsd-kind-icon">length<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">LengthT</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-timestamp.ts#L16">src/database-timestamp.ts:16</a></li>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/serializable.ts#L341">src/serializable.ts:341</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>The epoch to use when serializing this date.</p>
+						<p>Length type, to be provided by child classes.</p>
+					</div>
+				</div>
+				<div class="tsd-type-declaration">
+					<h4>Type declaration</h4>
+					<ul class="tsd-parameters">
+						<li class="tsd-parameter-signature">
+							<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
+								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">LengthT</span></li>
+							</ul>
+							<ul class="tsd-descriptions">
+								<li class="tsd-description">
+									<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">LengthT</span></h4>
+								</li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-inherited">
+				<a name="value" class="tsd-anchor"></a>
+				<h3>value</h3>
+				<div class="tsd-signature tsd-kind-icon">value<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">ValueT</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div>
+				<aside class="tsd-sources">
+					<p>Inherited from <a href="sarray.html">SArray</a>.<a href="sarray.html#value">value</a></p>
+					<ul>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/serializable.ts#L146">src/serializable.ts:146</a></li>
+					</ul>
+				</aside>
+				<div class="tsd-comment tsd-typography">
+					<div class="lead">
+						<p>Array of Serializables.</p>
 					</div>
 				</div>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class">
-				<a name="value" class="tsd-anchor"></a>
-				<h3>value</h3>
-				<div class="tsd-signature tsd-kind-icon">value<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">Date</span><span class="tsd-signature-symbol"> = ...</span></div>
+			<section class="tsd-panel tsd-member tsd-kind-property tsd-parent-kind-class tsd-is-protected">
+				<a name="valuetype" class="tsd-anchor"></a>
+				<h3><span class="tsd-flag ts-flagProtected">Protected</span> <span class="tsd-flag ts-flagAbstract">Abstract</span> value<wbr>Type</h3>
+				<div class="tsd-signature tsd-kind-icon">value<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">ValueT</span></div>
 				<aside class="tsd-sources">
 					<ul>
-						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-timestamp.ts#L14">src/database-timestamp.ts:14</a></li>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/serializable.ts#L343">src/serializable.ts:343</a></li>
 					</ul>
 				</aside>
 				<div class="tsd-comment tsd-typography">
 					<div class="lead">
-						<p>JavaScript Date value corresponding to the time.</p>
+						<p>Element type, to be provided by child classes.</p>
 					</div>
+				</div>
+				<div class="tsd-type-declaration">
+					<h4>Type declaration</h4>
+					<ul class="tsd-parameters">
+						<li class="tsd-parameter-signature">
+							<ul class="tsd-signatures tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited">
+								<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">ValueT</span></li>
+							</ul>
+							<ul class="tsd-descriptions">
+								<li class="tsd-description">
+									<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">ValueT</span></h4>
+								</li>
+							</ul>
+						</li>
+					</ul>
 				</div>
 			</section>
 		</section>
 		<section class="tsd-panel-group tsd-member-group ">
 			<h2>Methods</h2>
-			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 				<a name="getserializedlength" class="tsd-anchor"></a>
 				<h3>get<wbr>Serialized<wbr>Length</h3>
-				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 					<li class="tsd-signature tsd-kind-icon">get<wbr>Serialized<wbr>Length<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Implementation of <a href="../interfaces/serializable.html">Serializable</a>.<a href="../interfaces/serializable.html#getserializedlength">getSerializedLength</a></p>
+							<p>Overrides <a href="sarray.html">SArray</a>.<a href="sarray.html#getserializedlength">getSerializedLength</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-timestamp.ts#L59">src/database-timestamp.ts:59</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/serializable.ts#L359">src/serializable.ts:359</a></li>
 							</ul>
 						</aside>
-						<div class="tsd-comment tsd-typography">
-							<div class="lead">
-								<p>Computes the serialized length of this value.</p>
-							</div>
-						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
@@ -2871,30 +2930,20 @@ img {
 					</li>
 				</ul>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 				<a name="parsefrom" class="tsd-anchor"></a>
 				<h3>parse<wbr>From</h3>
-				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 					<li class="tsd-signature tsd-kind-icon">parse<wbr>From<span class="tsd-signature-symbol">(</span>buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span>, opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/parseoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">ParseOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Implementation of <a href="../interfaces/serializable.html">Serializable</a>.<a href="../interfaces/serializable.html#parsefrom">parseFrom</a></p>
+							<p>Overrides <a href="sarray.html">SArray</a>.<a href="sarray.html#parsefrom">parseFrom</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-timestamp.ts#L28">src/database-timestamp.ts:28</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/serializable.ts#L345">src/serializable.ts:345</a></li>
 							</ul>
 						</aside>
-						<div class="tsd-comment tsd-typography">
-							<div class="lead">
-								<p>Parses a PDB timestamp.</p>
-							</div>
-							<p>From <a href="https://wiki.mobileread.com/wiki/PDB#PDB_Times">https://wiki.mobileread.com/wiki/PDB#PDB_Times</a>:</p>
-							<p>If the time has the top bit set, it&#39;s an unsigned 32-bit number counting
-							from 1st Jan 1904.</p>
-							<p>If the time has the top bit clear, it&#39;s a signed 32-bit number counting
-							from 1st Jan 1970.</p>
-						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
@@ -2908,25 +2957,20 @@ img {
 					</li>
 				</ul>
 			</section>
-			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class">
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 				<a name="serialize" class="tsd-anchor"></a>
 				<h3>serialize</h3>
-				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class">
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-overwrite">
 					<li class="tsd-signature tsd-kind-icon">serialize<span class="tsd-signature-symbol">(</span>opts<span class="tsd-signature-symbol">?: </span><a href="../interfaces/serializeoptions.html" class="tsd-signature-type" data-tsd-kind="Interface">SerializeOptions</a><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span></li>
 				</ul>
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Implementation of <a href="../interfaces/serializable.html">Serializable</a>.<a href="../interfaces/serializable.html#serialize">serialize</a></p>
+							<p>Overrides <a href="sarray.html">SArray</a>.<a href="sarray.html#serialize">serialize</a></p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/database-timestamp.ts#L42">src/database-timestamp.ts:42</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/serializable.ts#L353">src/serializable.ts:353</a></li>
 							</ul>
 						</aside>
-						<div class="tsd-comment tsd-typography">
-							<div class="lead">
-								<p>Serializes this value into a buffer.</p>
-							</div>
-						</div>
 						<h4 class="tsd-parameters-title">Parameters</h4>
 						<ul class="tsd-parameters">
 							<li>
@@ -2946,7 +2990,7 @@ img {
 				<ul class="tsd-descriptions">
 					<li class="tsd-description">
 						<aside class="tsd-sources">
-							<p>Inherited from <a href="creatable.html">Creatable</a>.<a href="creatable.html#create">create</a></p>
+							<p>Inherited from <a href="sarray.html">SArray</a>.<a href="sarray.html#create">create</a></p>
 							<ul>
 								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/06469a1/src/serializable.ts#L40">src/serializable.ts:40</a></li>
 							</ul>
