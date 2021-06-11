@@ -69,6 +69,10 @@ export class SBuffer extends Creatable implements SerializableWrapper<Buffer> {
   getSerializedLength() {
     return this.value.length;
   }
+
+  toJSON() {
+    return this.value.toJSON();
+  }
 }
 
 /** Factory for Serializable wrappers for basic data types. */
@@ -102,6 +106,10 @@ export function createSerializableScalarWrapperClass<ValueT>({
 
     getSerializedLength() {
       return serializedLength;
+    }
+
+    toJSON() {
+      return this.value;
     }
   };
   return SerializableScalarWrapperClass;
@@ -163,6 +171,10 @@ export class SArray<ValueT extends Serializable = SBuffer>
       length += element.getSerializedLength(opts);
     });
     return length;
+  }
+
+  toJSON() {
+    return this.value;
   }
 
   private map<FnT extends (element: ValueT, index: number) => any>(
@@ -254,6 +266,15 @@ export class SObject extends Creatable implements Serializable {
     return SArray.create({
       value: getAllSerializablePropertiesOrWrappers(this),
     });
+  }
+
+  toJSON() {
+    return _.fromPairs(
+      getSerializablePropertySpecs(this).map(({propertyKey}) => [
+        propertyKey,
+        (this as any)[propertyKey],
+      ])
+    );
   }
 
   private wrapSArrayError<FnT extends () => any>(fn: FnT): ReturnType<FnT> {
@@ -360,5 +381,35 @@ export abstract class SDynamicArray<
     const length = new this.lengthType();
     length.value = this.value.length;
     return length.getSerializedLength(opts) + super.getSerializedLength(opts);
+  }
+}
+
+/** A Buffer encoded as a number N followed by N bytes. */
+export abstract class SDynamicBuffer<
+    LengthT extends SerializableWrapper<number>
+  >
+  extends SBuffer
+  implements SerializableWrapper<Buffer>
+{
+  /** Length type, to be provided by child classes. */
+  protected abstract lengthType: new () => LengthT;
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const length = new this.lengthType();
+    let readOffset = length.parseFrom(buffer, opts);
+    this.value = buffer.slice(readOffset, readOffset + length.value);
+    return readOffset + length.value;
+  }
+
+  serialize(opts?: SerializeOptions) {
+    const length = new this.lengthType();
+    length.value = this.value.length;
+    return Buffer.concat([length.serialize(opts), this.value]);
+  }
+
+  getSerializedLength(opts?: SerializeOptions) {
+    const length = new this.lengthType();
+    length.value = this.value.length;
+    return length.getSerializedLength(opts) + this.value.length;
   }
 }

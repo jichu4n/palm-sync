@@ -43,6 +43,9 @@ export class DlpConnection {
     this.log(
       `>>> ${request.constructor.name} ${serializedRequest.toString('hex')}`
     );
+    this.log(
+      `>>> ${request.constructor.name} ${JSON.stringify(request.toJSON())}`
+    );
 
     this.transport.write(serializedRequest);
     const rawResponse = (await pEvent(this.transport, 'data')) as Buffer;
@@ -51,6 +54,9 @@ export class DlpConnection {
     const response: DlpResponseType<DlpRequestT> = new request.responseType();
     try {
       response.parseFrom(rawResponse, this.opts.responseParseOptions);
+      this.log(
+        `<<< ${request.responseType.name} ${JSON.stringify(response.toJSON())}`
+      );
     } catch (e) {
       this.log(`    Error parsing ${request.responseType.name}: ${e.message}`);
       throw e;
@@ -85,19 +91,15 @@ export abstract class DlpRequest<DlpResponseT extends DlpResponse>
       );
     }
 
-    const actualNumArgs = reader.readUInt8();
-    const args = getDlpArgs(this);
-    if (actualNumArgs !== args.length) {
-      throw new Error(
-        'Argument count mismatch: ' +
-          `expected ${args.length}, got ${actualNumArgs}`
-      );
-    }
+    const numDlpArgs = reader.readUInt8();
 
     let {readOffset} = reader;
-    for (const arg of args) {
-      readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
-    }
+    readOffset += parseDlpArgs(
+      this,
+      numDlpArgs,
+      buffer.slice(readOffset),
+      opts
+    );
 
     return readOffset;
   }
@@ -117,6 +119,13 @@ export abstract class DlpRequest<DlpResponseT extends DlpResponse>
     return (
       2 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
     );
+  }
+
+  toJSON(): Object {
+    return {
+      commandId: this.commandId,
+      args: getDlpArgsAsJson(this),
+    };
   }
 }
 
@@ -205,25 +214,21 @@ export abstract class DlpResponse extends Creatable implements Serializable {
       );
     }
 
-    const actualNumArgs = reader.readUInt8();
+    const numDlpArgs = reader.readUInt8();
     this.status = reader.readUInt16BE();
 
     let {readOffset} = reader;
     if (this.status === DlpResponseStatus.OK) {
-      const args = getDlpArgs(this);
-      if (actualNumArgs !== args.length) {
-        throw new Error(
-          'Argument count mismatch: ' +
-            `expected ${args.length}, got ${actualNumArgs}`
-        );
-      }
-      for (const arg of args) {
-        readOffset += arg.parseFrom(buffer.slice(readOffset), opts);
-      }
+      readOffset += parseDlpArgs(
+        this,
+        numDlpArgs,
+        buffer.slice(readOffset),
+        opts
+      );
     } else {
-      if (actualNumArgs !== 0) {
+      if (numDlpArgs !== 0) {
         throw new Error(
-          `Error response with non-zero arguments: ${actualNumArgs}`
+          `Error response with non-zero arguments: ${numDlpArgs}`
         );
       }
       throw new Error(
@@ -252,6 +257,54 @@ export abstract class DlpResponse extends Creatable implements Serializable {
       4 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
     );
   }
+
+  toJSON(): Object {
+    return {
+      commandId: this.commandId,
+      status: this.status,
+      args: getDlpArgsAsJson(this),
+    };
+  }
+}
+
+/** Common logic for parsing DLP args. */
+function parseDlpArgs(
+  dlpRequestOrResponse: DlpRequest<DlpResponse> | DlpResponse,
+  numDlpArgs: number,
+  buffer: Buffer,
+  opts?: ParseOptions
+): number {
+  const args = getDlpArgs(dlpRequestOrResponse);
+  const numRequiredDlpArgs =
+    args.length - _(args).map('isOptional').filter().size();
+  if (numDlpArgs < numRequiredDlpArgs) {
+    throw new Error(
+      'Argument count mismatch: ' +
+        `expected ${numRequiredDlpArgs}, got ${numDlpArgs}`
+    );
+  }
+  let readOffset = 0;
+  for (let i = 0; i < numDlpArgs; ++i) {
+    readOffset += args[i].parseFrom(buffer.slice(readOffset), opts);
+  }
+  return readOffset;
+}
+
+/** Common logic for converting DLP args to JSON. */
+function getDlpArgsAsJson(
+  dlpRequestOrResponse: DlpRequest<DlpResponse> | DlpResponse
+) {
+  return _(getDlpArgSpecs(dlpRequestOrResponse))
+    .groupBy('argId')
+    .mapValues((dlpArgSpecs) =>
+      _.fromPairs(
+        dlpArgSpecs.map(({propertyKey}) => [
+          propertyKey,
+          (dlpRequestOrResponse as any)[propertyKey],
+        ])
+      )
+    )
+    .value();
 }
 
 /** Key for storing DLP argument information on a DlpRequest / DlpResponse. */
@@ -262,12 +315,15 @@ export interface DlpArgSpec<ValueT = any>
   extends SerializablePropertySpec<ValueT> {
   /** The DLP argument ID. */
   argId: number;
+  /** Whether this argument may be omitted. */
+  isOptional: boolean;
 }
 
-/** Decorator for a DLP argument property. */
-export function dlpArg<ValueT>(
+/** Actual implementation of dlpArg and optDlpArg. */
+function dlpArgImpl<ValueT>(
   argId: number,
-  serializableWrapperClass?: new () => SerializableWrapper<ValueT>
+  serializableWrapperClass?: new () => SerializableWrapper<ValueT>,
+  isOptional?: boolean
 ): PropertyDecorator {
   return function (target: Object, propertyKey: string | symbol) {
     // Use serialize / serializeAs to add basic to
@@ -285,6 +341,7 @@ export function dlpArg<ValueT>(
     const dlpArgSpec: DlpArgSpec = {
       ...serializablePropertySpecs.pop()!,
       argId,
+      isOptional: !!isOptional,
     };
     const dlpArgSpecs = Reflect.getMetadata(
       DLP_ARG_SPECS_METADATA_KEY,
@@ -296,6 +353,22 @@ export function dlpArg<ValueT>(
       Reflect.defineMetadata(DLP_ARG_SPECS_METADATA_KEY, [dlpArgSpec], target);
     }
   };
+}
+
+/** Decorator for a required DLP argument. */
+export function dlpArg<ValueT>(
+  argId: number,
+  serializableWrapperClass?: new () => SerializableWrapper<ValueT>
+): PropertyDecorator {
+  return dlpArgImpl(argId, serializableWrapperClass, false);
+}
+
+/** Decorator for an optional DLP argument. */
+export function optDlpArg<ValueT>(
+  argId: number,
+  serializableWrapperClass?: new () => SerializableWrapper<ValueT>
+): PropertyDecorator {
+  return dlpArgImpl(argId, serializableWrapperClass, true);
 }
 
 /** Extract DlpArgSpec's defined via dlpArg on a DlpRequest or DlpResponse. */
@@ -311,7 +384,7 @@ export function getDlpArgs(targetInstance: Object) {
   return _(getDlpArgSpecs(targetInstance))
     .groupBy('argId')
     .entries()
-    .map(([_, dlpArgSpecs]) => {
+    .map(([argIdString, dlpArgSpecs]) => {
       const valueArray = SArray.create({
         value: dlpArgSpecs.map(({propertyKey, getOrCreateWrapper}) =>
           getOrCreateWrapper
@@ -319,7 +392,18 @@ export function getDlpArgs(targetInstance: Object) {
             : ((targetInstance as any)[propertyKey] as Serializable)
         ),
       });
-      return new DlpArg(dlpArgSpecs[0].argId, valueArray);
+      const isOptionalArray = _(dlpArgSpecs).map('isOptional').uniq().value();
+      if (isOptionalArray.length !== 1) {
+        throw new Error(
+          `Found conflicting definitions for DLP argument ID ${argIdString} ` +
+            `in class ${targetInstance.constructor.name}`
+        );
+      }
+      return DlpArg.create({
+        argId: dlpArgSpecs[0].argId,
+        value: valueArray,
+        isOptional: isOptionalArray[0],
+      });
     })
     .value();
 }
@@ -425,17 +509,15 @@ export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
 export class DlpArg<ValueT extends Serializable = SBuffer>
+  extends Creatable
   implements Serializable
 {
   /** DLP argument ID */
-  argId: number;
+  argId: number = 0;
   /** Argument data. */
-  value: ValueT;
-
-  constructor(argId: number, value: ValueT) {
-    this.argId = argId;
-    this.value = value;
-  }
+  value!: ValueT;
+  /** Whether this argument is optional. */
+  isOptional = false;
 
   parseFrom(buffer: Buffer, opts?: ParseOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);

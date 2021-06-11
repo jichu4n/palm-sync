@@ -47,4 +47,8 @@ export class SStringNT implements SerializableWrapper<string> {
   getSerializedLength(opts?: SerializeOptions): number {
     return encodeString(this.value, opts).length + 1;
   }
+
+  toJSON() {
+    return this.value;
+  }
 }

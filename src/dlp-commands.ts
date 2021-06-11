@@ -8,11 +8,14 @@ import {
   DlpResponse,
   DlpTimestamp,
   DLP_ARG_ID_BASE,
+  optDlpArg,
 } from './dlp-protocol';
 import {
   ParseOptions,
+  SArray,
   SBuffer,
   SDynamicArray,
+  SDynamicBuffer,
   Serializable,
   serialize,
   serializeAs,
@@ -175,6 +178,60 @@ enum DlpCommandId {
 }
 
 // =============================================================================
+// ReadSysInfo
+// =============================================================================
+export class DlpReadSysInfoRequest extends DlpRequest<DlpReadSysInfoResponse> {
+  commandId = DlpCommandId.ReadSysInfo;
+  responseType = DlpReadSysInfoResponse;
+
+  /** DLP version supported by the host. Hard-coded to 1.4 as per pilot-link. */
+  @dlpArg(DLP_ARG_ID_BASE)
+  private hostDlpVersion = DlpVersion.create({major: 1, minor: 4});
+}
+
+export class DlpReadSysInfoResponse extends DlpResponse {
+  commandId = DlpCommandId.ReadSysInfo;
+
+  /** Version of the device ROM.
+   *
+   * Format: 0xMMmmffssbb where MM=Major, * mm=minor, ff=fix, ss=stage, bb=build
+   */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt32BE)
+  romVersion = 0;
+
+  /** Locale for this device. Not sure what the format is. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt32BE)
+  locale = 0;
+
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  private padding1 = 0;
+
+  /** Product ID. */
+  @dlpArg(
+    DLP_ARG_ID_BASE,
+    class extends SDynamicBuffer<SUInt8> {
+      lengthType = SUInt8;
+    }
+  )
+  productId = Buffer.alloc(0);
+
+  /** DLP protocol version on this device */
+  @optDlpArg(DLP_ARG_ID_BASE + 1)
+  clientDlpVersion = DlpVersion.create();
+  /** Minimum DLP version this device is compatible with */
+  @optDlpArg(DLP_ARG_ID_BASE + 1)
+  compatDlpVersion = DlpVersion.create();
+
+  /** Maximum record size.
+   *
+   * Usually <=0xFFFF or ==0 for older devices (means records are limited to
+   * 64k), can be much larger for devices with DLP >= 1.4 (i.e. 0x00FFFFFE).
+   */
+  @optDlpArg(DLP_ARG_ID_BASE + 1, SUInt32BE)
+  maxRecordSize = 0;
+}
+
+// =============================================================================
 // ReadDBList
 // =============================================================================
 export class DlpReadDBListRequest extends DlpRequest<DlpReadDBListResponse> {
@@ -214,10 +271,6 @@ export class DlpReadDBListResponse extends DlpResponse {
     }
   )
   metadataList: Array<DlpDatabaseMetadata> = [];
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return this.serialize(opts).length;
-  }
 }
 
 /** Database search flags, used in DlpReadDBListRequest. */
@@ -564,4 +617,24 @@ export class DlpRecordMetadata extends SObject {
   /** Record category. */
   @serializeAs(SUInt8)
   category = 0;
+}
+
+/** DLP version number.
+ *
+ * e.g. DLP version 1.4 => {major: 1, minor: 4}
+ */
+export class DlpVersion extends SObject {
+  @serializeAs(SUInt16BE)
+  major = 0;
+
+  @serializeAs(SUInt16BE)
+  minor = 0;
+
+  toString() {
+    return `${this.major}.${this.minor}`;
+  }
+
+  toNumber() {
+    return this.major + this.minor / 10;
+  }
 }

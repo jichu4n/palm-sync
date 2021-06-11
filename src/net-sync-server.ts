@@ -13,6 +13,7 @@ import {
   DlpReadOpenDBInfoRequest,
   DlpReadRecordByIDRequest,
   DlpReadRecordIDListRequest,
+  DlpReadSysInfoRequest,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
 import {MemoRecord} from './memo-database';
@@ -69,6 +70,7 @@ export class NetSyncServer {
   async onConnection(socket: Socket) {
     const connection = new NetSyncConnection(socket);
     await connection.doHandshake();
+    await connection.start();
 
     // TODO: Conduit framework
     const {dlpConnection} = connection;
@@ -170,6 +172,13 @@ export class NetSyncConnection {
       HOTSYNC_HANDSHAKE_REQUEST_3.length
     );
     this.log('Handshake complete');
+  }
+
+  async start() {
+    const sysInfoResp = await this.dlpConnection.execute(
+      DlpReadSysInfoRequest.create()
+    );
+    this.log(JSON.stringify(sysInfoResp));
   }
 
   async end() {

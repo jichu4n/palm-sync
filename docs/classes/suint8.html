@@ -2722,6 +2722,9 @@ img {
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
 					<a href="suint8.html#serialize" class="tsd-kind-icon">serialize</a>
 				</li>
+				<li class=" tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<a href="suint8.html#tojson" class="tsd-kind-icon">toJSON</a>
+				</li>
 				<li class=" tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static">
 					<a href="suint8.html#create" class="tsd-kind-icon">create</a>
 				</li>
@@ -2779,6 +2782,7 @@ img {
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="suint8.html#getserializedlength" class="tsd-kind-icon">get<wbr>Serialized<wbr>Length</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="suint8.html#parsefrom" class="tsd-kind-icon">parse<wbr>From</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="suint8.html#serialize" class="tsd-kind-icon">serialize</a></li>
+							<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><a href="suint8.html#tojson" class="tsd-kind-icon">toJSON</a></li>
 							<li class="tsd-kind-method tsd-parent-kind-class tsd-has-type-parameter tsd-is-inherited tsd-is-static"><a href="suint8.html#create" class="tsd-kind-icon">create</a></li>
 						</ul>
 					</section>
@@ -2813,7 +2817,7 @@ img {
 					<p>Implementation of <a href="../interfaces/serializablewrapper.html">SerializableWrapper</a>.<a href="../interfaces/serializablewrapper.html#value">value</a></p>
 					<p>Inherited from createSerializableScalarWrapperClass({readFn: Buffer.prototype.readUInt8,writeFn: Buffer.prototype.writeUInt8,serializedLength: 1,defaultValue: 0,}).value</p>
 					<ul>
-						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L90">src/serializable.ts:90</a></li>
+						<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/2e8aa7b/src/serializable.ts#L94">src/serializable.ts:94</a></li>
 					</ul>
 				</aside>
 			</section>
@@ -2832,7 +2836,7 @@ img {
 							<p>Implementation of <a href="../interfaces/serializablewrapper.html">SerializableWrapper</a>.<a href="../interfaces/serializablewrapper.html#getserializedlength">getSerializedLength</a></p>
 							<p>Inherited from createSerializableScalarWrapperClass({readFn: Buffer.prototype.readUInt8,writeFn: Buffer.prototype.writeUInt8,serializedLength: 1,defaultValue: 0,}).getSerializedLength</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L103">src/serializable.ts:103</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/2e8aa7b/src/serializable.ts#L107">src/serializable.ts:107</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2856,7 +2860,7 @@ img {
 							<p>Implementation of <a href="../interfaces/serializablewrapper.html">SerializableWrapper</a>.<a href="../interfaces/serializablewrapper.html#parsefrom">parseFrom</a></p>
 							<p>Inherited from createSerializableScalarWrapperClass({readFn: Buffer.prototype.readUInt8,writeFn: Buffer.prototype.writeUInt8,serializedLength: 1,defaultValue: 0,}).parseFrom</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L92">src/serializable.ts:92</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/2e8aa7b/src/serializable.ts#L96">src/serializable.ts:96</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2887,7 +2891,7 @@ img {
 							<p>Implementation of <a href="../interfaces/serializablewrapper.html">SerializableWrapper</a>.<a href="../interfaces/serializablewrapper.html#serialize">serialize</a></p>
 							<p>Inherited from createSerializableScalarWrapperClass({readFn: Buffer.prototype.readUInt8,writeFn: Buffer.prototype.writeUInt8,serializedLength: 1,defaultValue: 0,}).serialize</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L97">src/serializable.ts:97</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/2e8aa7b/src/serializable.ts#L101">src/serializable.ts:101</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
@@ -2896,6 +2900,24 @@ img {
 							</div>
 						</div>
 						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>
+					</li>
+				</ul>
+			</section>
+			<section class="tsd-panel tsd-member tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+				<a name="tojson" class="tsd-anchor"></a>
+				<h3>toJSON</h3>
+				<ul class="tsd-signatures tsd-kind-method tsd-parent-kind-class tsd-is-inherited">
+					<li class="tsd-signature tsd-kind-icon">toJSON<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></li>
+				</ul>
+				<ul class="tsd-descriptions">
+					<li class="tsd-description">
+						<aside class="tsd-sources">
+							<p>Inherited from createSerializableScalarWrapperClass({readFn: Buffer.prototype.readUInt8,writeFn: Buffer.prototype.writeUInt8,serializedLength: 1,defaultValue: 0,}).toJSON</p>
+							<ul>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/2e8aa7b/src/serializable.ts#L111">src/serializable.ts:111</a></li>
+							</ul>
+						</aside>
+						<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4>
 					</li>
 				</ul>
 			</section>
@@ -2910,7 +2932,7 @@ img {
 						<aside class="tsd-sources">
 							<p>Inherited from createSerializableScalarWrapperClass({readFn: Buffer.prototype.readUInt8,writeFn: Buffer.prototype.writeUInt8,serializedLength: 1,defaultValue: 0,}).create</p>
 							<ul>
-								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/d63d58f/src/serializable.ts#L40">src/serializable.ts:40</a></li>
+								<li>Defined in <a href="https://github.com/jichu4n/palmira/blob/2e8aa7b/src/serializable.ts#L40">src/serializable.ts:40</a></li>
 							</ul>
 						</aside>
 						<div class="tsd-comment tsd-typography">
