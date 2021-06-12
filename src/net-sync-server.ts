@@ -9,7 +9,6 @@ import {
   DlpOpenMode,
   DlpReadDBListMode,
   DlpReadDBListRequest,
-  DlpReadDBListResponse,
   DlpReadOpenDBInfoRequest,
   DlpReadRecordByIDRequest,
   DlpReadRecordIDListRequest,

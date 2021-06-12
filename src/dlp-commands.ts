@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import {SmartBuffer} from 'smart-buffer';
 import {SStringNT} from './database-encoding';
 import {DatabaseAttrs, RecordAttrs, TypeId} from './database-header';
 import {
@@ -12,11 +11,9 @@ import {
 } from './dlp-protocol';
 import {
   ParseOptions,
-  SArray,
   SBuffer,
   SDynamicArray,
   SDynamicBuffer,
-  Serializable,
   serialize,
   serializeAs,
   SerializeOptions,
@@ -356,6 +353,29 @@ export class DlpCloseAllDBsRequest extends DlpRequest<DlpCloseDBResponse> {
 
 export class DlpCloseDBResponse extends DlpResponse {
   commandId = DlpCommandId.CloseDB;
+}
+
+// =============================================================================
+// DeleteDB
+// =============================================================================
+export class DlpDeleteDBRequest extends DlpRequest<DlpDeleteDBResponse> {
+  commandId = DlpCommandId.DeleteDB;
+  responseType = DlpDeleteDBResponse;
+
+  /** Card number (typically 0). */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  cardId = 0;
+
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  private padding1 = 0;
+
+  /** Database name. */
+  @dlpArg(DLP_ARG_ID_BASE, SStringNT)
+  name = '';
+}
+
+export class DlpDeleteDBResponse extends DlpResponse {
+  commandId = DlpCommandId.DeleteDB;
 }
 
 // =============================================================================
