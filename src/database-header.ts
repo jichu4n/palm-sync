@@ -8,6 +8,7 @@ import {
 import {decodeString, encodeString} from './database-encoding';
 import DatabaseTimestamp, {epochDatabaseTimestamp} from './database-timestamp';
 import {
+  Creatable,
   createSerializableScalarWrapperClass,
   ParseOptions,
   SDynamicArray,
@@ -38,7 +39,7 @@ export class TypeId
   implements SerializableWrapper<string> {}
 
 /** PDB database header, a.k.a DatabaseHdrType. */
-export class DatabaseHeader implements Serializable {
+export class DatabaseHeader extends Creatable implements Serializable {
   /** Database name (max 31 bytes). */
   name: string = '';
   /** Database attribute flags. */
@@ -121,7 +122,7 @@ export interface RecordOrResourceMetadataList<
 }
 
 /** Record metadata for PDB files, a.k.a. RecordEntryType. */
-export class RecordMetadata implements Serializable {
+export class RecordMetadata extends Creatable implements Serializable {
   /** Offset to raw record data. */
   localChunkId: number = 0;
   /** Record attributes. */
@@ -218,7 +219,7 @@ export class ResourceMetadataList
  *
  * Source: https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
  */
-export class DatabaseAttrs implements Serializable {
+export class DatabaseAttrs extends Creatable implements Serializable {
   /** Whether this is a resource database (i.e. PRC). */
   resDB: boolean = false;
   /** Read Only database. */
@@ -305,7 +306,7 @@ export class DatabaseAttrs implements Serializable {
  *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
  *   - https://metacpan.org/release/Palm-PDB/source/lib/Palm/PDB.pm
  */
-export class RecordAttrs implements Serializable {
+export class RecordAttrs extends Creatable implements Serializable {
   /** Delete this record next sync */
   delete: boolean = false;
   /** Archive this record next sync */

@@ -331,6 +331,49 @@ export enum DlpOpenMode {
 }
 
 // =============================================================================
+// CreateDB
+// =============================================================================
+export class DlpCreateDBRequest extends DlpRequest<DlpCreateDBResponse> {
+  commandId = DlpCommandId.CreateDB;
+  responseType = DlpCreateDBResponse;
+
+  /** Database creator identifier (max 4 bytes). */
+  @dlpArg(DLP_ARG_ID_BASE, TypeId)
+  creator = 'AAAA';
+
+  /** Database type identifier (max 4 bytes). */
+  @dlpArg(DLP_ARG_ID_BASE, TypeId)
+  type = 'AAAA';
+
+  /** Card number (typically 0). */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  cardId = 0;
+
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  private padding1 = 0;
+
+  /** Database attribute flags. */
+  @dlpArg(DLP_ARG_ID_BASE)
+  attributes = new DatabaseAttrs();
+
+  /** Database version (integer). */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  version = 0;
+
+  /** Database name. */
+  @dlpArg(DLP_ARG_ID_BASE, SStringNT)
+  name = '';
+}
+
+export class DlpCreateDBResponse extends DlpResponse {
+  commandId = DlpCommandId.CreateDB;
+
+  /** Handle to opened database. */
+  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  dbHandle = 0;
+}
+
+// =============================================================================
 // CloseDB
 // =============================================================================
 export class DlpCloseDBRequest extends DlpRequest<DlpCloseDBResponse> {

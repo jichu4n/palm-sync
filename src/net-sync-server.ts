@@ -1,8 +1,11 @@
 import debug from 'debug';
 import net, {Server, Socket} from 'net';
+import {DatabaseAttrs} from './database-header';
 import {
   DlpAddSyncLogEntryRequest,
   DlpCloseDBRequest,
+  DlpCreateDBRequest,
+  DlpDeleteDBRequest,
   DlpEndOfSyncRequest,
   DlpOpenConduitRequest,
   DlpOpenDBRequest,
@@ -127,6 +130,23 @@ export class NetSyncServer {
       );
     }
     await dlpConnection.execute(DlpCloseDBRequest.create({dbHandle}));
+
+    try {
+      await dlpConnection.execute(DlpDeleteDBRequest.create({name: 'foobar'}));
+    } catch (e) {}
+    const {dbHandle: dbHandle2} = await dlpConnection.execute(
+      DlpCreateDBRequest.create({
+        creator: 'AAAA',
+        type: 'DATA',
+        attributes: DatabaseAttrs.create({
+          backup: true,
+        }),
+        name: 'foobar',
+      })
+    );
+    await dlpConnection.execute(
+      DlpCloseDBRequest.create({dbHandle: dbHandle2})
+    );
 
     await connection.end();
   }
