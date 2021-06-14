@@ -1,5 +1,6 @@
 import _ from 'lodash';
-import {SStringNT} from './database-encoding';
+import {SmartBuffer} from 'smart-buffer';
+import {decodeString, encodeString, SStringNT} from './database-encoding';
 import {DatabaseAttrs, RecordAttrs, TypeId} from './database-header';
 import {
   dlpArg,
@@ -172,6 +173,22 @@ enum DlpCommandId {
   Unknown4 = 0x63,
   /** Read resources >64k by index in Tapwave */
   ReadResourceEx = 0x64,
+}
+
+// =============================================================================
+// ReadUserInfo
+// =============================================================================
+export class DlpReadUserInfoRequest extends DlpRequest<DlpReadUserInfoResponse> {
+  commandId = DlpCommandId.ReadUserInfo;
+  responseType = DlpReadUserInfoResponse;
+}
+
+export class DlpReadUserInfoResponse extends DlpResponse {
+  commandId = DlpCommandId.ReadUserInfo;
+
+  /** User information read from the device.  */
+  @dlpArg(DLP_ARG_ID_BASE)
+  userInfo = DlpUserInfo.create();
 }
 
 // =============================================================================
@@ -699,5 +716,87 @@ export class DlpVersion extends SObject {
 
   toNumber() {
     return this.major + this.minor / 10;
+  }
+}
+
+/** User information used in DlpReadUserInfo and DlpWriteUserInfo commands. */
+export class DlpUserInfo extends SObject {
+  /** HotSync user ID number (0 if none) */
+  @serializeAs(SUInt32BE)
+  userId = 0;
+
+  /** ID assigned to viewer by desktop app.
+   *
+   * Not currently used, according to Palm:
+   * http://oasis.palm.com/dev/kb/manuals/1706.cfm
+   */
+  @serializeAs(SUInt32BE)
+  viewerId = 0;
+
+  /** ID of last synced PC (0 if none). */
+  @serializeAs(SUInt32BE)
+  lastSyncPcId = 0;
+
+  /** Timestamp of last successful sync. */
+  @serialize
+  lastSuccessfulSyncDate = new DlpTimestamp();
+
+  /** Timestamp of last sync attempt. */
+  @serialize
+  lastSyncDate = new DlpTimestamp();
+
+  /** Length of username, including NUL (0 if none) */
+  @serializeAs(SUInt8)
+  private userNameLength = 0;
+
+  /** Length of encrypted password (0 if none) */
+  @serializeAs(SUInt8)
+  private passwordLength = 0;
+
+  /* User name.
+   *
+   * The max length is 41 per ColdSync, while pilot-link supports up to 128.
+   */
+  userName = '';
+
+  /** Encrypted password.
+   *
+   * ColdSync supports a max length of 256, while pilot-link supports
+   */
+  password = Buffer.alloc(0);
+
+  parseFrom(buffer: Buffer, opts?: ParseOptions) {
+    const reader = SmartBuffer.fromBuffer(buffer);
+    reader.readOffset = super.parseFrom(buffer, opts);
+    this.userName =
+      this.userNameLength === 0
+        ? ''
+        : decodeString(
+            reader
+              .readBuffer(this.userNameLength)
+              .slice(0, this.userNameLength - 1) // Drop trailing NUL byte
+          );
+    this.password = reader.readBuffer(this.passwordLength);
+    return reader.readOffset;
+  }
+
+  serialize(opts?: SerializeOptions) {
+    const writer = new SmartBuffer();
+
+    const encodedUserName = encodeString(this.userName, opts);
+    this.userNameLength = encodedUserName.length + 1;
+    this.passwordLength = this.password.length;
+    writer.writeBuffer(super.serialize(opts));
+
+    writer.writeBuffer(encodedUserName);
+    writer.writeUInt8(0);
+
+    writer.writeBuffer(this.password);
+
+    return writer.toBuffer();
+  }
+
+  getSerializedLength(opts?: SerializeOptions) {
+    return this.serialize(opts).length;
   }
 }

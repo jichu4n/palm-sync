@@ -16,6 +16,7 @@ import {
   DlpReadRecordByIDRequest,
   DlpReadRecordIDListRequest,
   DlpReadSysInfoRequest,
+  DlpReadUserInfoRequest,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
 import {MemoRecord} from './memo-database';
@@ -198,6 +199,10 @@ export class NetSyncConnection {
       DlpReadSysInfoRequest.create()
     );
     this.log(JSON.stringify(sysInfoResp));
+    const userInfoResp = await this.dlpConnection.execute(
+      DlpReadUserInfoRequest.create()
+    );
+    this.log(JSON.stringify(userInfoResp));
   }
 
   async end() {
