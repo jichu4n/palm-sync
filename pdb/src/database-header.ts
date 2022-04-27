@@ -164,12 +164,16 @@ export class ResourceMetadataList
 
 /** Database attribute flags.
  *
- * Source: https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
+ * Sources:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r4/include/Core/System/DataMgr.h
+ *   - https://github.com/madsen/Palm-PDB/blob/master/lib/Palm/PDB.pm
  */
 export class DatabaseAttrs extends SBitmask.as(SUInt16BE) {
   /** Database not closed properly. */
   @bitfield(1, Boolean)
   open: boolean = false;
+  @bitfield(3)
+  private unused1 = 0;
   /** This database (resource or record) is associated with the application
    * with the same creator. It will be beamed and copied along with the
    * application. */
@@ -221,9 +225,6 @@ export class DatabaseAttrs extends SBitmask.as(SUInt16BE) {
   /** Whether this is a resource database (i.e. PRC). */
   @bitfield(1, Boolean)
   resDB: boolean = false;
-
-  @bitfield(3)
-  private unused = 0;
 }
 
 /** Record attribute flags.
