@@ -1,7 +1,20 @@
+import {DatabaseAttrs, RecordAttrs, SDynamicArray, TypeId} from '@palmira/pdb';
 import _ from 'lodash';
+import {
+  decodeString,
+  DeserializeOptions,
+  encodeString,
+  field,
+  SBuffer,
+  SDynamicBuffer,
+  SerializeOptions,
+  SObject,
+  SStringNT,
+  SUInt16BE,
+  SUInt32BE,
+  SUInt8,
+} from 'serio';
 import {SmartBuffer} from 'smart-buffer';
-import {decodeString, encodeString, SStringNT} from './database-encoding';
-import {DatabaseAttrs, RecordAttrs, TypeId} from './database-header';
 import {
   dlpArg,
   DlpRequest,
@@ -10,19 +23,6 @@ import {
   DLP_ARG_ID_BASE,
   optDlpArg,
 } from './dlp-protocol';
-import {
-  DeserializeOptions,
-  SBuffer,
-  SDynamicArray,
-  SDynamicBuffer,
-  serialize,
-  serializeAs,
-  SerializeOptions,
-  SObject,
-  SUInt16BE,
-  SUInt32BE,
-  SUInt8,
-} from 'serio';
 
 /** DLP command ID constants. */
 enum DlpCommandId {
@@ -188,7 +188,7 @@ export class DlpReadUserInfoResponse extends DlpResponse {
 
   /** User information read from the device.  */
   @dlpArg(DLP_ARG_ID_BASE)
-  userInfo = DlpUserInfo.create();
+  userInfo = new DlpUserInfo();
 }
 
 // =============================================================================
@@ -200,7 +200,7 @@ export class DlpReadSysInfoRequest extends DlpRequest<DlpReadSysInfoResponse> {
 
   /** DLP version supported by the host. Hard-coded to 1.4 as per pilot-link. */
   @dlpArg(DLP_ARG_ID_BASE)
-  private hostDlpVersion = DlpVersion.create({major: 1, minor: 4});
+  private hostDlpVersion = DlpVersion.with({major: 1, minor: 4});
 }
 
 export class DlpReadSysInfoResponse extends DlpResponse {
@@ -231,10 +231,10 @@ export class DlpReadSysInfoResponse extends DlpResponse {
 
   /** DLP protocol version on this device */
   @optDlpArg(DLP_ARG_ID_BASE + 1)
-  clientDlpVersion = DlpVersion.create();
+  clientDlpVersion = new DlpVersion();
   /** Minimum DLP version this device is compatible with */
   @optDlpArg(DLP_ARG_ID_BASE + 1)
-  compatDlpVersion = DlpVersion.create();
+  compatDlpVersion = new DlpVersion();
 
   /** Maximum record size.
    *
@@ -469,10 +469,10 @@ export class DlpReadRecordByIDResponse extends DlpResponse {
   commandId = DlpCommandId.ReadRecord;
 
   @dlpArg(DLP_ARG_ID_BASE)
-  metadata = DlpRecordMetadata.create();
+  metadata = new DlpRecordMetadata();
 
   @dlpArg(DLP_ARG_ID_BASE)
-  data = SBuffer.create();
+  data = new SBuffer();
 }
 
 // =============================================================================
@@ -604,7 +604,7 @@ export class DlpReadRecordIDListResponse extends DlpResponse {
   }
 
   set recordIds(values: Array<number>) {
-    this.recordIdWrappers = values.map((value) => SUInt32BE.create({value}));
+    this.recordIdWrappers = values.map((value) => SUInt32BE.of(value));
   }
 }
 

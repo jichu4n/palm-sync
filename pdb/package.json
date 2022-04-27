@@ -1,7 +1,17 @@
 {
   "name": "@palmira/pdb",
   "version": "0.0.1",
-  "description": "Library for manipulating Palm OS PDB and PRC database files",
+  "description": "Work with Palm OS PDB and PRC database files",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jichu4n/palmira.git"
+  },
+  "author": "Chuan Ji <chuan@jichu4n.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jichu4n/palmira/issues"
+  },
+  "homepage": "https://github.com/jichu4n/palmira#readme",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -15,16 +25,6 @@
     "test": "jest",
     "prepack": "npm run lint && npm run build && npm test && rm -r ./dist/tests"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jichu4n/palmira.git"
-  },
-  "author": "Chuan Ji <chuan@jichu4n.com>",
-  "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/jichu4n/palmira/issues"
-  },
-  "homepage": "https://github.com/jichu4n/palmira#readme",
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
     "@types/jest": "^27.4.1",

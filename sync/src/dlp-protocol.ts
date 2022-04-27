@@ -4,18 +4,16 @@ import pEvent from 'p-event';
 import 'reflect-metadata';
 import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
-import {epochDatabaseTimestamp} from './database-timestamp';
+import {epochDatabaseTimestamp} from '@palmira/pdb';
 import {
-  Creatable,
   DeserializeOptions,
   SArray,
   SBuffer,
   Serializable,
-  SerializablePropertySpec,
+  SObjectFieldSpec,
   SerializableWrapper,
-  SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
-  serialize,
-  serializeAs,
+  SOBJECT_FIELD_SPECS_METADATA_KEY,
+  field,
   SerializeOptions,
   SObject,
   SUInt16BE,
