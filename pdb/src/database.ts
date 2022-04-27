@@ -1,20 +1,22 @@
 import _ from 'lodash';
-import {SmartBuffer} from 'smart-buffer';
-import {
-  DatabaseHeader,
-  RecordMetadata,
-  RecordMetadataList,
-  RecordOrResourceMetadataList,
-  ResourceMetadata,
-  ResourceMetadataList,
-} from './database-header';
-import {PdbSBufferRecord, PrcSBufferRecord, Record} from './record';
 import {
   DeserializeOptions,
   SBuffer,
   Serializable,
   SerializeOptions,
 } from 'serio';
+import {SmartBuffer} from 'smart-buffer';
+import {
+  DatabaseHeader,
+  PdbSBufferRecord,
+  PrcSBufferRecord,
+  Record,
+  RecordMetadata,
+  RecordMetadataList,
+  RecordOrResourceMetadataList,
+  ResourceMetadata,
+  ResourceMetadataList,
+} from '.';
 
 /** Representation of a Palm OS PDB file. */
 export abstract class Database<

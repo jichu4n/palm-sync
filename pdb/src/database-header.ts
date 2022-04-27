@@ -1,14 +1,13 @@
 import {
   bitfield,
-  createSerializableScalarWrapperClass,
-  decodeString,
   DeserializeOptions,
-  encodeString,
   field,
   SBitmask,
   Serializable,
   SerializeOptions,
   SObject,
+  SString,
+  SStringNT,
   SUInt16BE,
   SUInt32BE,
   SUInt8,
@@ -18,94 +17,48 @@ import {DatabaseTimestamp, epochDatabaseTimestamp} from '.';
 import {SDynamicArray} from './serializable';
 
 /** Serializable wrapper for a 32-bit type ID mapped to a 4-character string. */
-export class TypeId extends createSerializableScalarWrapperClass<string>({
-  readFn(this: Buffer) {
-    return this.toString('ascii', 0, 4);
-  },
-  writeFn(this: Buffer, value: string) {
-    if (value.length !== 4) {
-      throw new Error(`Type ID value must be exactly 4 bytes: "${value}"`);
-    }
-    this.write(value, 'ascii');
-  },
-  serializedLength: 4,
-  defaultValue: 'AAAA',
-}) {}
+export class TypeId extends SString.ofLength(4) {
+  value = 'AAAA';
+}
 
 /** PDB database header, a.k.a DatabaseHdrType. */
-export class DatabaseHeader {
+export class DatabaseHeader extends SObject {
   /** Database name (max 31 bytes). */
+  @field.as(SStringNT.ofLength(32))
   name: string = '';
   /** Database attribute flags. */
+  @field
   attributes: DatabaseAttrs = new DatabaseAttrs();
   /** Database version (integer). */
+  @field.as(SUInt16BE)
   version: number = 0;
   /** Database creation timestamp. */
-  creationDate: DatabaseTimestamp = new DatabaseTimestamp();
+  @field
+  creationDate = new DatabaseTimestamp();
   /** Database modification timestamp. */
-  modificationDate: DatabaseTimestamp = new DatabaseTimestamp();
+  @field
+  modificationDate = new DatabaseTimestamp();
   /** Last backup timestamp. */
+  @field
   lastBackupDate: DatabaseTimestamp = epochDatabaseTimestamp;
   /** Modification number (integer). */
+  @field.as(SUInt32BE)
   modificationNumber: number = 0;
   /** Offset to AppInfo block. */
+  @field.as(SUInt32BE)
   appInfoId: number = 0;
   /** Offset to SortInfo block. */
+  @field.as(SUInt32BE)
   sortInfoId: number = 0;
   /** Database type identifier (max 4 bytes). */
+  @field.as(TypeId)
   type: string = '';
   /** Database creator identifier (max 4 bytes). */
+  @field.as(TypeId)
   creator: string = '';
   /** Seed for generating record IDs. */
+  @field.as(SUInt32BE)
   uniqueIdSeed: number = 0;
-
-  deserialize(buffer: Buffer, opts?: DeserializeOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    this.name = decodeString(reader.readBufferNT(), opts);
-    reader.readOffset = 32;
-    this.attributes.deserialize(reader.readBuffer(2), opts);
-    this.version = reader.readUInt16BE();
-    this.creationDate.deserialize(reader.readBuffer(4), opts);
-    this.modificationDate.deserialize(reader.readBuffer(4), opts);
-    this.lastBackupDate.deserialize(reader.readBuffer(4), opts);
-    this.modificationNumber = reader.readUInt32BE();
-    this.appInfoId = reader.readUInt32BE();
-    this.sortInfoId = reader.readUInt32BE();
-    this.type = reader.readString(4, 'ascii');
-    this.creator = reader.readString(4, 'ascii');
-    this.uniqueIdSeed = reader.readUInt32BE();
-    return reader.readOffset;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-    if (this.name.length > 31) {
-      throw new Error(`Name length exceeds 31 bytes: ${this.name.length}`);
-    }
-    writer.writeBufferNT(encodeString(this.name, opts));
-    writer.writeBuffer(this.attributes.serialize(opts), 32);
-    writer.writeUInt16BE(this.version);
-    writer.writeBuffer(this.creationDate.serialize(opts));
-    writer.writeBuffer(this.modificationDate.serialize(opts));
-    writer.writeBuffer(this.lastBackupDate.serialize(opts));
-    writer.writeUInt32BE(this.modificationNumber);
-    writer.writeUInt32BE(this.appInfoId);
-    writer.writeUInt32BE(this.sortInfoId);
-    if (this.type.length > 4) {
-      throw new Error(`Type length exceeds 4 bytes: ${this.type.length}`);
-    }
-    writer.writeString(this.type, 'ascii');
-    if (this.creator.length > 4) {
-      throw new Error(`Creator exceeds 4 bytes: ${this.creator.length}`);
-    }
-    writer.writeString(this.creator, 64, 'ascii');
-    writer.writeUInt32BE(this.uniqueIdSeed, 68);
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return 72;
-  }
 }
 
 /** Record or resource metadata list. */

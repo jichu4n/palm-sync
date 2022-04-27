@@ -1,5 +1,6 @@
 {
   "name": "palmira-monorepo",
+  "description": "Modern toolkit for working with Palm OS devices and files",
   "version": "0.0.1",
   "private": true,
   "workspaces": [

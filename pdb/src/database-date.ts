@@ -1,12 +1,12 @@
-import {epochTimestamp} from '.';
 import {
   DeserializeOptions,
+  field,
   SerializableWrapper,
   SerializeOptions,
   SObject,
-  field,
   SUInt16BE,
 } from 'serio';
+import {epochTimestamp} from '.';
 
 /** A date (year, month, DOM) encoded as a 16-bit integer. */
 export class DatabaseDate extends SObject {
