@@ -9,4 +9,4 @@ export * from './record';
 export * from './datebook-database';
 export * from './memo-database';
 export * from './todo-database';
-export * from './palm-doc';
+export * from './palmdoc-database';

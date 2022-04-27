@@ -10,7 +10,7 @@ const packageJson = require('../../package.json');
 
 if (require.main === module) {
   (async () => {
-    program.name('palm-doc').version(packageJson.version);
+    program.name('palmdoc').version(packageJson.version);
 
     program
       .command('decode <document.pdb>')

@@ -42,6 +42,12 @@ export class DatabaseDate extends SObject {
     // 5 bits => date
     this.dayOfMonth = newValue & 0x1f;
   }
+
+  toJSON() {
+    return new Date(this.year, this.month - 1, this.dayOfMonth)
+      .toISOString()
+      .split('T')[0];
+  }
 }
 
 /** DatabaseDate wrapper where the value may be unspecified (indicated by 0xff). */
