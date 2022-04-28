@@ -1,33 +1,21 @@
-import {DatabaseAttrs, MemoRecord} from '@palmira/pdb';
 import debug from 'debug';
 import EventEmitter from 'events';
 import net, {Server, Socket} from 'net';
 import pEvent from 'p-event';
-import {readStream} from './read-stream-async';
+import stream from 'stream';
 import {
   DlpAddSyncLogEntryRequest,
-  DlpCloseDBRequest,
-  DlpCreateDBRequest,
-  DlpDeleteDBRequest,
   DlpEndOfSyncRequest,
-  DlpOpenConduitRequest,
-  DlpOpenDBRequest,
-  DlpOpenMode,
   DlpReadDBListMode,
   DlpReadDBListRequest,
-  DlpReadOpenDBInfoRequest,
-  DlpReadRecordByIDRequest,
-  DlpReadRecordIDListRequest,
   DlpReadSysInfoRequest,
   DlpReadUserInfoRequest,
-} from './dlp-commands';
-import {DlpConnection} from './dlp-protocol';
-import {
+  DlpConnection,
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
-} from './net-sync-protocol';
+} from '.';
+import {readStream} from './read-stream-async';
 import {StreamRecorder} from './stream-recorder';
-import stream from 'stream';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -144,13 +132,11 @@ export class NetSyncConnection {
       HOTSYNC_HANDSHAKE_REQUEST_1.length
     );
     this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_1);
-    this.log('Handshake 2');
     await readStream(
       this.netSyncDatagramStream,
       HOTSYNC_HANDSHAKE_REQUEST_2.length
     );
     this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_2);
-    this.log('Handshake 3');
     await readStream(
       this.netSyncDatagramStream,
       HOTSYNC_HANDSHAKE_REQUEST_3.length
@@ -189,57 +175,7 @@ if (require.main === module) {
         mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
       })
     );
-
-    await dlpConnection.execute(new DlpOpenConduitRequest());
-    const {dbHandle} = await dlpConnection.execute(
-      DlpOpenDBRequest.with({
-        mode: DlpOpenMode.READ,
-        name: 'MemoDB',
-      })
-    );
-    const {numRecords} = await dlpConnection.execute(
-      DlpReadOpenDBInfoRequest.with({dbHandle})
-    );
-    console.log(`Number of records in MemoDB: ${numRecords}`);
-    const {recordIds} = await dlpConnection.execute(
-      DlpReadRecordIDListRequest.with({
-        dbHandle,
-        maxNumRecords: 500,
-      })
-    );
-    console.log(`Record IDs: ${recordIds.join(' ')}`);
-    for (const recordId of recordIds) {
-      const resp = await dlpConnection.execute(
-        DlpReadRecordByIDRequest.with({
-          dbHandle,
-          recordId,
-        })
-      );
-      const memoRecord = new MemoRecord();
-      memoRecord.deserialize(resp.data.value, {encoding: 'gb2312'});
-      console.log(
-        JSON.stringify({
-          metadata: resp.metadata,
-          text: memoRecord.value,
-        })
-      );
-    }
-    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
-
-    try {
-      await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
-    } catch (e) {}
-    const {dbHandle: dbHandle2} = await dlpConnection.execute(
-      DlpCreateDBRequest.with({
-        creator: 'AAAA',
-        type: 'DATA',
-        attributes: DatabaseAttrs.with({
-          backup: true,
-        }),
-        name: 'foobar',
-      })
-    );
-    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle: dbHandle2}));
+    console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
   });
   netSyncServer.start();
 }
