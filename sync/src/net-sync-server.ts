@@ -1,20 +1,10 @@
-import {DatabaseAttrs, MemoRecord} from '@palmira/pdb';
 import debug from 'debug';
 import net, {Server, Socket} from 'net';
 import {
   DlpAddSyncLogEntryRequest,
-  DlpCloseDBRequest,
-  DlpCreateDBRequest,
-  DlpDeleteDBRequest,
   DlpEndOfSyncRequest,
-  DlpOpenConduitRequest,
-  DlpOpenDBRequest,
-  DlpOpenMode,
   DlpReadDBListMode,
   DlpReadDBListRequest,
-  DlpReadOpenDBInfoRequest,
-  DlpReadRecordByIDRequest,
-  DlpReadRecordIDListRequest,
   DlpReadSysInfoRequest,
   DlpReadUserInfoRequest,
 } from './dlp-commands';
@@ -23,6 +13,7 @@ import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
 } from './net-sync-protocol';
+import {StreamRecorder} from './stream-recorder';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -59,6 +50,13 @@ export const HOTSYNC_HANDSHAKE_REQUEST_3 = Buffer.from([
 ]);
 
 export class NetSyncServer {
+  /** Processing logic to run when a connection is made. */
+  runFn: (connection: NetSyncConnection) => Promise<void>;
+
+  constructor(runFn: NetSyncServer['runFn']) {
+    this.runFn = runFn;
+  }
+
   start() {
     if (this.server) {
       throw new Error('Server already started');
@@ -74,77 +72,7 @@ export class NetSyncServer {
     await connection.doHandshake();
     await connection.start();
 
-    // TODO: Conduit framework
-    const {dlpConnection} = connection;
-
-    const readDbListResp = await dlpConnection.execute(
-      DlpReadDBListRequest.with({
-        mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
-      })
-    );
-    this.log(
-      `readDbListResp: ${readDbListResp.metadataList.map(
-        ({name, type, creator, index, creationDate}) =>
-          JSON.stringify({
-            creationDate: creationDate.value,
-            name,
-            type,
-            creator,
-            index,
-          })
-      )}`
-    );
-
-    await dlpConnection.execute(new DlpOpenConduitRequest());
-    const {dbHandle} = await connection.dlpConnection.execute(
-      DlpOpenDBRequest.with({
-        mode: DlpOpenMode.READ,
-        name: 'MemoDB',
-      })
-    );
-    const {numRecords} = await dlpConnection.execute(
-      DlpReadOpenDBInfoRequest.with({dbHandle})
-    );
-    this.log(`Number of records in MemoDB: ${numRecords}`);
-    const {recordIds} = await dlpConnection.execute(
-      DlpReadRecordIDListRequest.with({
-        dbHandle,
-        maxNumRecords: 500,
-      })
-    );
-    this.log(`Record IDs: ${recordIds.join(' ')}`);
-    for (const recordId of recordIds) {
-      const resp = await dlpConnection.execute(
-        DlpReadRecordByIDRequest.with({
-          dbHandle,
-          recordId,
-        })
-      );
-      const memoRecord = new MemoRecord();
-      memoRecord.deserialize(resp.data.value, {encoding: 'gb2312'});
-      this.log(
-        JSON.stringify({
-          metadata: resp.metadata,
-          text: memoRecord.value,
-        })
-      );
-    }
-    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
-
-    try {
-      await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
-    } catch (e) {}
-    const {dbHandle: dbHandle2} = await dlpConnection.execute(
-      DlpCreateDBRequest.with({
-        creator: 'AAAA',
-        type: 'DATA',
-        attributes: DatabaseAttrs.with({
-          backup: true,
-        }),
-        name: 'foobar',
-      })
-    );
-    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle: dbHandle2}));
+    await this.runFn(connection);
 
     await connection.end();
   }
@@ -156,10 +84,14 @@ export class NetSyncServer {
 export class NetSyncConnection {
   /** DLP connection for communicating with this sync session. */
   dlpConnection: DlpConnection;
+  /** Recorder for the socket. */
+  recorder = new StreamRecorder();
 
   constructor(socket: Socket) {
     this.log = debug('NetSync').extend(socket.remoteAddress ?? 'UNKNOWN');
-    this.netSyncDatagramStream = createNetSyncDatagramStream(socket);
+    this.netSyncDatagramStream = createNetSyncDatagramStream(
+      this.recorder.wrap(socket)
+    );
     this.dlpConnection = new DlpConnection(this.netSyncDatagramStream);
 
     this.log(`Connection received`);
@@ -216,6 +148,65 @@ export class NetSyncConnection {
 }
 
 if (require.main === module) {
-  const netSyncServer = new NetSyncServer();
+  const netSyncServer = new NetSyncServer(async ({dlpConnection}) => {
+    const readDbListResp = await dlpConnection.execute(
+      DlpReadDBListRequest.with({
+        mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+      })
+    );
+
+    /*
+    await dlpConnection.execute(new DlpOpenConduitRequest());
+    const {dbHandle} = await connection.dlpConnection.execute(
+      DlpOpenDBRequest.with({
+        mode: DlpOpenMode.READ,
+        name: 'MemoDB',
+      })
+    );
+    const {numRecords} = await dlpConnection.execute(
+      DlpReadOpenDBInfoRequest.with({dbHandle})
+    );
+    this.log(`Number of records in MemoDB: ${numRecords}`);
+    const {recordIds} = await dlpConnection.execute(
+      DlpReadRecordIDListRequest.with({
+        dbHandle,
+        maxNumRecords: 500,
+      })
+    );
+    this.log(`Record IDs: ${recordIds.join(' ')}`);
+    for (const recordId of recordIds) {
+      const resp = await dlpConnection.execute(
+        DlpReadRecordByIDRequest.with({
+          dbHandle,
+          recordId,
+        })
+      );
+      const memoRecord = new MemoRecord();
+      memoRecord.deserialize(resp.data.value, {encoding: 'gb2312'});
+      this.log(
+        JSON.stringify({
+          metadata: resp.metadata,
+          text: memoRecord.value,
+        })
+      );
+    }
+    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
+
+    try {
+      await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
+    } catch (e) {}
+    const {dbHandle: dbHandle2} = await dlpConnection.execute(
+      DlpCreateDBRequest.with({
+        creator: 'AAAA',
+        type: 'DATA',
+        attributes: DatabaseAttrs.with({
+          backup: true,
+        }),
+        name: 'foobar',
+      })
+    );
+    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle: dbHandle2}));
+    */
+  });
   netSyncServer.start();
 }
