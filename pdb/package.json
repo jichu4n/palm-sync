@@ -39,7 +39,7 @@
     "commander": "^9.2.0",
     "fs-extra": "^10.1.0",
     "lodash": "^4.17.21",
-    "serio": "^0.1.6",
+    "serio": "^0.1.7",
     "smart-buffer": "^4.2.0"
   },
   "files": [

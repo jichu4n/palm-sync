@@ -1,6 +1,6 @@
 import {epochDatabaseTimestamp} from '@palmira/pdb';
 import debug from 'debug';
-import _ from 'lodash';
+import _, {fromPairs} from 'lodash';
 import pEvent from 'p-event';
 import 'reflect-metadata';
 import {
@@ -288,10 +288,14 @@ function parseDlpArgs(
           `expected ${arg.dlpArgSpecs.length}, got ${arg.value.value.length}`
       );
     }
-    for (let j = 0; j < arg.dlpArgSpecs.length; ++j) {
-      (dlpRequestOrResponse as any)[arg.dlpArgSpecs[j].propertyKey] =
-        arg.value.value[j];
-    }
+    dlpRequestOrResponse.assignFromSerializable(
+      fromPairs(
+        arg.dlpArgSpecs.map(({propertyKey}, j) => [
+          propertyKey.toString(),
+          arg.value.value[j],
+        ])
+      )
+    );
   }
   return readOffset;
 }
@@ -509,11 +513,11 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request / response argument. */
-export class DlpArg<ValueT extends SArray<any>> extends SObject {
+export class DlpArg extends SObject {
   /** DLP argument ID */
   argId: number = 0;
   /** Argument data. */
-  value!: ValueT;
+  value!: SArray;
   /** Whether this argument is optional. */
   isOptional = false;
   /** Metadata about the properties that make up this DLP argument. */

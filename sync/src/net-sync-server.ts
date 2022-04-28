@@ -1,10 +1,20 @@
+import {DatabaseAttrs, MemoRecord} from '@palmira/pdb';
 import debug from 'debug';
 import net, {Server, Socket} from 'net';
 import {
   DlpAddSyncLogEntryRequest,
+  DlpCloseDBRequest,
+  DlpCreateDBRequest,
+  DlpDeleteDBRequest,
   DlpEndOfSyncRequest,
+  DlpOpenConduitRequest,
+  DlpOpenDBRequest,
+  DlpOpenMode,
   DlpReadDBListMode,
   DlpReadDBListRequest,
+  DlpReadOpenDBInfoRequest,
+  DlpReadRecordByIDRequest,
+  DlpReadRecordIDListRequest,
   DlpReadSysInfoRequest,
   DlpReadUserInfoRequest,
 } from './dlp-commands';
@@ -155,9 +165,8 @@ if (require.main === module) {
       })
     );
 
-    /*
     await dlpConnection.execute(new DlpOpenConduitRequest());
-    const {dbHandle} = await connection.dlpConnection.execute(
+    const {dbHandle} = await dlpConnection.execute(
       DlpOpenDBRequest.with({
         mode: DlpOpenMode.READ,
         name: 'MemoDB',
@@ -166,14 +175,14 @@ if (require.main === module) {
     const {numRecords} = await dlpConnection.execute(
       DlpReadOpenDBInfoRequest.with({dbHandle})
     );
-    this.log(`Number of records in MemoDB: ${numRecords}`);
+    console.log(`Number of records in MemoDB: ${numRecords}`);
     const {recordIds} = await dlpConnection.execute(
       DlpReadRecordIDListRequest.with({
         dbHandle,
         maxNumRecords: 500,
       })
     );
-    this.log(`Record IDs: ${recordIds.join(' ')}`);
+    console.log(`Record IDs: ${recordIds.join(' ')}`);
     for (const recordId of recordIds) {
       const resp = await dlpConnection.execute(
         DlpReadRecordByIDRequest.with({
@@ -183,7 +192,7 @@ if (require.main === module) {
       );
       const memoRecord = new MemoRecord();
       memoRecord.deserialize(resp.data.value, {encoding: 'gb2312'});
-      this.log(
+      console.log(
         JSON.stringify({
           metadata: resp.metadata,
           text: memoRecord.value,
@@ -206,7 +215,6 @@ if (require.main === module) {
       })
     );
     await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle: dbHandle2}));
-    */
   });
   netSyncServer.start();
 }
