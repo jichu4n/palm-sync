@@ -5,7 +5,7 @@ import {DatabaseDate, ToDoDatabase, ToDoRecord} from '..';
 describe('ToDoDatabase', function () {
   test('load test database', async function () {
     const buffer = await fs.readFile(
-      path.join(__dirname, '..', '..', 'src', 'tests', 'testdata', 'ToDoDB.pdb')
+      path.join(__dirname, 'testdata', 'ToDoDB.pdb')
     );
     const db = new ToDoDatabase();
     db.deserialize(buffer);

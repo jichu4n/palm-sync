@@ -5,7 +5,7 @@ import {MemoDatabase, MemoRecord} from '..';
 describe('MemoDatabase', function () {
   test('load test database', async function () {
     const buffer = await fs.readFile(
-      path.join(__dirname, '..', '..', 'src', 'tests', 'testdata', 'MemoDB.pdb')
+      path.join(__dirname, 'testdata', 'MemoDB.pdb')
     );
     const db = new MemoDatabase();
     db.deserialize(buffer);

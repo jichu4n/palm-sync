@@ -7,15 +7,7 @@ import {PalmDoc, PalmDocSerializeOptions} from '..';
 describe('PalmDoc', function () {
   test('load test database', async function () {
     const buffer = await fs.readFile(
-      path.join(
-        __dirname,
-        '..',
-        '..',
-        'src',
-        'tests',
-        'testdata',
-        'OnBoardHeaderV40.pdb'
-      )
+      path.join(__dirname, 'testdata', 'OnBoardHeaderV40.pdb')
     );
     const doc = new PalmDoc();
     doc.deserialize(buffer);

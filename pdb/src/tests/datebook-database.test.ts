@@ -11,15 +11,7 @@ import {
 describe('DatebookDatabase', function () {
   test('load test database', async function () {
     const buffer = await fs.readFile(
-      path.join(
-        __dirname,
-        '..',
-        '..',
-        'src',
-        'tests',
-        'testdata',
-        'DatebookDB.pdb'
-      )
+      path.join(__dirname, 'testdata', 'DatebookDB.pdb')
     );
     const db = new DatebookDatabase();
     db.deserialize(buffer);

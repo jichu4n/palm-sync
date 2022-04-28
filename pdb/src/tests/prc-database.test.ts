@@ -7,15 +7,7 @@ import {PrcSBufferRecord, RawPrcDatabase} from '..';
 describe('PrcDatabase', function () {
   test('load test database', async function () {
     const buffer = await fs.readFile(
-      path.join(
-        __dirname,
-        '..',
-        '..',
-        'src',
-        'tests',
-        'testdata',
-        'OnBoard.prc'
-      )
+      path.join(__dirname, 'testdata', 'OnBoard.prc')
     );
     const db = new RawPrcDatabase();
     db.deserialize(buffer);

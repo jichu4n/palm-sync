@@ -15,5 +15,4 @@ jobs:
       - run: npm install
       - run: npm run --workspaces lint
       - run: npm run --workspaces build
-      - run: npm run --workspaces build
-      - run: npm test --workspaces -- --passWithNoTests
+      - run: npm test --workspaces
