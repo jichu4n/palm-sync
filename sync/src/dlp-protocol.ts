@@ -280,7 +280,18 @@ function parseDlpArgs(
   }
   let readOffset = 0;
   for (let i = 0; i < numDlpArgs; ++i) {
-    readOffset += args[i].deserialize(buffer.slice(readOffset), opts);
+    const arg = args[i];
+    readOffset += arg.deserialize(buffer.slice(readOffset), opts);
+    if (arg.value.value.length !== arg.dlpArgSpecs.length) {
+      throw new Error(
+        'Argument field count mismatch: ' +
+          `expected ${arg.dlpArgSpecs.length}, got ${arg.value.value.length}`
+      );
+    }
+    for (let j = 0; j < arg.dlpArgSpecs.length; ++j) {
+      (dlpRequestOrResponse as any)[arg.dlpArgSpecs[j].propertyKey] =
+        arg.value.value[j];
+    }
   }
   return readOffset;
 }
@@ -391,6 +402,7 @@ export function getDlpArgs(targetInstance: SObject) {
         argId: dlpArgSpecs[0].argId,
         value: valueArray,
         isOptional: isOptionalArray[0],
+        dlpArgSpecs,
       });
     })
     .value();
@@ -496,14 +508,16 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 /** ID of the first argument in a DLP request. */
 export const DLP_ARG_ID_BASE = 0x20;
 
-/** DLP request argument. */
-export class DlpArg<ValueT extends Serializable = SBuffer> extends SObject {
+/** DLP request / response argument. */
+export class DlpArg<ValueT extends SArray<any>> extends SObject {
   /** DLP argument ID */
   argId: number = 0;
   /** Argument data. */
   value!: ValueT;
   /** Whether this argument is optional. */
   isOptional = false;
+  /** Metadata about the properties that make up this DLP argument. */
+  dlpArgSpecs: Array<DlpArgSpec> = [];
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
