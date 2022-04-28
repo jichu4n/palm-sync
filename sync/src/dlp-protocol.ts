@@ -481,6 +481,7 @@ export const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
     },
   },
 };
+
 /** DlpArgTypes as an array. */
 const DlpArgTypesEntries = _.sortBy(
   Object.entries(DlpArgTypes),
