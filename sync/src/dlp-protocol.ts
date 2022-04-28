@@ -1,24 +1,22 @@
+import {epochDatabaseTimestamp} from '@palmira/pdb';
 import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
 import 'reflect-metadata';
-import {SmartBuffer} from 'smart-buffer';
-import stream from 'stream';
-import {epochDatabaseTimestamp} from '@palmira/pdb';
 import {
   DeserializeOptions,
+  field,
   SArray,
   SBuffer,
   Serializable,
-  SObjectFieldSpec,
   SerializableWrapper,
-  SOBJECT_FIELD_SPECS_METADATA_KEY,
-  field,
   SerializeOptions,
   SObject,
   SUInt16BE,
   SUInt8,
 } from 'serio';
+import {SmartBuffer} from 'smart-buffer';
+import stream from 'stream';
 
 /** Representation of a DLP connection over an underlying transport. */
 export class DlpConnection {
@@ -55,7 +53,7 @@ export class DlpConnection {
       this.log(
         `<<< ${request.responseType.name} ${JSON.stringify(response.toJSON())}`
       );
-    } catch (e) {
+    } catch (e: any) {
       this.log(`    Error parsing ${request.responseType.name}: ${e.message}`);
       throw e;
     }
@@ -67,7 +65,9 @@ export class DlpConnection {
 }
 
 /** Base class for DLP requests. */
-export abstract class DlpRequest<DlpResponseT extends DlpResponse> {
+export abstract class DlpRequest<
+  DlpResponseT extends DlpResponse
+> extends SObject {
   /** DLP command ID. */
   abstract commandId: number;
 
@@ -185,7 +185,7 @@ const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
 const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
 
 /** Base class for DLP responses. */
-export abstract class DlpResponse {
+export abstract class DlpResponse extends SObject {
   /** Expected DLP command ID. */
   abstract commandId: number;
 
@@ -303,11 +303,12 @@ function getDlpArgsAsJson(
 }
 
 /** Key for storing DLP argument information on a DlpRequest / DlpResponse. */
-export const DLP_ARG_SPECS_METADATA_KEY = Symbol('dlpArgSpecs');
+export const DLP_ARG_SPECS_METADATA_KEY = Symbol('__dlpArgSpecs');
 
 /** Metadata stored for each DLP argument. */
-export interface DlpArgSpec<ValueT = any>
-  extends SerializablePropertySpec<ValueT> {
+export interface DlpArgSpec {
+  /** The name of the property. */
+  propertyKey: string | symbol;
   /** The DLP argument ID. */
   argId: number;
   /** Whether this argument may be omitted. */
@@ -315,26 +316,21 @@ export interface DlpArgSpec<ValueT = any>
 }
 
 /** Actual implementation of dlpArg and optDlpArg. */
-function dlpArgImpl<ValueT>(
+function registerDlpArg<ValueT>(
   argId: number,
-  serializableWrapperClass?: new () => SerializableWrapper<ValueT>,
+  wrapperType?: new () => SerializableWrapper<ValueT>,
   isOptional?: boolean
 ): PropertyDecorator {
   return function (target: Object, propertyKey: string | symbol) {
-    // Use serialize / serializeAs to add basic to
-    // SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY
-    if (serializableWrapperClass) {
-      serializeAs(serializableWrapperClass)(target, propertyKey);
+    // Use @field or @field.as to add property to SObject.
+    if (wrapperType) {
+      field.as(wrapperType)(target, propertyKey);
     } else {
-      serialize(target, propertyKey);
+      field(target, propertyKey);
     }
-    // Augment and move metadata to DLP_ARG_SPECS_METADATA_KEY.
-    const serializablePropertySpecs = Reflect.getMetadata(
-      SERIALIZABLE_PROPERTY_SPECS_METADATA_KEY,
-      target
-    ) as Array<SerializablePropertySpec>;
+    // Add DLP-specific metadata for the same property to DLP_ARG_SPECS_METADATA_KEY.
     const dlpArgSpec: DlpArgSpec = {
-      ...serializablePropertySpecs.pop()!,
+      propertyKey,
       argId,
       isOptional: !!isOptional,
     };
@@ -353,17 +349,17 @@ function dlpArgImpl<ValueT>(
 /** Decorator for a required DLP argument. */
 export function dlpArg<ValueT>(
   argId: number,
-  serializableWrapperClass?: new () => SerializableWrapper<ValueT>
+  wrapperType?: new () => SerializableWrapper<ValueT>
 ): PropertyDecorator {
-  return dlpArgImpl(argId, serializableWrapperClass, false);
+  return registerDlpArg(argId, wrapperType, false);
 }
 
 /** Decorator for an optional DLP argument. */
 export function optDlpArg<ValueT>(
   argId: number,
-  serializableWrapperClass?: new () => SerializableWrapper<ValueT>
+  wrapperType?: new () => SerializableWrapper<ValueT>
 ): PropertyDecorator {
-  return dlpArgImpl(argId, serializableWrapperClass, true);
+  return registerDlpArg(argId, wrapperType, true);
 }
 
 /** Extract DlpArgSpec's defined via dlpArg on a DlpRequest or DlpResponse. */
@@ -375,18 +371,15 @@ export function getDlpArgSpecs(targetInstance: Object) {
 }
 
 /** Constructs DlpArg's on a DlpRequest or DlpResponse. */
-export function getDlpArgs(targetInstance: Object) {
+export function getDlpArgs(targetInstance: SObject) {
+  const values = targetInstance.mapValuesToSerializable();
   return _(getDlpArgSpecs(targetInstance))
     .groupBy('argId')
     .entries()
     .map(([argIdString, dlpArgSpecs]) => {
-      const valueArray = SArray.create({
-        value: dlpArgSpecs.map(({propertyKey, getOrCreateWrapper}) =>
-          getOrCreateWrapper
-            ? getOrCreateWrapper(targetInstance)
-            : ((targetInstance as any)[propertyKey] as Serializable)
-        ),
-      });
+      const valueArray = SArray.of(
+        dlpArgSpecs.map(({propertyKey}) => values[propertyKey.toString()])
+      );
       const isOptionalArray = _(dlpArgSpecs).map('isOptional').uniq().value();
       if (isOptionalArray.length !== 1) {
         throw new Error(
@@ -394,7 +387,7 @@ export function getDlpArgs(targetInstance: Object) {
             `in class ${targetInstance.constructor.name}`
         );
       }
-      return DlpArg.create({
+      return DlpArg.with({
         argId: dlpArgSpecs[0].argId,
         value: valueArray,
         isOptional: isOptionalArray[0],
@@ -503,7 +496,7 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request argument. */
-export class DlpArg<ValueT extends Serializable = SBuffer> {
+export class DlpArg<ValueT extends Serializable = SBuffer> extends SObject {
   /** DLP argument ID */
   argId: number = 0;
   /** Argument data. */

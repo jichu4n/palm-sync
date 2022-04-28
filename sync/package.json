@@ -40,8 +40,9 @@
     "debug": "^4.3.4",
     "duplexify": "^4.1.2",
     "lodash": "^4.17.21",
-    "p-event": "^5.0.1",
+    "p-event": "^4.2.0",
     "reflect-metadata": "^0.1.13",
+    "serio": "^0.1.6",
     "smart-buffer": "^4.2.0"
   }
 }

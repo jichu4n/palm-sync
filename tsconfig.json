@@ -10,5 +10,5 @@
     "outDir": "dist",
     "baseUrl": "."
   },
-  "include": ["src/**/*", "pdb/src/serializable.ts"]
+  "include": ["src/**/*"]
 }

@@ -1,6 +1,6 @@
+import {DatabaseAttrs, MemoRecord} from '@palmira/pdb';
 import debug from 'debug';
 import net, {Server, Socket} from 'net';
-import {DatabaseAttrs} from './database-header';
 import {
   DlpAddSyncLogEntryRequest,
   DlpCloseDBRequest,
@@ -19,7 +19,6 @@ import {
   DlpReadUserInfoRequest,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
-import {MemoRecord} from './memo-database';
 import {
   createNetSyncDatagramStream,
   NetSyncDatagramStream,
@@ -79,7 +78,7 @@ export class NetSyncServer {
     const {dlpConnection} = connection;
 
     const readDbListResp = await dlpConnection.execute(
-      DlpReadDBListRequest.create({
+      DlpReadDBListRequest.with({
         mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
       })
     );
@@ -96,19 +95,19 @@ export class NetSyncServer {
       )}`
     );
 
-    await dlpConnection.execute(DlpOpenConduitRequest.create());
+    await dlpConnection.execute(new DlpOpenConduitRequest());
     const {dbHandle} = await connection.dlpConnection.execute(
-      DlpOpenDBRequest.create({
+      DlpOpenDBRequest.with({
         mode: DlpOpenMode.READ,
         name: 'MemoDB',
       })
     );
     const {numRecords} = await dlpConnection.execute(
-      DlpReadOpenDBInfoRequest.create({dbHandle})
+      DlpReadOpenDBInfoRequest.with({dbHandle})
     );
     this.log(`Number of records in MemoDB: ${numRecords}`);
     const {recordIds} = await dlpConnection.execute(
-      DlpReadRecordIDListRequest.create({
+      DlpReadRecordIDListRequest.with({
         dbHandle,
         maxNumRecords: 500,
       })
@@ -116,7 +115,7 @@ export class NetSyncServer {
     this.log(`Record IDs: ${recordIds.join(' ')}`);
     for (const recordId of recordIds) {
       const resp = await dlpConnection.execute(
-        DlpReadRecordByIDRequest.create({
+        DlpReadRecordByIDRequest.with({
           dbHandle,
           recordId,
         })
@@ -130,24 +129,22 @@ export class NetSyncServer {
         })
       );
     }
-    await dlpConnection.execute(DlpCloseDBRequest.create({dbHandle}));
+    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
 
     try {
-      await dlpConnection.execute(DlpDeleteDBRequest.create({name: 'foobar'}));
+      await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
     } catch (e) {}
     const {dbHandle: dbHandle2} = await dlpConnection.execute(
-      DlpCreateDBRequest.create({
+      DlpCreateDBRequest.with({
         creator: 'AAAA',
         type: 'DATA',
-        attributes: DatabaseAttrs.create({
+        attributes: DatabaseAttrs.with({
           backup: true,
         }),
         name: 'foobar',
       })
     );
-    await dlpConnection.execute(
-      DlpCloseDBRequest.create({dbHandle: dbHandle2})
-    );
+    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle: dbHandle2}));
 
     await connection.end();
   }
@@ -196,22 +193,22 @@ export class NetSyncConnection {
 
   async start() {
     const sysInfoResp = await this.dlpConnection.execute(
-      DlpReadSysInfoRequest.create()
+      new DlpReadSysInfoRequest()
     );
     this.log(JSON.stringify(sysInfoResp));
     const userInfoResp = await this.dlpConnection.execute(
-      DlpReadUserInfoRequest.create()
+      new DlpReadUserInfoRequest()
     );
     this.log(JSON.stringify(userInfoResp));
   }
 
   async end() {
     await this.dlpConnection.execute(
-      DlpAddSyncLogEntryRequest.create({
+      DlpAddSyncLogEntryRequest.with({
         message: 'Thank you for using Palmira!',
       })
     );
-    await this.dlpConnection.execute(DlpEndOfSyncRequest.create());
+    await this.dlpConnection.execute(new DlpEndOfSyncRequest());
   }
 
   private log: debug.Debugger;
