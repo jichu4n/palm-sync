@@ -1,6 +1,9 @@
 import {DatabaseAttrs, MemoRecord} from '@palmira/pdb';
 import debug from 'debug';
+import EventEmitter from 'events';
 import net, {Server, Socket} from 'net';
+import pEvent from 'p-event';
+import {readStream} from './read-stream-async';
 import {
   DlpAddSyncLogEntryRequest,
   DlpCloseDBRequest,
@@ -24,6 +27,7 @@ import {
   NetSyncDatagramStream,
 } from './net-sync-protocol';
 import {StreamRecorder} from './stream-recorder';
+import stream from 'stream';
 
 /** HotSync port to listen on. */
 export const HOTSYNC_DATA_PORT = 14238;
@@ -59,11 +63,12 @@ export const HOTSYNC_HANDSHAKE_REQUEST_3 = Buffer.from([
   0x93, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 
-export class NetSyncServer {
+export class NetSyncServer extends EventEmitter {
   /** Processing logic to run when a connection is made. */
   runFn: (connection: NetSyncConnection) => Promise<void>;
 
   constructor(runFn: NetSyncServer['runFn']) {
+    super();
     this.runFn = runFn;
   }
 
@@ -77,14 +82,25 @@ export class NetSyncServer {
     });
   }
 
-  async onConnection(socket: Socket) {
+  async stop() {
+    if (!this.server) {
+      return;
+    }
+    this.server.close();
+    await pEvent(this.server, 'close');
+  }
+
+  async onConnection(socket: Socket | stream.Duplex) {
     const connection = new NetSyncConnection(socket);
+    this.emit('connect', connection);
+
     await connection.doHandshake();
     await connection.start();
 
     await this.runFn(connection);
 
     await connection.end();
+    this.emit('disconnect', connection);
   }
 
   private server: Server | null = null;
@@ -97,18 +113,22 @@ export class NetSyncConnection {
   /** Recorder for the socket. */
   recorder = new StreamRecorder();
 
-  constructor(socket: Socket) {
-    this.log = debug('NetSync').extend(socket.remoteAddress ?? 'UNKNOWN');
+  constructor(socket: Socket | stream.Duplex) {
+    this.log = debug('NetSync').extend(
+      socket instanceof Socket ? socket.remoteAddress ?? 'UNKNOWN' : 'N/A'
+    );
     this.netSyncDatagramStream = createNetSyncDatagramStream(
-      this.recorder.wrap(socket)
+      this.recorder.record(socket)
     );
     this.dlpConnection = new DlpConnection(this.netSyncDatagramStream);
 
     this.log(`Connection received`);
 
-    socket.setNoDelay(true);
+    if (socket instanceof Socket) {
+      socket.setNoDelay(true);
+    }
 
-    socket.on('close', (hadError) => {
+    socket.on('close', (hadError: any) => {
       this.log(`Connection closed${hadError ? 'with errors' : ''}`);
     });
 
@@ -119,15 +139,20 @@ export class NetSyncConnection {
 
   async doHandshake() {
     this.log('Starting handshake');
-    await this.netSyncDatagramStream.readAsync(
+    await readStream(
+      this.netSyncDatagramStream,
       HOTSYNC_HANDSHAKE_REQUEST_1.length
     );
     this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_1);
-    await this.netSyncDatagramStream.readAsync(
+    this.log('Handshake 2');
+    await readStream(
+      this.netSyncDatagramStream,
       HOTSYNC_HANDSHAKE_REQUEST_2.length
     );
     this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_2);
-    await this.netSyncDatagramStream.readAsync(
+    this.log('Handshake 3');
+    await readStream(
+      this.netSyncDatagramStream,
       HOTSYNC_HANDSHAKE_REQUEST_3.length
     );
     this.log('Handshake complete');

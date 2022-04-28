@@ -19,7 +19,8 @@
     "build:docs": "rm -rf ./docs/ && typedoc",
     "lint": "prettier --check .",
     "test": "jest",
-    "start:netSyncServerDev": "ts-node-dev --respawn ./src/net-sync-server.ts"
+    "start:netSyncServerDev": "ts-node-dev --respawn ./src/net-sync-server.ts",
+    "record-net-sync-session": "ts-node ./src/tests/record-net-sync-session.ts"
   },
   "devDependencies": {
     "@types/debug": "^4.1.7",
@@ -27,8 +28,10 @@
     "@types/jest": "^27.4.1",
     "@types/lodash": "^4.14.182",
     "@types/node": "^17.0.29",
+    "commander": "^9.2.0",
     "prettier": "^2.6.2",
     "ts-jest": "^27.1.4",
+    "ts-node": "^10.7.0",
     "ts-node-dev": "^1.1.8",
     "typedoc": "^0.22.15",
     "typescript": "^4.6.3"

@@ -7,8 +7,6 @@ import {
   DeserializeOptions,
   field,
   SArray,
-  SBuffer,
-  Serializable,
   SerializableWrapper,
   SerializeOptions,
   SObject,

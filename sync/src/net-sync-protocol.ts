@@ -106,26 +106,8 @@ export class NetSyncDatagramWriteStream extends stream.Transform {
   private xid = 0;
 }
 
-/** Utility method for reading a datagram with an optional expected size. */
-async function readAsync(this: stream.Readable, expectedLength?: number) {
-  const data = await pEvent(this, 'data');
-  if (
-    expectedLength &&
-    (!data || !data.length || data.length !== expectedLength)
-  ) {
-    throw new Error(
-      `Error reading data: expected ${expectedLength} bytes, got ${
-        data.length || 'none'
-      }`
-    );
-  }
-  return data;
-}
-
 /** Duplex NetSync datagram stream, created by createNetSyncDatagramStream. */
-export type NetSyncDatagramStream = duplexify.Duplexify & {
-  readAsync: typeof readAsync;
-};
+export type NetSyncDatagramStream = duplexify.Duplexify;
 
 /** Create a NetSync datagram stream on top of a raw data stream. */
 export function createNetSyncDatagramStream(
@@ -139,6 +121,5 @@ export function createNetSyncDatagramStream(
     writeStream,
     readStream
   ) as NetSyncDatagramStream;
-  netSyncDatagramStream.readAsync = readAsync;
   return netSyncDatagramStream;
 }
