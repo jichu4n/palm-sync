@@ -1,53 +1,53 @@
 import debug from 'debug';
-import EventEmitter from 'events';
+import {EventEmitter} from 'events';
 import net, {Server, Socket} from 'net';
 import pEvent from 'p-event';
 import stream from 'stream';
 import {
+  createNetSyncDatagramStream,
   DlpAddSyncLogEntryRequest,
+  DlpConnection,
   DlpEndOfSyncRequest,
   DlpReadDBListMode,
   DlpReadDBListRequest,
   DlpReadSysInfoRequest,
   DlpReadUserInfoRequest,
-  DlpConnection,
-  createNetSyncDatagramStream,
   NetSyncDatagramStream,
 } from '.';
-import {readStream} from './read-stream-async';
+import {readStream} from './utils';
 import {StreamRecorder} from './stream-recorder';
 
 /** HotSync port to listen on. */
-export const HOTSYNC_DATA_PORT = 14238;
+export const NET_SYNC_PORT = 14238;
 
 /** Handshake request 1 from client to server. */
-export const HOTSYNC_HANDSHAKE_REQUEST_1 = Buffer.from([
+export const NET_SYNC_HANDSHAKE_REQUEST_1 = Buffer.from([
   0x90, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
   0x08, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 /** Handshake response 1 from server to client. */
-export const HOTSYNC_HANDSHAKE_RESPONSE_1 = Buffer.from([
+export const NET_SYNC_HANDSHAKE_RESPONSE_1 = Buffer.from([
   0x12, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
   0x24, 0xff, 0xff, 0xff, 0xff, 0x3c, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0xc0, 0xa8, 0x01, 0x21, 0x04, 0x27, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 /** Handshake request 2 from client to server. */
-export const HOTSYNC_HANDSHAKE_REQUEST_2 = Buffer.from([
+export const NET_SYNC_HANDSHAKE_REQUEST_2 = Buffer.from([
   0x92, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
   0x24, 0xff, 0xff, 0xff, 0xff, 0x00, 0x3c, 0x00, 0x3c, 0x40, 0x00, 0x00, 0x00,
   0x01, 0x00, 0x00, 0x00, 0xc0, 0xa8, 0xa5, 0x1e, 0x04, 0x01, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 /** Handshake response 2 from server to client. */
-export const HOTSYNC_HANDSHAKE_RESPONSE_2 = Buffer.from([
+export const NET_SYNC_HANDSHAKE_RESPONSE_2 = Buffer.from([
   0x13, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
   0x20, 0xff, 0xff, 0xff, 0xff, 0x00, 0x3c, 0x00, 0x3c, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 /** Handshake request 3 from client to server. */
-export const HOTSYNC_HANDSHAKE_REQUEST_3 = Buffer.from([
+export const NET_SYNC_HANDSHAKE_REQUEST_3 = Buffer.from([
   0x93, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 
@@ -65,8 +65,8 @@ export class NetSyncServer extends EventEmitter {
       throw new Error('Server already started');
     }
     this.server = net.createServer(this.onConnection.bind(this));
-    this.server.listen(HOTSYNC_DATA_PORT, () => {
-      this.log(`Server started on port ${HOTSYNC_DATA_PORT}`);
+    this.server.listen(NET_SYNC_PORT, () => {
+      this.log(`Server started on port ${NET_SYNC_PORT}`);
     });
   }
 
@@ -129,17 +129,17 @@ export class NetSyncConnection {
     this.log('Starting handshake');
     await readStream(
       this.netSyncDatagramStream,
-      HOTSYNC_HANDSHAKE_REQUEST_1.length
+      NET_SYNC_HANDSHAKE_REQUEST_1.length
     );
-    this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_1);
+    this.netSyncDatagramStream.write(NET_SYNC_HANDSHAKE_RESPONSE_1);
     await readStream(
       this.netSyncDatagramStream,
-      HOTSYNC_HANDSHAKE_REQUEST_2.length
+      NET_SYNC_HANDSHAKE_REQUEST_2.length
     );
-    this.netSyncDatagramStream.write(HOTSYNC_HANDSHAKE_RESPONSE_2);
+    this.netSyncDatagramStream.write(NET_SYNC_HANDSHAKE_RESPONSE_2);
     await readStream(
       this.netSyncDatagramStream,
-      HOTSYNC_HANDSHAKE_REQUEST_3.length
+      NET_SYNC_HANDSHAKE_REQUEST_3.length
     );
     this.log('Handshake complete');
   }

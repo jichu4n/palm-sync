@@ -1,5 +1,4 @@
 import duplexify from 'duplexify';
-import pEvent from 'p-event';
 import {SmartBuffer} from 'smart-buffer';
 import stream from 'stream';
 
@@ -29,31 +28,51 @@ export class NetSyncDatagramReadStream extends stream.Transform {
 
     // If no existing datagram being parsed, start parsing a new datagram.
     if (!this.currentDatagram) {
-      if (chunk.length < NET_SYNC_DATAGRAM_HEADER_LENGTH) {
-        callback(
-          new Error(`Incomplete datagram header (${chunk.length} bytes)`)
-        );
-        return;
-      }
-      reader.readUInt8(); // data type
-      reader.readUInt8(); // XID
-      const dataLength = reader.readUInt32BE();
       this.currentDatagram = {
-        payload: new SmartBuffer(),
-        remainingLength: dataLength,
+        data: new SmartBuffer(),
+        remainingLength: -1,
       };
     }
+
+    // If we haven't parsed the header yet, try parsing the header.
+    if (this.currentDatagram.remainingLength < 0) {
+      this.currentDatagram.data.writeBuffer(
+        reader.readBuffer(
+          Math.min(
+            reader.remaining(),
+            NET_SYNC_DATAGRAM_HEADER_LENGTH - this.currentDatagram.data.length
+          )
+        )
+      );
+      // If we still haven't received the full header, then let's try again when
+      // we receive the next chunk.
+      if (this.currentDatagram.data.length < NET_SYNC_DATAGRAM_HEADER_LENGTH) {
+        return;
+      }
+      // Otherwise, let's parse the header.
+      this.currentDatagram.data.readUInt8(); // data type
+      this.currentDatagram.data.readUInt8(); // XID
+      this.currentDatagram.remainingLength =
+        this.currentDatagram.data.readUInt32BE();
+    }
+
+    // At this point, we have parsed the header and are still trying to read
+    // currentDatagram.remainingLength bytes for the current datagram.
 
     // Append data in this chunk into the current datagram.
     const payloadForCurrentDatagram = reader.readBuffer(
       Math.min(reader.remaining(), this.currentDatagram.remainingLength)
     );
-    this.currentDatagram.payload.writeBuffer(payloadForCurrentDatagram);
+    this.currentDatagram.data.writeBuffer(payloadForCurrentDatagram);
     this.currentDatagram.remainingLength -= payloadForCurrentDatagram.length;
 
     // If current datagram is complete, emit it.
     if (this.currentDatagram.remainingLength === 0) {
-      this.push(this.currentDatagram.payload.toBuffer());
+      this.push(
+        this.currentDatagram.data
+          .toBuffer()
+          .slice(NET_SYNC_DATAGRAM_HEADER_LENGTH)
+      );
       this.currentDatagram = null;
     }
 
@@ -67,7 +86,7 @@ export class NetSyncDatagramReadStream extends stream.Transform {
   }
 
   private currentDatagram: {
-    payload: SmartBuffer;
+    data: SmartBuffer;
     remainingLength: number;
   } | null = null;
 }
