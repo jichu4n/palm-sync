@@ -10,7 +10,7 @@ import pEvent from 'p-event';
 import stream from 'stream';
 import {readStream} from './utils';
 import {StreamRecorder} from './stream-recorder';
-import {RawSlpDatagram, SlpReadStream} from './slp-protocol';
+import {RawSlpDatagram, createSlpDatagramStream} from './slp-protocol';
 
 /** Serial-over-TCP port to listen on.
  *
@@ -86,11 +86,10 @@ export class SerialTcpSyncConnection {
   }
 
   async start() {
-    const slpStream = new SlpReadStream();
-    this.socket.pipe(slpStream);
+    const slpStream = createSlpDatagramStream(this.socket);
     for (;;) {
       const data = RawSlpDatagram.from(await readStream(slpStream));
-      this.log(`Initial data: ${JSON.stringify(data, null, 2)}`);
+      this.log(`Read data: ${JSON.stringify(data, null, 2)}`);
     }
   }
 

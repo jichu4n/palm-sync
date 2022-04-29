@@ -1,3 +1,4 @@
+import duplexify from 'duplexify';
 import {
   DeserializeOptions,
   field,
@@ -17,6 +18,14 @@ import {crc16} from './utils';
 /** 3-byte signature that marks the beginning of every SLP datagram.  */
 export const SLP_SIGNATURE = Object.freeze([0xbe, 0xef, 0xed]);
 
+/** Type of SLP packets. */
+export enum SlpPacketType {
+  /** Remote Debugger, Remote Console, and System Remote Procedure Call packets. */
+  SYSTEM = 0,
+  PADP = 2,
+  LOOPBACK = 3,
+}
+
 /** SLP datagram header. */
 export class SlpDatagramHeader extends SObject {
   /** 3-byte SLP signature. Must always be SLP_SIGNATURE.*/
@@ -29,8 +38,8 @@ export class SlpDatagramHeader extends SObject {
   @field.as(SUInt8)
   srcSocketId = 0;
   /** Packet type -- see SlpPacketType. */
-  @field.as(SUInt8)
-  type = 0;
+  @field.as(SUInt8.asEnum(SlpPacketType))
+  type = SlpPacketType.SYSTEM;
   /** Payload size. */
   @field.as(SUInt16BE)
   dataLength = 0;
@@ -161,7 +170,7 @@ export abstract class SlpDatagram<
 export class RawSlpDatagram extends SlpDatagram.as(SBuffer) {}
 
 /** Transformer for reading SLP datagrams. */
-export class SlpReadStream extends stream.Transform {
+export class SlpDatagramReadStream extends stream.Transform {
   _transform(
     chunk: any,
     encoding: BufferEncoding | 'buffer',
@@ -171,7 +180,6 @@ export class SlpReadStream extends stream.Transform {
       callback(new Error(`Unsupported encoding ${encoding}`));
       return;
     }
-    console.log(`Received chunk: ${chunk.toString('hex')}`);
 
     const reader = SmartBuffer.fromBuffer(chunk);
 
@@ -196,6 +204,7 @@ export class SlpReadStream extends stream.Transform {
       // If we still haven't received the full header, then let's try again when
       // we receive the next chunk.
       if (this.currentDatagram.data.length < SLP_DATAGRAM_HEADER_LENGTH) {
+        callback(null);
         return;
       }
       // Otherwise, let's parse the header.
@@ -228,7 +237,7 @@ export class SlpReadStream extends stream.Transform {
     if (reader.remaining()) {
       this._transform(reader.readBuffer(), encoding, callback);
     } else {
-      callback();
+      callback(null);
     }
   }
 
@@ -238,4 +247,20 @@ export class SlpReadStream extends stream.Transform {
     /** Header of the datagram. */
     remainingLength: number;
   } | null = null;
+}
+
+/** Duplex SLP datagram stream, created by createSLPDatagramStream. */
+export type SlpDatagramStream = duplexify.Duplexify;
+
+/** Create an SLP datagram stream on top of a raw data stream. */
+export function createSlpDatagramStream(
+  rawStream: stream.Duplex
+): SlpDatagramStream {
+  const readStream = new SlpDatagramReadStream();
+  rawStream.pipe(readStream);
+  const slpDatagramStream = duplexify(
+    rawStream,
+    readStream
+  ) as SlpDatagramStream;
+  return slpDatagramStream;
 }

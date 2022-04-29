@@ -47,6 +47,7 @@ export class NetSyncDatagramReadStream extends stream.Transform {
       // If we still haven't received the full header, then let's try again when
       // we receive the next chunk.
       if (this.currentDatagram.data.length < NET_SYNC_DATAGRAM_HEADER_LENGTH) {
+        callback(null);
         return;
       }
       // Otherwise, let's parse the header.
@@ -81,7 +82,7 @@ export class NetSyncDatagramReadStream extends stream.Transform {
     if (reader.remaining()) {
       this._transform(reader.readBuffer(), encoding, callback);
     } else {
-      callback();
+      callback(null);
     }
   }
 
