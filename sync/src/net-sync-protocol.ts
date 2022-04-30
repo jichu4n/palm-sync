@@ -87,6 +87,7 @@ export class NetSyncDatagramReadStream extends stream.Transform {
   }
 
   private currentDatagram: {
+    /** Portion of the datagram read so far. */
     data: SmartBuffer;
     remainingLength: number;
   } | null = null;
@@ -108,7 +109,7 @@ export class NetSyncDatagramWriteStream extends stream.Transform {
 
     // Write header.
     writer.writeUInt8(1); // data type
-    writer.writeUInt8(this.nextXid); // XID
+    writer.writeUInt8(this.getNextXid()); // XID
     writer.writeUInt32BE(chunk.length);
 
     // Write payload.
@@ -117,7 +118,7 @@ export class NetSyncDatagramWriteStream extends stream.Transform {
     callback(null, writer.toBuffer());
   }
 
-  get nextXid() {
+  private getNextXid() {
     this.xid = (this.xid + 1) % 0xff || 1;
     return this.xid;
   }

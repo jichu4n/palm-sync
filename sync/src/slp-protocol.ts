@@ -3,8 +3,6 @@ import {
   DeserializeOptions,
   field,
   SArray,
-  SBuffer,
-  Serializable,
   SerializableWrapper,
   SerializeOptions,
   SObject,
@@ -18,12 +16,38 @@ import {crc16} from './utils';
 /** 3-byte signature that marks the beginning of every SLP datagram.  */
 export const SLP_SIGNATURE = Object.freeze([0xbe, 0xef, 0xed]);
 
-/** Type of SLP packets. */
-export enum SlpPacketType {
-  /** Remote Debugger, Remote Console, and System Remote Procedure Call packets. */
+/** Type of SLP datagrams. */
+export enum SlpDatagramType {
+  /** Remote Debugger, Remote Console, and System Remote Procedure Call packets.
+   *
+   * Not used for HotSync.
+   */
   SYSTEM = 0,
+  /** PADP packets. */
   PADP = 2,
+  /** Loop-back test packets.
+   *
+   * Ignored for the purposes of HotSync.
+   */
   LOOPBACK = 3,
+}
+
+/** Static SLP socket IDs.
+ *
+ * These are the standard socket IDs defined by the SLP protocol. In addition,
+ * SLP also reserves ranges for dynamic socket IDs:
+ *   0x04-0xCF Reserved for dynamic assignment
+ *   0xD0-0xDF Reserved for testing
+ */
+export enum SlpSocketId {
+  /** Remote Debugger socket. */
+  REMOTE_DEBUGGER = 0,
+  /** Remote Console socket. */
+  REMOTE_CONSOLE = 1,
+  /** Remote UI socket. */
+  REMOTE_UI = 2,
+  /** Desktop Link Server socket. */
+  DLP = 3,
 }
 
 /** SLP datagram header. */
@@ -31,15 +55,21 @@ export class SlpDatagramHeader extends SObject {
   /** 3-byte SLP signature. Must always be SLP_SIGNATURE.*/
   @field.as(SArray.as(SUInt8))
   signature = [...SLP_SIGNATURE];
-  /** Destination socket ID. */
-  @field.as(SUInt8)
-  destSocketId = 0;
-  /** Source socket ID. */
-  @field.as(SUInt8)
-  srcSocketId = 0;
+  /** Destination socket ID.
+   *
+   * See SlpSocketId.
+   */
+  @field.as(SUInt8.asEnum(SlpSocketId))
+  destSocketId = SlpSocketId.DLP;
+  /** Source socket ID.
+   *
+   * See SlpSocketId.
+   */
+  @field.as(SUInt8.asEnum(SlpSocketId))
+  srcSocketId = SlpSocketId.DLP;
   /** Packet type -- see SlpPacketType. */
-  @field.as(SUInt8.asEnum(SlpPacketType))
-  type = SlpPacketType.SYSTEM;
+  @field.as(SUInt8.asEnum(SlpDatagramType))
+  type = SlpDatagramType.PADP;
   /** Payload size. */
   @field.as(SUInt16BE)
   dataLength = 0;
@@ -95,34 +125,30 @@ export class SlpDatagramHeader extends SObject {
     }
     return checksum;
   }
+
+  toJSON() {
+    const obj = super.toJSON();
+    obj.signature = Buffer.from(this.signature).toString('hex');
+    obj.destSocketId = SlpSocketId[obj.destSocketId] || obj.destSocketId;
+    obj.srcSocketId = SlpSocketId[obj.srcSocketId] || obj.srcSocketId;
+    return obj;
+  }
 }
 /** Total size in bytes of SLP datagram header. */
 const SLP_DATAGRAM_HEADER_LENGTH = 10;
 
 /** SLP datagram. */
-export abstract class SlpDatagram<
-  ValueT extends Serializable
-> extends SerializableWrapper<ValueT> {
-  /** Payload data type. */
-  abstract valueType: new () => ValueT;
-
+export class SlpDatagram extends SerializableWrapper<Buffer> {
   /** SLP datagram header. */
   header = new SlpDatagramHeader();
-
-  /** Returns an SlpDatagram class for a given data type. */
-  static as<ValueT extends Serializable>(valueType: new () => ValueT) {
-    return class extends SlpDatagram<ValueT> {
-      valueType = valueType;
-      value = new valueType();
-    };
-  }
+  value = Buffer.alloc(0);
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
     // Read header.
     reader.readOffset += this.header.deserialize(buffer, opts);
     // Read value.
-    this.value.deserialize(reader.readBuffer(this.header.dataLength));
+    this.value = reader.readBuffer(this.header.dataLength);
     // Read and validate CRC.
     const expectedCrc = crc16(buffer.slice(0, reader.readOffset));
     const crc = reader.readUInt16BE();
@@ -137,19 +163,16 @@ export abstract class SlpDatagram<
 
   serialize(opts?: SerializeOptions): Buffer {
     const writer = new SmartBuffer();
-    const serializedValue = this.value.serialize(opts);
-    this.header.dataLength = serializedValue.length;
+    this.header.dataLength = this.value.length;
     writer.writeBuffer(this.header.serialize(opts));
-    writer.writeBuffer(serializedValue);
+    writer.writeBuffer(this.value);
     const crc = crc16(writer.toBuffer());
     writer.writeUInt16BE(crc);
     return writer.toBuffer();
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
-    return (
-      SLP_DATAGRAM_HEADER_LENGTH + this.value.getSerializedLength(opts) + 2
-    );
+    return SLP_DATAGRAM_HEADER_LENGTH + this.value.length + 2;
   }
 
   static getExpectedSerializedLength(header: SlpDatagramHeader) {
@@ -160,16 +183,20 @@ export abstract class SlpDatagram<
     const serializedBuffer = this.serialize();
     return {
       header: this.header,
-      value: this.value,
+      value: this.value.toString('hex'),
       crc: serializedBuffer.readUInt16BE(serializedBuffer.length - 2),
     };
   }
 }
 
-/** Specialization of SlpDatagram for raw buffers. */
-export class RawSlpDatagram extends SlpDatagram.as(SBuffer) {}
-
-/** Transformer for reading SLP datagrams. */
+/** Transformer for reading SLP datagrams.
+ *
+ * Note that, unlike other streams, the output of this transformer is not
+ * payload data but complete SLP datagrams. This is because the SLP protocol and
+ * the PADP protocol which sits on top are entertwined, in that the PADP
+ * protocol layer needs to read / write the header in addition to the payload of
+ * the underlying SLP datagrams.
+ */
 export class SlpDatagramReadStream extends stream.Transform {
   _transform(
     chunk: any,
@@ -244,7 +271,7 @@ export class SlpDatagramReadStream extends stream.Transform {
   private currentDatagram: {
     /** Portion of the datagram read so far. */
     data: SmartBuffer;
-    /** Header of the datagram. */
+    /** Remaining data size to be read. */
     remainingLength: number;
   } | null = null;
 }
