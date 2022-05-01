@@ -8,9 +8,18 @@ import {EventEmitter} from 'events';
 import net, {Server, Socket} from 'net';
 import pEvent from 'p-event';
 import stream from 'stream';
-import {readStream} from './utils';
+import {
+  DlpAddSyncLogEntryRequest,
+  DlpConnection,
+  DlpEndOfSyncRequest,
+  DlpReadDBListMode,
+  DlpReadDBListRequest,
+  DlpReadSysInfoRequest,
+  DlpReadUserInfoRequest,
+  doCmpHandshake,
+  PadpStream,
+} from '.';
 import {StreamRecorder} from './stream-recorder';
-import {PadpStream} from '.';
 
 /** Serial-over-TCP port to listen on.
  *
@@ -50,8 +59,12 @@ export class SerialTcpSyncServer extends EventEmitter {
     const connection = new SerialTcpSyncConnection(socket);
     this.emit('connect', connection);
 
+    await connection.doHandshake();
     await connection.start();
 
+    await this.runFn(connection);
+
+    await connection.end();
     this.emit('disconnect', connection);
   }
 
@@ -61,7 +74,7 @@ export class SerialTcpSyncServer extends EventEmitter {
 
 export class SerialTcpSyncConnection {
   /** DLP connection for communicating with this sync session. */
-  // dlpConnection: DlpConnection;
+  dlpConnection: DlpConnection;
   /** Recorder for the socket. */
   recorder = new StreamRecorder();
 
@@ -69,6 +82,9 @@ export class SerialTcpSyncConnection {
     this.log = debug('SerialTcpSync').extend(
       socket instanceof Socket ? socket.remoteAddress ?? 'UNKNOWN' : 'N/A'
     );
+
+    this.padpStream = new PadpStream(this.recorder.record(this.socket));
+    this.dlpConnection = new DlpConnection(this.padpStream);
 
     this.log(`Connection received`);
 
@@ -85,18 +101,46 @@ export class SerialTcpSyncConnection {
     });
   }
 
+  async doHandshake() {
+    this.log('Starting CMP handshake');
+    await doCmpHandshake(this.padpStream, 115200);
+    this.log('CMP handlshake complete');
+  }
+
   async start() {
-    const padpSream = new PadpStream(this.recorder.record(this.socket));
-    for (;;) {
-      const data = await readStream(padpSream);
-      this.log(`Read data: ${data.toString('hex')}`);
-    }
+    const sysInfoResp = await this.dlpConnection.execute(
+      new DlpReadSysInfoRequest()
+    );
+    this.log(JSON.stringify(sysInfoResp));
+    const userInfoResp = await this.dlpConnection.execute(
+      new DlpReadUserInfoRequest()
+    );
+    this.log(JSON.stringify(userInfoResp));
+  }
+
+  async end() {
+    await this.dlpConnection.execute(
+      DlpAddSyncLogEntryRequest.with({
+        message: 'Thank you for using Palmira!',
+      })
+    );
+    await this.dlpConnection.execute(new DlpEndOfSyncRequest());
   }
 
   private log: debug.Debugger;
+  private padpStream: PadpStream;
 }
 
 if (require.main === module) {
-  const serialTcpSyncServer = new SerialTcpSyncServer(async () => {});
+  const serialTcpSyncServer = new SerialTcpSyncServer(
+    async ({dlpConnection}) => {
+      const readDbListResp = await dlpConnection.execute(
+        DlpReadDBListRequest.with({
+          mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+        })
+      );
+      console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
+    }
+  );
   serialTcpSyncServer.start();
 }

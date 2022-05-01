@@ -12,7 +12,7 @@ import {
   SUInt8,
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
-import stream from 'stream';
+import {Duplex, DuplexOptions} from 'stream';
 import {
   createSlpDatagramStream,
   SlpDatagram,
@@ -33,14 +33,14 @@ export enum PadpDatagramType {
   ABORT = 0x08,
 }
 
-/** PADP packet fragment flags. */
+/** PADP datagram flags. */
 export class PadpDatagramAttrs extends SBitmask.as(SUInt8) {
-  /** Flag indicating that this is the first fragment in a PADP packet. */
+  /** Flag indicating that this is the first datagram in a PADP message. */
   @bitfield(1, Boolean)
-  isFirstFragment = false;
-  /** Flag indicating that this is the first fragment in a PADP packet. */
+  isFirstDatagram = false;
+  /** Flag indicating that this is the last datagram in a PADP message. */
   @bitfield(1, Boolean)
-  isLastFragment = false;
+  isLastDatagram = false;
   /** Flag denoting a memory error on the device. */
   @bitfield(1, Boolean)
   memoryError = false;
@@ -54,14 +54,14 @@ export class PadpDatagramAttrs extends SBitmask.as(SUInt8) {
 
 /** PADP datagram header. */
 export class PadpDatagramHeader extends SObject {
-  /** Type of this PADP packet fragment. */
+  /** Type of this PADP datagram. */
   @field.as(SUInt8.asEnum(PadpDatagramType))
   type = PadpDatagramType.DATA;
   /** Flags. */
   @field
   attrs = new PadpDatagramAttrs();
-  /** Size of the entire PADP message (if first fragment) or offset within the
-   * PADP message (if 2nd or later fragment).
+  /** Size of the entire PADP message (if first datagram) or offset within the
+   * PADP message (if 2nd or later datagram).
    *
    * The size of this field depends on the isLongForm flag.
    */
@@ -136,12 +136,21 @@ export class PadpDatagram extends SerializableWrapper<Buffer> {
  * The input stream is expected to yield complete SLP datagrams. The output is a
  * stream of assembled PADP message data.
  */
-export class PadpStream extends stream.Duplex {
-  constructor(rawStream: stream.Duplex, opts?: stream.DuplexOptions) {
+export class PadpStream extends Duplex {
+  constructor(rawStream: Duplex, opts?: DuplexOptions) {
     super(opts);
     this.slpDatagramStream = createSlpDatagramStream(rawStream);
     this.slpDatagramStream.on('data', this.onReceiveSlpDatagram.bind(this));
     this.slpDatagramStream.on('error', (error) => this.emit('error', error));
+  }
+
+  /** Sets the transaction ID for the next datagram sent through this stream.
+   *
+   * The transaction ID will increment starting from this number for subsequent
+   * datagrams.
+   */
+  setNextXid(xid: number) {
+    this.nextXid = xid;
   }
 
   _read(size: number) {
@@ -152,8 +161,9 @@ export class PadpStream extends stream.Duplex {
   onReceiveSlpDatagram(chunk: Buffer) {
     const slpDatagram = SlpDatagram.from(chunk);
     this.log(
-      `Received SLP ${SlpDatagramType[slpDatagram.header.type]} ` +
-        `xid ${slpDatagram.header.xid}`
+      `<<< ${SlpDatagramType[slpDatagram.header.type]} ` +
+        `xid ${slpDatagram.header.xid}: ` +
+        chunk.toString('hex')
     );
     switch (slpDatagram.header.type) {
       case SlpDatagramType.LOOPBACK:
@@ -167,139 +177,148 @@ export class PadpStream extends stream.Duplex {
     }
 
     const padpDatagram = PadpDatagram.from(slpDatagram.value);
-    this.log(
-      `Received PADP ${PadpDatagramType[padpDatagram.header.type]} ` +
-        (padpDatagram.header.attrs.isFirstFragment ? 'length' : 'offset') +
-        ` ${padpDatagram.header.lengthOrOffset.value}`
-    );
 
     switch (padpDatagram.header.type) {
       case PadpDatagramType.DATA:
-      case PadpDatagramType.ACK:
+        // Handle below.
         break;
+      case PadpDatagramType.ACK:
+        if (!this.ackListener) {
+          this.emitReadError('Received unexpected ACK', {
+            slpDatagram,
+            padpDatagram,
+          });
+          return;
+        }
+        if (slpDatagram.header.xid === this.ackListener.xid) {
+          this.log(`<<< ACK xid ${this.ackListener.xid}`);
+          this.ackListener.resolve();
+        } else {
+          const errorMessage =
+            `Expected ACK datagram with xid ${this.ackListener.xid}` +
+            `got ${slpDatagram.header.xid}`;
+          this.emitReadError(errorMessage, {slpDatagram, padpDatagram});
+          this.ackListener.reject(new Error(errorMessage));
+        }
+        this.ackListener = null;
+        return;
       case PadpDatagramType.TICKLE:
         // Ignore
         return;
       default:
-        this.emitReadError('Unexpectd PADP datagram type', {slpDatagram});
+        this.emitReadError('Unexpectd PADP datagram type', {
+          slpDatagram,
+          padpDatagram,
+        });
         return;
-    }
-
-    if (this.ackListener) {
-      // If there is a pending ACK listener, we expect the next datagram to be an
-      // ACK for the message that was just sent.
-      if (padpDatagram.header.type !== PadpDatagramType.ACK) {
-        const errorMessage =
-          `Expected PADP datagram of type ACK, ` +
-          `got ${PadpDatagramType[padpDatagram.header.type]}`;
-        this.emitReadError(errorMessage, {slpDatagram});
-        this.ackListener.reject(new Error(errorMessage));
-      } else if (slpDatagram.header.xid !== this.ackListener.xid) {
-        const errorMessage =
-          `Expected PADP ACK datagram with xid ${this.ackListener.xid}` +
-          `got ${slpDatagram.header.xid}`;
-        this.emitReadError(errorMessage, {slpDatagram});
-        this.ackListener.reject(new Error(errorMessage));
-      } else {
-        this.log(
-          `Received matching PADP datagram of type ACK ` +
-            `on xid ${this.ackListener.xid}`
-        );
-        this.ackListener.resolve();
-      }
-      this.ackListener = null;
-      return;
-    } else {
-      // If there is no pending ACK listener, we should be getting a new DATA
-      // datagram.
-      if (padpDatagram.header.type !== PadpDatagramType.DATA) {
-        const errorMessage =
-          `Expected PADP datagram of type DATA, ` +
-          `got ${PadpDatagramType[padpDatagram.header.type]}`;
-        this.emitReadError(errorMessage, {slpDatagram});
-        return;
-      }
     }
 
     // Process PADP datagram of type DATA.
 
-    if (this.currentMessage) {
-      // If we've already received earlier datagrams for this message, ensure
-      // this datagram is the next one in the sequence.
-      if (padpDatagram.header.attrs.isFirstFragment) {
+    // If the transaction ID of this datagram is the same as the most recent one
+    // we ACKed, this datagram is a duplicate of the last one. Our ACK either
+    // got lost or didn't arrive on time, so the Palm device is retrying the
+    // same message. We will ignore the message but will send back another ACK.
+    if (slpDatagram.header.xid === this.lastAckedXid) {
+      this.log(`--- Ignoring duplicate PADP xid ${slpDatagram.header.xid}`);
+    } else {
+      if (this.currentMessage) {
+        // If we've already received earlier datagrams for this message, ensure
+        // this datagram is the next one in the sequence.
+        if (padpDatagram.header.attrs.isFirstDatagram) {
+          this.emitReadError(
+            'Expected PADP datagram with isFirstDatagram unset',
+            {
+              slpDatagram,
+              padpDatagram,
+            }
+          );
+          return;
+        }
+        if (
+          padpDatagram.header.lengthOrOffset.value !==
+          this.currentMessage.data.length
+        ) {
+          this.emitReadError(
+            `Expected PADP datagram with offset ${this.currentMessage.data.length}`,
+            {slpDatagram, padpDatagram}
+          );
+          return;
+        }
+      } else {
+        // If no existing message being parsed, start parsing a new message.
+        if (!padpDatagram.header.attrs.isFirstDatagram) {
+          this.emitReadError(
+            'Expected PADP datagram with isFirstDatagram set',
+            {
+              slpDatagram,
+              padpDatagram,
+            }
+          );
+          return;
+        }
+        this.currentMessage = {
+          data: new SmartBuffer(),
+          remainingLength: padpDatagram.header.lengthOrOffset.value,
+        };
+      }
+
+      // Append data in this datagram into the current message.
+      this.currentMessage.data.writeBuffer(padpDatagram.value);
+      this.currentMessage.remainingLength -= padpDatagram.value.length;
+
+      if (this.currentMessage.remainingLength < 0) {
         this.emitReadError(
-          'Expected PADP datagram with isFirstFragment unset',
+          'Received PADP datagram exceeds expected data size',
           {
             slpDatagram,
+            padpDatagram,
           }
         );
         return;
       }
-      if (
-        padpDatagram.header.lengthOrOffset.value !==
-        this.currentMessage.data.length
-      ) {
-        this.emitReadError(
-          `Expected PADP datagram with offset ${this.currentMessage.data.length}`,
-          {slpDatagram}
-        );
-        return;
-      }
-    } else {
-      // If no existing message being parsed, start parsing a new message.
-      if (!padpDatagram.header.attrs.isFirstFragment) {
-        this.emitReadError('Expected PADP datagram with isFirstFragment set', {
-          slpDatagram,
-        });
-        return;
-      }
-      this.currentMessage = {
-        data: new SmartBuffer(),
-        remainingLength: padpDatagram.header.lengthOrOffset.value,
-      };
-    }
 
-    // Append data in this fragment into the current datagram.
-    this.currentMessage.data.writeBuffer(padpDatagram.value);
-    this.currentMessage.remainingLength -= padpDatagram.value.length;
-
-    if (this.currentMessage.remainingLength < 0) {
-      this.emitReadError('Received PADP datagram exceeds expected data size', {
-        slpDatagram,
-      });
-      return;
-    }
-
-    if (this.currentMessage.remainingLength === 0) {
-      // If current message is complete, emit it.
-      if (!padpDatagram.header.attrs.isLastFragment) {
-        this.emitReadError(
-          'Expected final PADP datagram to have isLastFragment set',
-          {slpDatagram}
-        );
-        return;
-      }
-      this.push(this.currentMessage.data.toBuffer());
-      this.log(
-        `Received PADP message: ${this.currentMessage.data
-          .toBuffer()
-          .toString('hex')}`
-      );
-      this.currentMessage = null;
-    } else {
-      // Current message is not yet complete.
-      if (padpDatagram.header.attrs.isLastFragment) {
-        this.emitReadError(
-          'Expected non-final PADP datagram to have isLastFragment unset',
-          {slpDatagram}
-        );
+      if (this.currentMessage.remainingLength === 0) {
+        // If current message is complete, emit it.
+        if (!padpDatagram.header.attrs.isLastDatagram) {
+          this.emitReadError(
+            'Expected final PADP datagram to have isLastDatagram set',
+            {slpDatagram, padpDatagram}
+          );
+          return;
+        }
+        this.push(this.currentMessage.data.toBuffer());
+        this.currentMessage = null;
+      } else {
+        // Current message is not yet complete.
+        if (padpDatagram.header.attrs.isLastDatagram) {
+          this.emitReadError(
+            'Expected non-final PADP datagram to have isLastDatagram unset',
+            {slpDatagram, padpDatagram}
+          );
+        }
       }
     }
 
     // Send ACK after processing a DATA datagram.
-    const ackSlpDatagram = this.createAckSlpDatagram(slpDatagram);
-    this.log(`Sending ACK xid ${ackSlpDatagram.header.xid}`);
-    this.slpDatagramStream.write(ackSlpDatagram.serialize());
+    const ackSlpDatagram = this.createAckSlpDatagram(slpDatagram, padpDatagram);
+    this.lastAckedXid = slpDatagram.header.xid;
+    this.log(
+      `>>> ACK xid ${ackSlpDatagram.header.xid}: ` +
+        ackSlpDatagram.serialize().toString('hex')
+    );
+    this.slpDatagramStream.write(
+      ackSlpDatagram.serialize(),
+      'buffer' as BufferEncoding,
+      (error) => {
+        if (error) {
+          this.log(
+            `Error sending ACK xid ${ackSlpDatagram.header.xid}: ${error.message}`
+          );
+          this.emit('error', error);
+        }
+      }
+    );
   }
 
   async _write(
@@ -320,10 +339,6 @@ export class PadpStream extends stream.Duplex {
       pieces.push(chunk.slice(startOffset, endOffset));
       startOffset = endOffset;
     }
-    this.log(
-      `Sending PADP message of length ${chunk.length} ` +
-        `in ${pieces.length} datagram(s)`
-    );
 
     let bytesWritten = 0;
     for (const [i, piece] of pieces.entries()) {
@@ -331,8 +346,8 @@ export class PadpStream extends stream.Duplex {
       padpDatagram.header = PadpDatagramHeader.with({
         type: PadpDatagramType.DATA,
         attrs: PadpDatagramAttrs.with({
-          isFirstFragment: i === 0,
-          isLastFragment: i === pieces.length - 1,
+          isFirstDatagram: i === 0,
+          isLastDatagram: i === pieces.length - 1,
         }),
         lengthOrOffset: SUInt16BE.of(i === 0 ? chunk.length : bytesWritten),
       });
@@ -348,12 +363,15 @@ export class PadpStream extends stream.Duplex {
         dataLength: padpDatagram.getSerializedLength(),
         xid,
       });
+      slpDatagram.value = padpDatagram.serialize();
 
       // Write SLP and wait for confirmation.
-      this.log(`Writing datagram ${i} with xid ${xid}`);
+      this.log(
+        `>>> PADP xid ${xid}: ` + slpDatagram.serialize().toString('hex')
+      );
       await new Promise<void>((resolve, reject) =>
         this.slpDatagramStream.write(
-          padpDatagram.serialize(),
+          slpDatagram.serialize(),
           'buffer' as BufferEncoding,
           (error) => (error ? reject(error) : resolve())
         )
@@ -361,25 +379,35 @@ export class PadpStream extends stream.Duplex {
 
       // Wait for next ack.
       if (this.ackListener !== null) {
-        callback(new Error('Internal error: ack listener already exists'));
+        callback(new Error('Internal error: multiple concurrent writes'));
         return;
       }
-      this.log(`Waiting for ACK on xid ${xid}`);
+      this.log(`--- Waiting for ACK on xid ${xid}`);
       await new Promise<void>((resolve, reject) => {
         this.ackListener = {resolve, reject, xid};
       });
-      this.log(`Received ACK on xid ${xid}`);
 
       // TODO: error handling
     }
 
-    this.log(`PADP message successfully sent`);
     callback(null);
   }
 
-  private createAckSlpDatagram(receivedSlpDatagram: SlpDatagram): SlpDatagram {
+  private createAckSlpDatagram(
+    receivedSlpDatagram: SlpDatagram,
+    receivedPadpDatagram: PadpDatagram
+  ): SlpDatagram {
     const padpDatagram = new PadpDatagram();
-    padpDatagram.header.type = PadpDatagramType.ACK;
+    padpDatagram.header = PadpDatagramHeader.with({
+      type: PadpDatagramType.ACK,
+      attrs: PadpDatagramAttrs.with({
+        isFirstDatagram: true,
+        isLastDatagram: true,
+      }),
+      lengthOrOffset: SUInt16BE.of(
+        receivedPadpDatagram.header.lengthOrOffset.value
+      ),
+    });
     const slpDatagram = new SlpDatagram();
     slpDatagram.header = SlpDatagramHeader.with({
       destSocketId: receivedSlpDatagram.header.srcSocketId,
@@ -394,18 +422,26 @@ export class PadpStream extends stream.Duplex {
 
   private emitReadError(
     message: string,
-    {slpDatagram}: {slpDatagram?: SlpDatagram} = {}
+    {
+      slpDatagram,
+      padpDatagram,
+    }: {slpDatagram?: SlpDatagram; padpDatagram?: PadpDatagram} = {}
   ) {
-    const fullMessage = slpDatagram
-      ? `${message}\nSLP datagram: ${JSON.stringify(slpDatagram)}`
-      : message;
+    const fullMessage = [
+      message,
+      ...(slpDatagram ? [`SLP datagram: ${JSON.stringify(slpDatagram)}`] : []),
+      ...(padpDatagram
+        ? [`PADP datagram: ${JSON.stringify(padpDatagram)}`]
+        : []),
+    ].join('\n');
     this.emit('error', new Error(fullMessage));
     this.log(`Error: ${fullMessage}`);
   }
 
   private getNextXid() {
-    this.xid = (this.xid + 1) % 0xff || 1;
-    return this.xid;
+    const xid = this.nextXid;
+    this.nextXid = (this.nextXid + 1) % 0xff || 1;
+    return xid;
   }
 
   private log = debug('PadpStream');
@@ -428,6 +464,11 @@ export class PadpStream extends stream.Duplex {
     xid: number;
   } | null = null;
 
-  /** Next transaction ID, incremented with every SLP datagram written. */
-  private xid = 0;
+  /** Next transaction ID to use for sending, incremented with every SLP
+   * datagram written. */
+  private nextXid = 1;
+
+  /** XID of most recently received SLP datagram. This is used for deduplicating
+   * messages in case our ACK gets lost. */
+  private lastAckedXid = 0;
 }
