@@ -218,11 +218,13 @@ export class PadpStream extends Duplex {
 
     // Process PADP datagram of type DATA.
 
-    if (slpDatagram.header.xid === this.lastReceivedXid) {
-      // If the transaction ID of this datagram is the same as the most recent one
-      // we ACKed, this datagram is a duplicate of the last one. Our ACK either
-      // got lost or didn't arrive on time, so the Palm device is retrying the
-      // same message. We will ignore the message but will send back another ACK.
+    if (chunk.equals(this.lastProcessedPadpDataChunk)) {
+      // If this datagram is exactly the same as the most recent PADP DATA
+      // datagram we ACKed, this datagram is a duplicate as subsequent distinct
+      // datagrams should either have a different transaction ID or a different
+      // lengthOrOffset. Our ACK either got lost or didn't arrive on time, so
+      // the Palm device is retrying sending the same datagram. We will ignore
+      // this datagram but will send back another ACK.
       this.log(`--- Ignoring duplicate PADP xid ${slpDatagram.header.xid}`);
     } else {
       // If we just sent a message and we're still waiting for the ACK, but then
@@ -291,9 +293,7 @@ export class PadpStream extends Duplex {
           }
         );
         return;
-      }
-
-      if (this.currentMessage.remainingLength === 0) {
+      } else if (this.currentMessage.remainingLength === 0) {
         // If current message is complete, emit it.
         if (!padpDatagram.header.attrs.isLastDatagram) {
           this.emitReadError(
@@ -303,6 +303,9 @@ export class PadpStream extends Duplex {
           return;
         }
         this.push(this.currentMessage.data.toBuffer());
+        this.log(
+          `<<< PUSH ${this.currentMessage.data.toBuffer().toString('hex')}`
+        );
         this.currentMessage = null;
       } else {
         // Current message is not yet complete.
@@ -312,12 +315,13 @@ export class PadpStream extends Duplex {
             {slpDatagram, padpDatagram}
           );
         }
+        this.log(`--- Message incomplete, waiting for next PADP datagram`);
       }
     }
 
     // Send ACK after processing a DATA datagram.
     const ackSlpDatagram = this.createAckSlpDatagram(slpDatagram, padpDatagram);
-    this.lastReceivedXid = slpDatagram.header.xid;
+    this.lastProcessedPadpDataChunk = chunk;
     this.log(
       `>>> ACK xid ${ackSlpDatagram.header.xid}: ` +
         ackSlpDatagram.serialize().toString('hex')
@@ -517,7 +521,7 @@ export class PadpStream extends Duplex {
    * datagram written. */
   private nextXid = 1;
 
-  /** XID of most recently received SLP datagram. This is used for deduplicating
-   * messages in case our ACK gets lost. */
-  private lastReceivedXid = 0;
+  /** Most recently processed SLP datagram of type PADP DATA. This is used for
+   * deduplicating messages in case our ACK gets lost. */
+  private lastProcessedPadpDataChunk = Buffer.alloc(0);
 }
