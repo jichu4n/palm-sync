@@ -5,9 +5,9 @@
  */
 import debug from 'debug';
 import {EventEmitter} from 'events';
-import net, {Server, Socket} from 'net';
+import {createServer, Server, Socket} from 'net';
 import pEvent from 'p-event';
-import stream from 'stream';
+import {Duplex} from 'stream';
 import {
   DlpAddSyncLogEntryRequest,
   DlpConnection,
@@ -41,7 +41,7 @@ export class SerialTcpSyncServer extends EventEmitter {
     if (this.server) {
       throw new Error('Server already started');
     }
-    this.server = net.createServer(this.onConnection.bind(this));
+    this.server = createServer(this.onConnection.bind(this));
     this.server.listen(SERIAL_TCP_SYNC_PORT, () => {
       this.log(`Server started on port ${SERIAL_TCP_SYNC_PORT}`);
     });
@@ -55,7 +55,7 @@ export class SerialTcpSyncServer extends EventEmitter {
     await pEvent(this.server, 'close');
   }
 
-  async onConnection(socket: Socket | stream.Duplex) {
+  async onConnection(socket: Socket | Duplex) {
     const connection = new SerialTcpSyncConnection(socket);
     this.emit('connect', connection);
 
@@ -78,7 +78,7 @@ export class SerialTcpSyncConnection {
   /** Recorder for the socket. */
   recorder = new StreamRecorder();
 
-  constructor(private socket: Socket | stream.Duplex) {
+  constructor(private socket: Socket | Duplex) {
     this.log = debug('SerialTcpSync').extend(
       socket instanceof Socket ? socket.remoteAddress ?? 'UNKNOWN' : 'N/A'
     );

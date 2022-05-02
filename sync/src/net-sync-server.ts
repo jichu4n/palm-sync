@@ -1,8 +1,8 @@
 import debug from 'debug';
 import {EventEmitter} from 'events';
-import net, {Server, Socket} from 'net';
+import {createServer, Server, Socket} from 'net';
 import pEvent from 'p-event';
-import stream from 'stream';
+import {Duplex} from 'stream';
 import {
   createNetSyncDatagramStream,
   DlpAddSyncLogEntryRequest,
@@ -14,8 +14,8 @@ import {
   DlpReadUserInfoRequest,
   NetSyncDatagramStream,
 } from '.';
-import {readStream} from './utils';
 import {StreamRecorder} from './stream-recorder';
+import {readStream} from './utils';
 
 /** HotSync port to listen on. */
 export const NET_SYNC_PORT = 14238;
@@ -64,7 +64,7 @@ export class NetSyncServer extends EventEmitter {
     if (this.server) {
       throw new Error('Server already started');
     }
-    this.server = net.createServer(this.onConnection.bind(this));
+    this.server = createServer(this.onConnection.bind(this));
     this.server.listen(NET_SYNC_PORT, () => {
       this.log(`Server started on port ${NET_SYNC_PORT}`);
     });
@@ -78,7 +78,7 @@ export class NetSyncServer extends EventEmitter {
     await pEvent(this.server, 'close');
   }
 
-  async onConnection(socket: Socket | stream.Duplex) {
+  async onConnection(socket: Socket | Duplex) {
     const connection = new NetSyncConnection(socket);
     this.emit('connect', connection);
 
@@ -101,7 +101,7 @@ export class NetSyncConnection {
   /** Recorder for the socket. */
   recorder = new StreamRecorder();
 
-  constructor(socket: Socket | stream.Duplex) {
+  constructor(socket: Socket | Duplex) {
     this.log = debug('NetSync').extend(
       socket instanceof Socket ? socket.remoteAddress ?? 'UNKNOWN' : 'N/A'
     );

@@ -1,6 +1,6 @@
-import fs from 'fs-extra';
 import duplexify from 'duplexify';
-import stream from 'stream';
+import fs from 'fs-extra';
+import {Duplex, DuplexOptions, Transform, TransformCallback} from 'stream';
 
 /** Utility class for recording reads / writes to a duplex stream.
  *
@@ -11,7 +11,7 @@ export class StreamRecorder {
   dataEvents: Array<DataEvent> = [];
 
   /** Wraps a duplex stream such that all reads and writes are recorded. */
-  record(rawStream: stream.Duplex): stream.Duplex {
+  record(rawStream: Duplex): Duplex {
     const readStream = new RecordingStream(this, DataEventType.READ);
     rawStream.pipe(readStream);
     const writeStream = new RecordingStream(this, DataEventType.WRITE);
@@ -20,7 +20,7 @@ export class StreamRecorder {
   }
 
   /** Creates a duplex stream that plays back the list of recorded events. */
-  playback(): stream.Duplex {
+  playback(): Duplex {
     return new PlaybackStream([...this.dataEvents]);
   }
 
@@ -84,7 +84,7 @@ export interface DataEventObject {
 }
 
 /** A Transform proxy that records data events to a StreamRecorder. */
-class RecordingStream extends stream.Transform {
+class RecordingStream extends Transform {
   constructor(
     private readonly streamRecorder: StreamRecorder,
     private readonly type: DataEventType
@@ -95,7 +95,7 @@ class RecordingStream extends stream.Transform {
   _transform(
     chunk: any,
     encoding: BufferEncoding | 'buffer',
-    callback: stream.TransformCallback
+    callback: TransformCallback
   ) {
     if (encoding !== 'buffer' || !(chunk instanceof Buffer)) {
       callback(new Error(`Unsupported encoding ${encoding}`));
@@ -111,13 +111,13 @@ class RecordingStream extends stream.Transform {
  * It expects data to be read and written in exactly the same order as the
  * recorded list.
  */
-class PlaybackStream extends stream.Duplex {
+class PlaybackStream extends Duplex {
   /** The list of recorded data events to play back. */
   dataEvents: Array<DataEvent> = [];
   /** Cursor in the recorded stream. */
   cursor = 0;
 
-  constructor(dataEvents: Array<DataEvent>, opts?: stream.DuplexOptions) {
+  constructor(dataEvents: Array<DataEvent>, opts?: DuplexOptions) {
     super(opts);
     this.dataEvents = dataEvents;
 

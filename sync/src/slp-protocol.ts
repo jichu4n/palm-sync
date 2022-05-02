@@ -10,7 +10,7 @@ import {
   SUInt8,
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
-import stream from 'stream';
+import {Duplex, Transform, TransformCallback} from 'stream';
 import {crc16} from './utils';
 
 /** 3-byte signature that marks the beginning of every SLP datagram.  */
@@ -197,11 +197,11 @@ export class SlpDatagram extends SerializableWrapper<Buffer> {
  * protocol layer needs to read / write the header in addition to the payload of
  * the underlying SLP datagrams.
  */
-export class SlpDatagramReadStream extends stream.Transform {
+export class SlpDatagramReadStream extends Transform {
   _transform(
     chunk: any,
     encoding: BufferEncoding | 'buffer',
-    callback: stream.TransformCallback
+    callback: TransformCallback
   ) {
     if (encoding !== 'buffer' || !(chunk instanceof Buffer)) {
       callback(new Error(`Unsupported encoding ${encoding}`));
@@ -277,12 +277,10 @@ export class SlpDatagramReadStream extends stream.Transform {
 }
 
 /** Duplex SLP datagram stream, created by createSLPDatagramStream. */
-export type SlpDatagramStream = duplexify.Duplexify;
+export type SlpDatagramStream = Duplex;
 
 /** Create an SLP datagram stream on top of a raw data stream. */
-export function createSlpDatagramStream(
-  rawStream: stream.Duplex
-): SlpDatagramStream {
+export function createSlpDatagramStream(rawStream: Duplex): SlpDatagramStream {
   const readStream = new SlpDatagramReadStream();
   rawStream.pipe(readStream);
   const slpDatagramStream = duplexify(

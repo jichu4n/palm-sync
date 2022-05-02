@@ -14,13 +14,13 @@ import {
   SUInt8,
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
-import stream from 'stream';
+import {Duplex} from 'stream';
 
 /** Representation of a DLP connection over an underlying transport. */
 export class DlpConnection {
   constructor(
     /** Underlying transport stream. */
-    private transport: stream.Duplex,
+    private transport: Duplex,
     /** Additional options. */
     private opts: {
       requestSerializeOptions?: SerializeOptions;

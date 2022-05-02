@@ -1,6 +1,6 @@
 import duplexify from 'duplexify';
 import {SmartBuffer} from 'smart-buffer';
-import stream from 'stream';
+import {Duplex, Transform} from 'stream';
 
 /** Size of NetSync datagram headers.
  *
@@ -13,7 +13,7 @@ import stream from 'stream';
 const NET_SYNC_DATAGRAM_HEADER_LENGTH = 6;
 
 /** Transformer for reading NetSync datagrams. */
-export class NetSyncDatagramReadStream extends stream.Transform {
+export class NetSyncDatagramReadStream extends Transform {
   _transform(
     chunk: Buffer,
     encoding: string,
@@ -94,7 +94,7 @@ export class NetSyncDatagramReadStream extends stream.Transform {
 }
 
 /** Transformer for writing NetSync datagrams. */
-export class NetSyncDatagramWriteStream extends stream.Transform {
+export class NetSyncDatagramWriteStream extends Transform {
   _transform(
     chunk: Buffer,
     encoding: string,
@@ -128,11 +128,11 @@ export class NetSyncDatagramWriteStream extends stream.Transform {
 }
 
 /** Duplex NetSync datagram stream, created by createNetSyncDatagramStream. */
-export type NetSyncDatagramStream = duplexify.Duplexify;
+export type NetSyncDatagramStream = Duplex;
 
 /** Create a NetSync datagram stream on top of a raw data stream. */
 export function createNetSyncDatagramStream(
-  rawStream: stream.Duplex
+  rawStream: Duplex
 ): NetSyncDatagramStream {
   const readStream = new NetSyncDatagramReadStream();
   rawStream.pipe(readStream);

@@ -1,11 +1,8 @@
 import pEvent from 'p-event';
-import stream from 'stream';
+import {Readable} from 'stream';
 
 /** Utility method for reading a datagram with an optional expected size. */
-export async function readStream(
-  stream: stream.Readable,
-  expectedLength?: number
-) {
+export async function readStream(stream: Readable, expectedLength?: number) {
   const data: Buffer = await pEvent(stream, 'data');
   if (
     expectedLength &&
