@@ -131,6 +131,9 @@ export class PadpDatagram extends SerializableWrapper<Buffer> {
   }
 }
 
+/** Number of times to retry sending a PADP datagram before assuming failure. */
+export const PADP_SEND_MAX_RETRIES = 10;
+
 /** PADP stream over a raw data stream.
  *
  * The input stream is expected to yield complete SLP datagrams. The output is a
@@ -215,13 +218,25 @@ export class PadpStream extends Duplex {
 
     // Process PADP datagram of type DATA.
 
-    // If the transaction ID of this datagram is the same as the most recent one
-    // we ACKed, this datagram is a duplicate of the last one. Our ACK either
-    // got lost or didn't arrive on time, so the Palm device is retrying the
-    // same message. We will ignore the message but will send back another ACK.
-    if (slpDatagram.header.xid === this.lastAckedXid) {
+    if (slpDatagram.header.xid === this.lastReceivedXid) {
+      // If the transaction ID of this datagram is the same as the most recent one
+      // we ACKed, this datagram is a duplicate of the last one. Our ACK either
+      // got lost or didn't arrive on time, so the Palm device is retrying the
+      // same message. We will ignore the message but will send back another ACK.
       this.log(`--- Ignoring duplicate PADP xid ${slpDatagram.header.xid}`);
     } else {
+      // If we just sent a message and we're still waiting for the ACK, but then
+      // receive a DATA message that has the same XID, it means the current
+      // message is the reply to our earlier message and the ACK from the Palm
+      // device was lost.
+      if (this.ackListener && slpDatagram.header.xid === this.ackListener.xid) {
+        this.log(
+          `--- Received PADP xid ${slpDatagram.header.xid} reply without ACK`
+        );
+        this.ackListener.resolve();
+        this.ackListener = null;
+      }
+
       if (this.currentMessage) {
         // If we've already received earlier datagrams for this message, ensure
         // this datagram is the next one in the sequence.
@@ -302,7 +317,7 @@ export class PadpStream extends Duplex {
 
     // Send ACK after processing a DATA datagram.
     const ackSlpDatagram = this.createAckSlpDatagram(slpDatagram, padpDatagram);
-    this.lastAckedXid = slpDatagram.header.xid;
+    this.lastReceivedXid = slpDatagram.header.xid;
     this.log(
       `>>> ACK xid ${ackSlpDatagram.header.xid}: ` +
         ackSlpDatagram.serialize().toString('hex')
@@ -365,29 +380,63 @@ export class PadpStream extends Duplex {
       });
       slpDatagram.value = padpDatagram.serialize();
 
-      // Write SLP and wait for confirmation.
-      this.log(
-        `>>> PADP xid ${xid}: ` + slpDatagram.serialize().toString('hex')
-      );
-      await new Promise<void>((resolve, reject) =>
-        this.slpDatagramStream.write(
-          slpDatagram.serialize(),
-          'buffer' as BufferEncoding,
-          (error) => (error ? reject(error) : resolve())
-        )
-      );
+      let error: Error | null = null;
+      for (let retryId = 0; retryId < PADP_SEND_MAX_RETRIES; ++retryId) {
+        error = null;
 
-      // Wait for next ack.
-      if (this.ackListener !== null) {
-        callback(new Error('Internal error: multiple concurrent writes'));
+        // Write SLP and wait for confirmation.
+        this.log(
+          `>>> PADP xid ${xid}: ` +
+            slpDatagram.serialize().toString('hex') +
+            (retryId > 0 ? ` (try #${retryId + 1})` : '')
+        );
+        try {
+          await new Promise<void>((resolve, reject) =>
+            this.slpDatagramStream.write(
+              slpDatagram.serialize(),
+              'buffer' as BufferEncoding,
+              (error) => (error ? reject(error) : resolve())
+            )
+          );
+        } catch (e: any) {
+          error = new Error(`Error sending PADP xid ${xid}: ${e.message}`);
+          this.log(`--- ${error.message}`);
+          continue;
+        }
+
+        // Wait for next ack.
+        if (this.ackListener) {
+          // This should not happen since we won't call callback() until we
+          // receive the ACK, so there should never be multiple concurrent writes.
+          callback(new Error('Internal error: multiple concurrent writes'));
+          return;
+        }
+        this.log(`--- Waiting for ACK on xid ${xid}`);
+        try {
+          await new Promise<void>((resolve, reject) => {
+            this.ackListener = {resolve, reject, xid};
+          });
+        } catch (e: any) {
+          error = new Error(
+            `Error while waiting for ACK on xid ${xid}: ${e.message}`
+          );
+          this.log(`--- ${error.message}`);
+          continue;
+        }
+
+        // Successfully sent message and received ACK.
+        break;
+      }
+
+      // If we exhausted the number of retries and still ended up with an error,
+      // return that to the caller.
+      if (error) {
+        this.log(
+          `--- PADP xid ${xid} failed after ${PADP_SEND_MAX_RETRIES} retries`
+        );
+        callback(error);
         return;
       }
-      this.log(`--- Waiting for ACK on xid ${xid}`);
-      await new Promise<void>((resolve, reject) => {
-        this.ackListener = {resolve, reject, xid};
-      });
-
-      // TODO: error handling
     }
 
     callback(null);
@@ -470,5 +519,5 @@ export class PadpStream extends Duplex {
 
   /** XID of most recently received SLP datagram. This is used for deduplicating
    * messages in case our ACK gets lost. */
-  private lastAckedXid = 0;
+  private lastReceivedXid = 0;
 }
