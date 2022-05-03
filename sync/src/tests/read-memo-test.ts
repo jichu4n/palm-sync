@@ -22,14 +22,12 @@ export async function run({dlpConnection}: NetSyncConnection) {
   const {numRecords} = await dlpConnection.execute(
     DlpReadOpenDBInfoRequest.with({dbHandle})
   );
-  assert.strictEqual(numRecords, 2);
   const {recordIds} = await dlpConnection.execute(
     DlpReadRecordIDListRequest.with({
       dbHandle,
       maxNumRecords: 500,
     })
   );
-  assert.strictEqual(recordIds.length, 2);
   const memoRecords: Array<MemoRecord> = [];
   for (const recordId of recordIds) {
     const resp = await dlpConnection.execute(
@@ -40,10 +38,8 @@ export async function run({dlpConnection}: NetSyncConnection) {
     );
     memoRecords.push(MemoRecord.from(resp.data.value));
   }
-  assert.deepStrictEqual(
-    memoRecords.map(({value}) => value),
-    ['hello', 'world']
-  );
+
+  console.log(memoRecords.map(({value}) => value).join('\n--------\n'));
 
   await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
 }

@@ -165,17 +165,18 @@ class PlaybackStream extends Duplex {
 
   // Push all READ events until the next WRITE event or end of record data.
   _read(): void {
-    for (; ; ++this.cursor) {
-      // If at end of recorded data, push null to signal EOF.
-      if (this.cursor >= this.dataEvents.length) {
-        this.push(null);
-        return;
-      }
-      if (this.dataEvents[this.cursor].type === DataEventType.READ) {
-        this.push(this.dataEvents[this.cursor].data);
-      } else {
-        return;
-      }
+    // If at end of recorded data, push null to signal EOF.
+    if (this.cursor >= this.dataEvents.length) {
+      this.push(null);
+      return;
+    }
+    if (this.dataEvents[this.cursor].type === DataEventType.READ) {
+      const data = this.dataEvents[this.cursor].data;
+      ++this.cursor;
+      setTimeout(() => {
+        this.push(data);
+        this._read();
+      }, 0);
     }
   }
 }

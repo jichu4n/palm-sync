@@ -186,23 +186,15 @@ export class PadpStream extends Duplex {
         // Handle below.
         break;
       case PadpDatagramType.ACK:
-        if (!this.ackListener) {
-          this.emitReadError('Received unexpected ACK', {
-            slpDatagram,
-            padpDatagram,
-          });
+        if (
+          !this.ackListener ||
+          slpDatagram.header.xid !== this.ackListener.xid
+        ) {
+          this.log(`--- Ignoring unexpected ACK xid ${slpDatagram.header.xid}`);
           return;
         }
-        if (slpDatagram.header.xid === this.ackListener.xid) {
-          this.log(`<<< ACK xid ${this.ackListener.xid}`);
-          this.ackListener.resolve();
-        } else {
-          const errorMessage =
-            `Expected ACK datagram with xid ${this.ackListener.xid}` +
-            `got ${slpDatagram.header.xid}`;
-          this.emitReadError(errorMessage, {slpDatagram, padpDatagram});
-          this.ackListener.reject(new Error(errorMessage));
-        }
+        this.log(`<<< ACK xid ${this.ackListener.xid}`);
+        this.ackListener.resolve();
         this.ackListener = null;
         return;
       case PadpDatagramType.TICKLE:
