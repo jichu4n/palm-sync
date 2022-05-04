@@ -129,7 +129,7 @@ export async function doCmpHandshake(
   stream: PadpStream,
   suggestedBaudRate?: number
 ) {
-  const log = debug('doCmpHandshake');
+  const log = debug('palmira').extend('cmp');
 
   // Read initial WAKEUP.
   const wakeupDatagram = CmpDatagram.from(await pEvent(stream, 'data'));

@@ -1,3 +1,4 @@
+import debug from 'debug';
 import duplexify from 'duplexify';
 import {
   DeserializeOptions,
@@ -276,13 +277,106 @@ export class SlpDatagramReadStream extends Transform {
   } | null = null;
 }
 
+/** Transformer for skipping to the first SLP datagram to read stream.
+ *
+ * On serial connections, the Palm device may send garbage data at thea
+ * beginning, and we are expected to ignore everything up to the first SLP
+ * datagram signature.
+ */
+class SlpSeekReadStream extends Transform {
+  _transform(
+    chunk: any,
+    encoding: BufferEncoding | 'buffer',
+    callback: TransformCallback
+  ) {
+    if (encoding !== 'buffer' || !(chunk instanceof Buffer)) {
+      callback(new Error(`Unsupported encoding ${encoding}`));
+      return;
+    }
+
+    // If we've already found the SLP signature, this stream becomes a
+    // passthrough transform.
+    if (this.hasFoundSlpSignature) {
+      callback(null, chunk);
+      return;
+    }
+
+    this.log(`<<< ${chunk.toString('hex')}`);
+
+    // Merge the chunk with the potential partial signature from the previous chunk.
+    const mergedChunk = Buffer.concat([
+      this.partialSignatureFromPreviousChunk,
+      chunk,
+    ]);
+
+    // If the merged chunk contains the full SLP signature, we're done!
+    const slpSignatureIdx = mergedChunk.findIndex((_, idx) =>
+      mergedChunk
+        .slice(idx, SLP_SIGNATURE.length)
+        .equals(Buffer.from(SLP_SIGNATURE))
+    );
+    if (slpSignatureIdx >= 0) {
+      const skippedLength = this.previousChunksLength + slpSignatureIdx;
+      this.log(`--- Found SLP signature after skipping ${skippedLength} bytes`);
+      this.hasFoundSlpSignature = true;
+      callback(null, mergedChunk.slice(slpSignatureIdx));
+      return;
+    }
+
+    // Otherwise, check if the last few bytes of mergedChunk may contain the
+    // start of an SLP signature. If so, add that to
+    // partialSignatureFromPreviousChunk.
+    this.partialSignatureFromPreviousChunk = Buffer.alloc(0);
+    this.previousChunksLength += chunk.length;
+    for (
+      let partialSignatureLength = Math.min(
+        SLP_SIGNATURE.length - 1,
+        mergedChunk.length
+      );
+      partialSignatureLength > 0;
+      --partialSignatureLength
+    ) {
+      const trailingChunkInMergedChunk = mergedChunk.slice(
+        mergedChunk.length - partialSignatureLength
+      );
+      const startingChunkInSlpSignature = Buffer.from(SLP_SIGNATURE).slice(
+        0,
+        partialSignatureLength
+      );
+      if (trailingChunkInMergedChunk.equals(startingChunkInSlpSignature)) {
+        this.partialSignatureFromPreviousChunk = trailingChunkInMergedChunk;
+        this.previousChunksLength -= partialSignatureLength;
+        break;
+      }
+    }
+    const lengthSkipped =
+      chunk.length - this.partialSignatureFromPreviousChunk.length;
+    this.log(
+      `--- Skipping ${lengthSkipped} bytes ` +
+        `(${this.previousChunksLength} total)`
+    );
+    callback(null);
+  }
+
+  /** Debugger. */
+  private log = debug('palmira').extend('slp');
+  /** Whether we've already found the SLP signature. */
+  private hasFoundSlpSignature = false;
+  /** Data read in previous chunks that may be part of the SLP signature. */
+  private partialSignatureFromPreviousChunk = Buffer.alloc(0);
+  /** Total length of data in previous chunks. */
+  private previousChunksLength = 0;
+}
+
 /** Duplex SLP datagram stream, created by createSLPDatagramStream. */
 export type SlpDatagramStream = Duplex;
 
 /** Create an SLP datagram stream on top of a raw data stream. */
 export function createSlpDatagramStream(rawStream: Duplex): SlpDatagramStream {
+  const slpSeekReadStream = new SlpSeekReadStream();
+  rawStream.pipe(slpSeekReadStream);
   const readStream = new SlpDatagramReadStream();
-  rawStream.pipe(readStream);
+  slpSeekReadStream.pipe(readStream);
   const slpDatagramStream = duplexify(
     rawStream,
     readStream

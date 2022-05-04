@@ -19,7 +19,7 @@ import {
 export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
   /** Set up a HotSync connection based on an underying raw data stream. */
   constructor(rawStream: Duplex) {
-    this.log = debug('SyncConnection');
+    this.log = debug('palmira').extend('sync');
     this.rawStream = rawStream;
 
     if (this.rawStream instanceof Socket) {
@@ -140,5 +140,5 @@ export abstract class NetworkSyncServer<
   /** The underlying net.Server. */
   protected server: Server | null = null;
   /** Debugger. */
-  private log = debug('NetworkSyncServer');
+  private log = debug('palmira').extend('sync');
 }

@@ -43,8 +43,8 @@ export function getServerTypeForConnectionType(connectionType: ConnectionType) {
 
 if (require.main === module) {
   (async function () {
-    debug.enable('*');
-    const log = debug('record-sync-session');
+    debug.enable('palmira:*');
+    const log = debug('palmira').extend('record-sync-session');
     program
       .name('record-sync-session')
       .description('Script to record a NetSync session for testing.')

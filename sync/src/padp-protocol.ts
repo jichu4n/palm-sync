@@ -411,12 +411,14 @@ export class PadpStream extends Duplex {
         try {
           await new Promise<void>((resolve, reject) => {
             this.ackListener = {resolve, reject, xid};
+            setTimeout(() => reject(new Error('Timeout')), 200);
           });
         } catch (e: any) {
           error = new Error(
             `Error while waiting for ACK on xid ${xid}: ${e.message}`
           );
           this.log(`--- ${error.message}`);
+          this.ackListener = null;
           continue;
         }
 
@@ -489,7 +491,7 @@ export class PadpStream extends Duplex {
     return xid;
   }
 
-  private log = debug('PadpStream');
+  private log = debug('palmira').extend('padp');
 
   /** Underlying SLP datagram stream. */
   private slpDatagramStream: SlpDatagramStream;

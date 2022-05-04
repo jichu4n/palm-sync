@@ -41,6 +41,7 @@
     "lodash": "^4.17.21",
     "p-event": "^4.2.0",
     "reflect-metadata": "^0.1.13",
+    "serialport": "^10.4.0",
     "serio": "^0.1.9",
     "smart-buffer": "^4.2.0"
   }

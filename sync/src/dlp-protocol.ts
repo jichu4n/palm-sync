@@ -59,7 +59,7 @@ export class DlpConnection {
     return response;
   }
 
-  private log = debug('DLP');
+  private log = debug('palmira').extend('dlp');
 }
 
 /** Base class for DLP requests. */
