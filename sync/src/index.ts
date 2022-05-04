@@ -8,3 +8,4 @@ export * from './cmp-protocol';
 export * from './network-sync-protocol';
 export * from './network-sync-server';
 export * from './serial-network-sync-server';
+export * from './serial-sync-server';

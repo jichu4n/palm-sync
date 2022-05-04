@@ -21,9 +21,7 @@ import {
 } from '.';
 
 /** Sync server using a serial port. */
-export class SerialSyncServer<
-  SyncConnectionT extends SyncConnection
-> extends EventEmitter {
+export class SerialSyncServer extends EventEmitter {
   /** Serial port device to listen on. */
   device: string;
   /** SerialPort instance. */
@@ -48,7 +46,7 @@ export class SerialSyncServer<
         if (error) {
           throw error;
         } else {
-          this.onConnection(this.serialPort!);
+          this.run();
         }
       }
     );
@@ -60,15 +58,18 @@ export class SerialSyncServer<
     }
     this.serialPort.close();
     await pEvent(this.serialPort, 'close');
+    this.serialPort = null;
   }
 
   async onConnection(rawStream: Duplex) {
     const connection = new SerialSyncConnection(rawStream);
     this.emit('connect', connection);
 
+    this.serialPort?.update({baudRate: 9600});
     this.log('Starting handshake');
     await connection.doHandshake();
     this.log('Handshake complete');
+    this.serialPort?.update({baudRate: 115200});
 
     await connection.start();
 
@@ -76,6 +77,16 @@ export class SerialSyncServer<
 
     await connection.end();
     this.emit('disconnect', connection);
+  }
+
+  private async run() {
+    while (this.serialPort && this.serialPort.isOpen) {
+      try {
+        await this.onConnection(this.serialPort);
+      } catch (e: any) {
+        // Ignore
+      }
+    }
   }
 
   /** HotSync logic to run when a connection is made. */
@@ -89,7 +100,7 @@ export class SerialSyncConnection extends SyncConnection<PadpStream> {
     return new PadpStream(rawStream);
   }
   async doHandshake(): Promise<void> {
-    await doCmpHandshake(this.dlpStream, 9600);
+    await doCmpHandshake(this.dlpStream, 115200);
   }
 }
 

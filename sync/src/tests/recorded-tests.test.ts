@@ -23,9 +23,8 @@ describe('recorded tests', function () {
           const recorder = await StreamRecorder.loadFromFile(
             getRecordedSessionFilePath(connectionType, testModule)
           );
-          const syncServer = new (getServerTypeForConnectionType(
-            connectionType
-          ))(syncFn);
+          const syncServer =
+            getServerTypeForConnectionType(connectionType)(syncFn);
           await syncServer.onConnection(recorder.playback());
         });
       }

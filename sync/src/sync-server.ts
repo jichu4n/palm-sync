@@ -29,7 +29,7 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
     this.dlpStream = this.createDlpStream(this.recorder.record(this.rawStream));
     this.dlpConnection = new DlpConnection(this.dlpStream);
 
-    this.log(`Connection received`);
+    this.log(`Connection established`);
 
     if (this.rawStream instanceof Socket) {
       this.rawStream.setNoDelay(true);

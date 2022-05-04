@@ -3,7 +3,13 @@ import {Argument, program} from 'commander';
 import debug from 'debug';
 import pEvent from 'p-event';
 import path from 'path';
-import {NetSyncConnection, NetSyncServer, SerialNetworkSyncServer} from '..';
+import {
+  NetSyncConnection,
+  NetSyncServer,
+  SerialNetworkSyncServer,
+  SerialSyncServer,
+  SyncFn,
+} from '..';
 
 export function getSyncFn(testModule: string) {
   const syncFn: (connection: NetSyncConnection) => Promise<void> =
@@ -28,14 +34,17 @@ export function getRecordedSessionFilePath(
 export enum ConnectionType {
   NETWORK = 'network',
   SERIAL_OVER_NETWORK = 'serial-over-network',
+  SERIAL = 'serial',
 }
 
 export function getServerTypeForConnectionType(connectionType: ConnectionType) {
   switch (connectionType) {
     case ConnectionType.NETWORK:
-      return NetSyncServer;
+      return (syncFn: SyncFn) => new NetSyncServer(syncFn);
     case ConnectionType.SERIAL_OVER_NETWORK:
-      return SerialNetworkSyncServer;
+      return (syncFn: SyncFn) => new SerialNetworkSyncServer(syncFn);
+    case ConnectionType.SERIAL:
+      return (syncFn: SyncFn) => new SerialSyncServer('/dev/ttyS0', syncFn);
     default:
       throw new Error(`Unknown connection type ${connectionType}`);
   }
@@ -62,9 +71,8 @@ if (require.main === module) {
         );
         log(`Running ${testModule}, recording to ${recordedSessionFilePath}`);
 
-        const syncServer = new (getServerTypeForConnectionType(connectionType))(
-          syncFn
-        );
+        const syncServer =
+          getServerTypeForConnectionType(connectionType)(syncFn);
         syncServer.start();
 
         log('Waiting for connection...');
