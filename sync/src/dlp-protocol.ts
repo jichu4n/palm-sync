@@ -1,6 +1,6 @@
 import {epochDatabaseTimestamp} from '@palmira/pdb';
 import debug from 'debug';
-import _, {fromPairs} from 'lodash';
+import _ from 'lodash';
 import pEvent from 'p-event';
 import 'reflect-metadata';
 import {
@@ -287,7 +287,7 @@ function parseDlpArgs(
       );
     }
     dlpRequestOrResponse.assignFromSerializable(
-      fromPairs(
+      _.fromPairs(
         arg.dlpArgSpecs.map(({propertyKey}, j) => [
           propertyKey.toString(),
           arg.value.value[j],

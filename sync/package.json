@@ -43,6 +43,7 @@
     "reflect-metadata": "^0.1.13",
     "serialport": "^10.4.0",
     "serio": "^0.1.9",
-    "smart-buffer": "^4.2.0"
+    "smart-buffer": "^4.2.0",
+    "usb": "^2.3.1"
   }
 }
