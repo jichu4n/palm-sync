@@ -18,7 +18,7 @@ import {
   ResourceMetadataList,
 } from '.';
 
-/** Representation of a Palm OS PDB file. */
+/** Representation of a Palm OS database file. */
 export abstract class Database<
   /** MetadataList type. */
   MetadataT extends RecordMetadata | ResourceMetadata,

@@ -2,7 +2,6 @@
 
 import {program} from 'commander';
 import fs from 'fs-extra';
-import {setDefaultEncoding} from 'serio';
 import {
   DatebookDatabase,
   DEFAULT_ENCODING,
@@ -20,13 +19,24 @@ interface DatabaseRegistryEntry {
   creator: string;
   type: string;
   databaseType: new () => PdbDatabase<any, any, any>;
+  label: string;
 }
 
 const DATABASE_REGISTRY: Array<DatabaseRegistryEntry> = [
-  {creator: 'memo', type: 'DATA', databaseType: MemoDatabase},
-  {creator: 'todo', type: 'DATA', databaseType: ToDoDatabase},
-  {creator: 'date', type: 'DATA', databaseType: DatebookDatabase},
-  {creator: 'REAd', type: 'TEXt', databaseType: PalmDocDatabase},
+  {creator: 'memo', type: 'DATA', databaseType: MemoDatabase, label: 'Memo'},
+  {creator: 'todo', type: 'DATA', databaseType: ToDoDatabase, label: 'ToDo'},
+  {
+    creator: 'date',
+    type: 'DATA',
+    databaseType: DatebookDatabase,
+    label: 'Datebook',
+  },
+  {
+    creator: 'REAd',
+    type: 'TEXt',
+    databaseType: PalmDocDatabase,
+    label: 'PalmDOC',
+  },
 ];
 
 if (require.main === module) {
@@ -34,7 +44,13 @@ if (require.main === module) {
     program.name('pdb2json').version(packageJson.version);
 
     program
-      .description('Decode a PDB file and print it to JSON')
+      .description(
+        [
+          'Decode a PDB file and print it to JSON.',
+          'Supported formats: ' +
+            DATABASE_REGISTRY.map(({label}) => label).join(', '),
+        ].join('\n')
+      )
       .argument('<pdb-file>', 'Path to PDB file')
       .option(
         '--input-encoding <encoding>',
