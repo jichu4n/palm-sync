@@ -1,17 +1,17 @@
 {
-  "name": "@palmira/pdb",
+  "name": "palm-pdb",
   "version": "0.0.1",
-  "description": "Work with Palm OS PDB and PRC database files",
+  "description": "Work with Palm OS PDB and PRC files in TypeScript",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jichu4n/palmira.git"
+    "url": "git+https://github.com/jichu4n/palm-pdb.git"
   },
   "author": "Chuan Ji <chuan@jichu4n.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/jichu4n/palmira/issues"
+    "url": "https://github.com/jichu4n/palm-pdb/issues"
   },
-  "homepage": "https://github.com/jichu4n/palmira#readme",
+  "homepage": "https://github.com/jichu4n/palm-pdb#readme",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
