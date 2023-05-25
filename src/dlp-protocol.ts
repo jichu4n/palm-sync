@@ -1,4 +1,4 @@
-import {epochDatabaseTimestamp} from '@palmira/pdb';
+import {epochDatabaseTimestamp} from 'palm-pdb';
 import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
@@ -59,7 +59,7 @@ export class DlpConnection {
     return response;
   }
 
-  private log = debug('palmira').extend('dlp');
+  private log = debug('palm-dlp').extend('dlp');
 }
 
 /** Base class for DLP requests. */

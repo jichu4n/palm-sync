@@ -1,4 +1,4 @@
-import {DatabaseAttrs, RecordAttrs, SDynamicArray, TypeId} from '@palmira/pdb';
+import {DatabaseAttrs, RecordAttrs, SDynamicArray, TypeId} from 'palm-pdb';
 import _ from 'lodash';
 import {
   decodeString,

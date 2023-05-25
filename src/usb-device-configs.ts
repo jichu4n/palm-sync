@@ -14,11 +14,14 @@ export interface UsbDeviceConfig {
 
 /** Device-specific initialization routines. */
 export enum UsbInitType {
+  /** No USB initialization required. */
   NONE = 'none',
-  GENERIC = 'generic',
-  VISOR = 'visor',
+  /** Palm OS 4.x and above. */
+  PALM_OS_4 = 'palmOs4',
+  /** Palm OS 3.x and below. */
+  PALM_OS_3 = 'palmOs3',
+  /** SONY CLIE specific. */
   SONY_CLIE = 'sonyClie',
-  TAPWAVE = 'tapwave',
 }
 
 /** USB hardware configuration info for all known Palm OS devices.
@@ -40,21 +43,21 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x054c,
       productId: 0x0066,
       label: 'Sony T, SJ series, and other Palm OS 4.0 devices',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x0095,
       label: 'Sony S360',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x000a,
       label: 'Sony NR and other Palm OS 4.1 devices',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     {
@@ -68,21 +71,21 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x054c,
       productId: 0x00da,
       label: 'Sony NX',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x00e9,
       label: 'Sony NZ',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x0144,
       label: 'Sony UX',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     {
@@ -97,7 +100,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x081e,
       productId: 0xdf00,
       label: 'Alphasmart Dana',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     /* HANDSPRING (vendor 0x082d) */
@@ -105,20 +108,20 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x082d,
       productId: 0x0100,
       label: 'Visor, Treo 300',
-      initType: UsbInitType.VISOR,
+      initType: UsbInitType.PALM_OS_3,
     },
 
     {
       vendorId: 0x082d,
       productId: 0x0200,
       label: 'Treo',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x082d,
       productId: 0x0300,
       label: 'Treo 600',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     /* PalmOne, Palm Inc */
@@ -126,115 +129,115 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x0830,
       productId: 0x0001,
       label: 'm500',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0002,
       label: 'm505',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0003,
       label: 'm515',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0010,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0011,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0020,
       label: 'i705',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0030,
       label: 'Tungsten|Z',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0031,
       label: 'Tungsten|W',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0040,
       label: 'm125',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0050,
       label: 'm130',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0051,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0052,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0053,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0060,
       label: 'Tungsten series, Zire 71',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0061,
       label: 'Zire 31, 72, Z22',
-      initType: UsbInitType.TAPWAVE,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0062,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0063,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0070,
       label: 'Zire',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0071,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
@@ -246,13 +249,13 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x0830,
       productId: 0x0099,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
     {
       vendorId: 0x0830,
       productId: 0x0100,
       label: 'UNKNOWN',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     /* GARMIN */
@@ -260,7 +263,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x091e,
       productId: 0x0004,
       label: 'IQUE 3600',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     /* Kyocera */
@@ -268,14 +271,14 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x0c88,
       productId: 0x0021,
       label: '7135 Smartphone',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     {
       vendorId: 0x0c88,
       productId: 0xa226,
       label: '6035 Smartphone',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     /* Tapwave */
@@ -283,7 +286,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x12ef,
       productId: 0x0100,
       label: 'Zodiac, Zodiac2',
-      initType: UsbInitType.TAPWAVE,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     /* ACEECA */
@@ -291,7 +294,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x4766,
       productId: 0x0001,
       label: 'MEZ1000',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
 
     /* Samsung */
@@ -299,7 +302,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x04e8,
       productId: 0x8001,
       label: 'i330',
-      initType: UsbInitType.GENERIC,
+      initType: UsbInitType.PALM_OS_4,
     },
   ].map((obj) => ({...obj, usbId: toUsbId(obj)}))
 );

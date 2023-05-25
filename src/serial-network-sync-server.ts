@@ -3,7 +3,7 @@
  * This is mainly intended to facilitate development using POSE, which supports
  * bridging serial connections to TCP connections.
  */
-import {MemoRecord} from '@palmira/pdb';
+import {MemoRecord} from 'palm-pdb';
 import {Duplex} from 'stream';
 import {
   DlpCloseDBRequest,

@@ -1,4 +1,4 @@
-import {MemoRecord} from '@palmira/pdb';
+import {MemoRecord} from 'palm-pdb';
 import assert from 'assert';
 import {
   DlpCloseDBRequest,

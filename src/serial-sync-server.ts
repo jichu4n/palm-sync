@@ -1,4 +1,4 @@
-import {MemoRecord} from '@palmira/pdb';
+import {MemoRecord} from 'palm-pdb';
 import debug from 'debug';
 import EventEmitter from 'events';
 import pEvent from 'p-event';
@@ -92,7 +92,7 @@ export class SerialSyncServer extends EventEmitter {
   /** HotSync logic to run when a connection is made. */
   syncFn: SyncFn;
   /** Debugger. */
-  private log = debug('palmira.serial');
+  private log = debug('palm-dlp').extend('serial');
 }
 
 export class SerialSyncConnection extends SyncConnection<PadpStream> {

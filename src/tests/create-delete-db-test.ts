@@ -1,4 +1,4 @@
-import {DatabaseAttrs} from '@palmira/pdb';
+import {DatabaseAttrs} from 'palm-pdb';
 import {
   DlpCloseDBRequest,
   DlpCreateDBRequest,

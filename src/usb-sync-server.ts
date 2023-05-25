@@ -1,9 +1,10 @@
-import {MemoRecord} from '@palmira/pdb';
+import debug from 'debug';
 import {
   bitfield,
   field,
   SArray,
   SBitmask,
+  Serializable,
   SObject,
   SString,
   SUInt16LE,
@@ -12,15 +13,8 @@ import {
 import {Duplex, DuplexOptions} from 'stream';
 import {WebUSB} from 'usb';
 import {
-  DlpCloseDBRequest,
-  DlpOpenConduitRequest,
-  DlpOpenDBRequest,
-  DlpOpenMode,
   DlpReadDBListMode,
   DlpReadDBListRequest,
-  DlpReadOpenDBInfoRequest,
-  DlpReadRecordByIDRequest,
-  DlpReadRecordIDListRequest,
   toUsbId,
   UsbDeviceConfig,
   UsbInitType,
@@ -133,6 +127,8 @@ export class ConnectionPortInfo extends SObject {
   portNumber = 0;
 }
 
+const log = debug('palm-dlp').extend('usb');
+
 /** Wait for a supported USB device. */
 export async function waitForDevice() {
   const webusb = new WebUSB({allowAllDevices: true});
@@ -154,6 +150,43 @@ export async function waitForDevice() {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
+}
+
+/** Send a USB control read request and parse the result. */
+export async function sendUsbControlRequest<ResponseT extends Serializable>(
+  device: USBDevice,
+  setup: USBControlTransferParameters,
+  responseT: new () => ResponseT
+): Promise<ResponseT> {
+  const response = new responseT();
+  const requestName = response.constructor.name.replace(/Response$/, '');
+  log(`>>> ${requestName}`);
+
+  const result = await device.controlTransferIn(
+    setup,
+    response.getSerializedLength()
+  );
+  if (result.status !== 'ok') {
+    const message = `${requestName} failed with status ${result.status}`;
+    log(`--- ${message}`);
+    throw new Error(message);
+  }
+  if (!result.data) {
+    const message = `${requestName} returned no data`;
+    log(`--- ${message}`);
+    throw new Error(message);
+  }
+  const responseData = Buffer.from(result.data.buffer);
+  log(`<<< ${responseData.toString('hex')}`);
+  try {
+    response.deserialize(Buffer.from(result.data.buffer));
+  } catch (e: any) {
+    const message = `Failed to parse ${requestName} response: ${e.message}`;
+    log(`--- ${message}`);
+    throw new Error(message);
+  }
+  log(`<<< ${JSON.stringify(response)}`);
+  return response;
 }
 
 /** Configuration for a USB connection, returned from USB device initialization
@@ -181,7 +214,7 @@ export const USB_INIT_FNS: {
       outEndpoint: 0,
     };
   },
-  [UsbInitType.GENERIC]: async (device: USBDevice) => {
+  [UsbInitType.PALM_OS_4]: async (device: USBDevice) => {
     const config = {
       device,
       interruptEndpoint: 0,
@@ -190,8 +223,8 @@ export const USB_INIT_FNS: {
     };
 
     console.log(`GetConnectionInfo`);
-    const getConnectionInfoResponse = new GetConnectionInfoResponse();
-    const result1 = await device.controlTransferIn(
+    const getConnectionInfoResponse = await sendUsbControlRequest(
+      device,
       {
         requestType: 'vendor',
         recipient: 'endpoint',
@@ -199,13 +232,8 @@ export const USB_INIT_FNS: {
         index: 0,
         value: 0,
       },
-      getConnectionInfoResponse.getSerializedLength()
+      GetConnectionInfoResponse
     );
-    if (result1.status !== 'ok') {
-      throw new Error(`GetConnectionInfo failed with status ${result1.status}`);
-    }
-    getConnectionInfoResponse.deserialize(Buffer.from(result1.data!.buffer));
-    console.log(JSON.stringify(getConnectionInfoResponse, null, 2));
     const portInfo = getConnectionInfoResponse.ports
       .slice(0, getConnectionInfoResponse.numPorts)
       .find(
@@ -249,7 +277,8 @@ export const USB_INIT_FNS: {
     // is broken and 2) we don't actually need it, but devices may expect this
     // call before sending data.
     console.log('GetNumBytesAvailable');
-    const result3 = await device.controlTransferIn(
+    const result3 = await sendUsbControlRequest(
+      device,
       {
         requestType: 'vendor',
         recipient: 'endpoint',
@@ -257,21 +286,13 @@ export const USB_INIT_FNS: {
         index: 0,
         value: 0,
       },
-      2
+      SUInt16LE
     );
-    if (result3.status !== 'ok') {
-      throw new Error(
-        `GET_NUM_BYTES_AVAILABLE failed with status ${result3.status}`
-      );
-    }
-    if (!result3.data) {
-      throw new Error(`GET_NUM_BYTES_AVAILABLE returned no data`);
-    }
-    console.log(SUInt16LE.from(Buffer.from(result3.data.buffer)).value);
+    console.log(result3.value);
 
     return config;
   },
-  [UsbInitType.VISOR]: async (device: USBDevice) => {
+  [UsbInitType.PALM_OS_3]: async (device: USBDevice) => {
     return {
       device,
       interruptEndpoint: 0,
