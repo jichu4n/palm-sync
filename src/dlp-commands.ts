@@ -615,51 +615,51 @@ export class DlpReadRecordIDListResponse extends DlpResponse {
 /** Database metadata in DLP requests and responses. */
 export class DlpDatabaseMetadata extends SObject {
   /** Total length of metadata structure. */
-  @field.as(SUInt8)
+  @field(SUInt8)
   private length = 0;
 
   /** Misc flags (see DlpDatabaseMiscFlags). */
-  @field.as(SUInt8)
+  @field(SUInt8)
   miscFlags = 0;
 
   /** Database attribute flags. */
-  @field
+  @field()
   attributes = new DatabaseAttrs();
 
   /** Database type identifier (max 4 bytes). */
-  @field.as(TypeId)
+  @field(TypeId)
   type = 'AAAA';
 
   /** Database creator identifier (max 4 bytes). */
-  @field.as(TypeId)
+  @field(TypeId)
   creator = 'AAAA';
 
   /** Database version (integer). */
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   version = 0;
 
   /** Modification number (integer). */
-  @field.as(SUInt32BE)
+  @field(SUInt32BE)
   modificationNumber = 0;
 
   /** Database creation timestamp. */
-  @field
+  @field()
   creationDate = new DlpTimestamp();
 
   /** Database modification timestamp. */
-  @field
+  @field()
   modificationDate = new DlpTimestamp();
 
   /** Last backup timestamp. */
-  @field
+  @field()
   lastBackupDate = new DlpTimestamp();
 
   /** Index of database in the response. */
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   index = 0;
 
   /** Database name (max 31 bytes). */
-  @field.as(SStringNT)
+  @field(SStringNT)
   name = '';
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions) {
@@ -679,23 +679,23 @@ export const MAX_RECORD_DATA_LENGTH = 0xffff;
 /** Record metadata in DLP requests and responses. */
 export class DlpRecordMetadata extends SObject {
   /** Record ID. */
-  @field.as(SUInt32BE)
+  @field(SUInt32BE)
   recordId = 0;
 
   /** Index of record in database. */
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   index = 0;
 
   /** Size of record data. */
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   length = 0;
 
   /** Record attributes. */
-  @field
+  @field()
   attributes: RecordAttrs = new RecordAttrs();
 
   /** Record category. */
-  @field.as(SUInt8)
+  @field(SUInt8)
   category = 0;
 }
 
@@ -704,10 +704,10 @@ export class DlpRecordMetadata extends SObject {
  * e.g. DLP version 1.4 => {major: 1, minor: 4}
  */
 export class DlpVersion extends SObject {
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   major = 0;
 
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   minor = 0;
 
   toString() {
@@ -722,7 +722,7 @@ export class DlpVersion extends SObject {
 /** User information used in DlpReadUserInfo and DlpWriteUserInfo commands. */
 export class DlpUserInfo extends SObject {
   /** HotSync user ID number (0 if none) */
-  @field.as(SUInt32BE)
+  @field(SUInt32BE)
   userId = 0;
 
   /** ID assigned to viewer by desktop app.
@@ -730,27 +730,27 @@ export class DlpUserInfo extends SObject {
    * Not currently used, according to Palm:
    * http://oasis.palm.com/dev/kb/manuals/1706.cfm
    */
-  @field.as(SUInt32BE)
+  @field(SUInt32BE)
   viewerId = 0;
 
   /** ID of last synced PC (0 if none). */
-  @field.as(SUInt32BE)
+  @field(SUInt32BE)
   lastSyncPcId = 0;
 
   /** Timestamp of last successful sync. */
-  @field
+  @field()
   lastSuccessfulSyncDate = new DlpTimestamp();
 
   /** Timestamp of last sync attempt. */
-  @field
+  @field()
   lastSyncDate = new DlpTimestamp();
 
   /** Length of username, including NUL (0 if none) */
-  @field.as(SUInt8)
+  @field(SUInt8)
   private userNameLength = 0;
 
   /** Length of encrypted password (0 if none) */
-  @field.as(SUInt8)
+  @field(SUInt8)
   private passwordLength = 0;
 
   /* User name.

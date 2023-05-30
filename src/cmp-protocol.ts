@@ -29,27 +29,27 @@ export enum CmpDatagramType {
 }
 
 /** CMP INIT datagram flags. */
-export class CmpInitDatagramAttrs extends SBitmask.as(SUInt8) {
+export class CmpInitDatagramAttrs extends SBitmask.of(SUInt8) {
   /** Request new baud rate.*/
-  @bitfield(1, Boolean)
+  @bitfield(1)
   shouldChangeBaudRate = false;
   /** Use a 1 minute timeout before dropping link. */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   shouldUseOneMinuteTimeout = false;
   /** Use a 2 minute timeout before dropping link. */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   shouldUseTwoMinuteTimeout = false;
   /** Whether long form PADP datagram headers are supported. */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   isLongFormPadpHeaderSupported = false;
   @bitfield(4)
   private padding1 = 0;
 }
 
 /** CMP ABORT datagram flags. */
-export class CmpAbortDatagramAttrs extends SBitmask.as(SUInt8) {
+export class CmpAbortDatagramAttrs extends SBitmask.of(SUInt8) {
   /* Protocol version mismatch */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   isProtocolVersionMismatch = false;
   @bitfield(7)
   private padding1 = 0;
@@ -65,26 +65,26 @@ export const SUPPORTED_CMP_VERSION = Object.freeze({
 /** CMP datagram. */
 export class CmpDatagram extends SObject {
   /** CMP datagram type. */
-  @field.as(SUInt8.asEnum(CmpDatagramType))
+  @field(SUInt8.enum(CmpDatagramType))
   type = CmpDatagramType.INIT;
   /** Flags.
    *
    * Will be set to correct type based on datagram type during deserialiation.
    * Will be type checked during serialization.
    */
-  @field
+  @field()
   attrs: CmpInitDatagramAttrs | CmpAbortDatagramAttrs | SUInt8 = SUInt8.of(0);
   /** Major verison of protocol. */
-  @field.as(SUInt8)
+  @field(SUInt8)
   private majorVersion = SUPPORTED_CMP_VERSION.majorVersion;
   /** Minor verison of protocol. */
-  @field.as(SUInt8)
+  @field(SUInt8)
   private minorVersion = SUPPORTED_CMP_VERSION.minorVersion;
   /** Reserved, must always be 0. */
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   private padding1 = 0;
   /** Baud rate to use. */
-  @field.as(SUInt32BE)
+  @field(SUInt32BE)
   baudRate = 0;
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {

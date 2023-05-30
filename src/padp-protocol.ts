@@ -34,18 +34,18 @@ export enum PadpDatagramType {
 }
 
 /** PADP datagram flags. */
-export class PadpDatagramAttrs extends SBitmask.as(SUInt8) {
+export class PadpDatagramAttrs extends SBitmask.of(SUInt8) {
   /** Flag indicating that this is the first datagram in a PADP message. */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   isFirstDatagram = false;
   /** Flag indicating that this is the last datagram in a PADP message. */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   isLastDatagram = false;
   /** Flag denoting a memory error on the device. */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   memoryError = false;
   /** If set, the lengthOrOffset field is 4 bytes long instead of 2. */
-  @bitfield(1, Boolean)
+  @bitfield(1)
   isLongForm = false;
 
   @bitfield(4)
@@ -55,17 +55,17 @@ export class PadpDatagramAttrs extends SBitmask.as(SUInt8) {
 /** PADP datagram header. */
 export class PadpDatagramHeader extends SObject {
   /** Type of this PADP datagram. */
-  @field.as(SUInt8.asEnum(PadpDatagramType))
+  @field(SUInt8.enum(PadpDatagramType))
   type = PadpDatagramType.DATA;
   /** Flags. */
-  @field
+  @field()
   attrs = new PadpDatagramAttrs();
   /** Size of the entire PADP message (if first datagram) or offset within the
    * PADP message (if 2nd or later datagram).
    *
    * The size of this field depends on the isLongForm flag.
    */
-  @field
+  @field()
   lengthOrOffset: SUInt16BE | SUInt32BE = SUInt16BE.of(0);
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {

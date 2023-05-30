@@ -1,12 +1,13 @@
-import {epochDatabaseTimestamp} from 'palm-pdb';
 import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
+import {EPOCH_TIMESTAMP} from 'palm-pdb';
 import 'reflect-metadata';
 import {
   DeserializeOptions,
   field,
   SArray,
+  Serializable,
   SerializableWrapper,
   SerializeOptions,
   SObject,
@@ -335,9 +336,9 @@ function registerDlpArg<ValueT>(
   isOptional?: boolean
 ): PropertyDecorator {
   return function (target: Object, propertyKey: string | symbol) {
-    // Use @field or @field.as to add property to SObject.
+    // Use @field to add property to SObject.
     if (wrapperType) {
-      field.as(wrapperType)(target, propertyKey);
+      field(wrapperType)(target, propertyKey);
     } else {
       field(target, propertyKey);
     }
@@ -515,7 +516,7 @@ export class DlpArg extends SObject {
   /** DLP argument ID */
   argId: number = 0;
   /** Argument data. */
-  value!: SArray;
+  value!: SArray<Serializable>;
   /** Whether this argument is optional. */
   isOptional = false;
   /** Metadata about the properties that make up this DLP argument. */
@@ -589,31 +590,31 @@ export class DlpTimestamp extends SObject {
   /** JavaScript Date value corresponding to the time. */
   value: Date = new Date();
 
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   private year = 0;
 
-  @field.as(SUInt8)
+  @field(SUInt8)
   private month = 0;
 
-  @field.as(SUInt8)
+  @field(SUInt8)
   private day = 0;
 
-  @field.as(SUInt8)
+  @field(SUInt8)
   private hour = 0;
 
-  @field.as(SUInt8)
+  @field(SUInt8)
   private minute = 0;
 
-  @field.as(SUInt8)
+  @field(SUInt8)
   private second = 0;
 
-  @field.as(SUInt8)
+  @field(SUInt8)
   private padding1 = 0;
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const readOffset = super.deserialize(buffer, opts);
     if (this.year === 0) {
-      this.value = epochDatabaseTimestamp.value;
+      this.value = EPOCH_TIMESTAMP.value;
     } else {
       this.value.setFullYear(this.year, this.month - 1, this.day);
       this.value.setHours(this.hour, this.minute, this.second);
@@ -623,7 +624,7 @@ export class DlpTimestamp extends SObject {
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    if (this.value === epochDatabaseTimestamp.value) {
+    if (this.value === EPOCH_TIMESTAMP.value) {
       this.year = 0;
       this.month = 0;
       this.day = 0;

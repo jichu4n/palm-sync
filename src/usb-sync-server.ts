@@ -47,7 +47,7 @@ export enum UsbControlRequestType {
 /** Response type for GET_EXT_CONNECTION_INFO control requests. */
 export class GetExtConnectionInfoResponse extends SObject {
   /** Number of ports in use (max 2).*/
-  @field.as(SUInt8)
+  @field(SUInt8)
   numPorts = 0;
   /** Whether in and out endpoint numbers are different.
    *
@@ -57,14 +57,14 @@ export class GetExtConnectionInfoResponse extends SObject {
    * If 1, the `portNumber` field is zero, and the `endpoints` field
    * specifies the in and out endpoint numbers.
    */
-  @field.as(SUInt8)
+  @field(SUInt8)
   hasDifferentEndpoints = 0;
 
-  @field.as(SUInt16LE)
+  @field(SUInt16LE)
   private padding1 = 0;
 
   /** Port information. */
-  @field.as(SArray)
+  @field(SArray)
   ports = Array(2)
     .fill(null)
     .map(() => new ExtConnectionPortInfo());
@@ -73,23 +73,23 @@ export class GetExtConnectionInfoResponse extends SObject {
 /** Information abount a port in a GetExtConnectionInfoResponse. */
 export class ExtConnectionPortInfo extends SObject {
   /** Creator ID of the application that opened	this connection. */
-  @field.as(SString.ofLength(4))
+  @field(SString.ofLength(4))
   type = 'AAAA';
   /** Specifies the in and out endpoint number if `hasDifferentEndpoints`
    * is 0, otherwise 0.  */
-  @field.as(SUInt8)
+  @field(SUInt8)
   portNumber = 0;
   /** Specifies the in and out endpoint numbers if `hasDifferentEndpoints`
    * is 1, otherwise set to 0. */
-  @field
+  @field()
   endpoints = new ExtConnectionEndpoints();
 
-  @field.as(SUInt16LE)
+  @field(SUInt16LE)
   private padding1 = 0;
 }
 
 /** A pair of 4-bit endpoint numbers. */
-export class ExtConnectionEndpoints extends SBitmask.as(SUInt8) {
+export class ExtConnectionEndpoints extends SBitmask.of(SUInt8) {
   /** In endpoint number. */
   @bitfield(4)
   inEndpoint = 0;
@@ -101,10 +101,10 @@ export class ExtConnectionEndpoints extends SBitmask.as(SUInt8) {
 /** Response type for GET_CONNECTION_INFO control requests. */
 export class GetConnectionInfoResponse extends SObject {
   /** Number of ports in use (max 2).*/
-  @field.as(SUInt16LE)
+  @field(SUInt16LE)
   numPorts = 0;
   /** Port information. */
-  @field.as(SArray)
+  @field(SArray)
   ports = Array(2)
     .fill(null)
     .map(() => new ConnectionPortInfo());
@@ -121,9 +121,9 @@ export enum ConnectionPortFunctionType {
 
 /** Information about a port in GetConnectionInfoResponse. */
 export class ConnectionPortInfo extends SObject {
-  @field.as(SUInt8.asEnum(ConnectionPortFunctionType))
+  @field(SUInt8.enum(ConnectionPortFunctionType))
   functionType = ConnectionPortFunctionType.GENERIC;
-  @field.as(SUInt8)
+  @field(SUInt8)
   portNumber = 0;
 }
 

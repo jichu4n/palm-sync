@@ -54,35 +54,35 @@ export enum SlpSocketId {
 /** SLP datagram header. */
 export class SlpDatagramHeader extends SObject {
   /** 3-byte SLP signature. Must always be SLP_SIGNATURE.*/
-  @field.as(SArray.as(SUInt8))
+  @field(SArray.of(SUInt8))
   signature = [...SLP_SIGNATURE];
   /** Destination socket ID.
    *
    * See SlpSocketId.
    */
-  @field.as(SUInt8.asEnum(SlpSocketId))
+  @field(SUInt8.enum(SlpSocketId))
   destSocketId = SlpSocketId.DLP;
   /** Source socket ID.
    *
    * See SlpSocketId.
    */
-  @field.as(SUInt8.asEnum(SlpSocketId))
+  @field(SUInt8.enum(SlpSocketId))
   srcSocketId = SlpSocketId.DLP;
   /** Packet type -- see SlpPacketType. */
-  @field.as(SUInt8.asEnum(SlpDatagramType))
+  @field(SUInt8.enum(SlpDatagramType))
   type = SlpDatagramType.PADP;
   /** Payload size. */
-  @field.as(SUInt16BE)
+  @field(SUInt16BE)
   dataLength = 0;
   /** Transaction ID. */
-  @field.as(SUInt8)
+  @field(SUInt8)
   xid = 0;
   /** Checksum of prev fields in header.
    *
    * This field is automatically computed during serialization and verified
    * during deserialization.
    */
-  @field.as(SUInt8)
+  @field(SUInt8)
   checksum = 0;
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
