@@ -2,7 +2,6 @@ import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
 import {EPOCH_TIMESTAMP} from 'palm-pdb';
-import 'reflect-metadata';
 import {
   DeserializeOptions,
   field,
@@ -329,42 +328,67 @@ export interface DlpArgSpec {
   isOptional: boolean;
 }
 
+type DlpArgDecorator<ValueT> = {
+  (
+    value: Function,
+    context: ClassGetterDecoratorContext | ClassSetterDecoratorContext
+  ): void;
+  (value: undefined, context: ClassFieldDecoratorContext): (
+    initialValue: ValueT
+  ) => ValueT;
+};
+
 /** Actual implementation of dlpArg and optDlpArg. */
 function registerDlpArg<ValueT>(
   argId: number,
   wrapperType?: new () => SerializableWrapper<ValueT>,
   isOptional?: boolean
-): PropertyDecorator {
-  return function (target: Object, propertyKey: string | symbol) {
+) {
+  return function (
+    value: undefined | Function,
+    context:
+      | ClassFieldDecoratorContext
+      | ClassGetterDecoratorContext
+      | ClassSetterDecoratorContext
+  ) {
     // Use @field to add property to SObject.
-    if (wrapperType) {
-      field(wrapperType)(target, propertyKey);
-    } else {
-      field(target, propertyKey);
+    field(wrapperType)(value as any, context as any);
+    // Add DLP-specific metadata for the same property to
+    // DLP_ARG_SPECS_METADATA_KEY.
+    context.addInitializer(function () {
+      const dlpArgSpec: DlpArgSpec = {
+        propertyKey: context.name,
+        argId,
+        isOptional: !!isOptional,
+      };
+      const targetPrototype = Object.getPrototypeOf(this);
+      const dlpArgSpecs = targetPrototype[DLP_ARG_SPECS_METADATA_KEY] as
+        | Array<DlpArgSpec>
+        | undefined;
+      if (dlpArgSpecs) {
+        dlpArgSpecs.push(dlpArgSpec);
+      } else {
+        targetPrototype[DLP_ARG_SPECS_METADATA_KEY] = [dlpArgSpec];
+      }
+    });
+
+    switch (context.kind) {
+      case 'field':
+        return (initialValue: ValueT) => initialValue;
+      case 'getter':
+      case 'setter':
+        return;
+      default:
+        throw new Error('@field() should only be used on class properties');
     }
-    // Add DLP-specific metadata for the same property to DLP_ARG_SPECS_METADATA_KEY.
-    const dlpArgSpec: DlpArgSpec = {
-      propertyKey,
-      argId,
-      isOptional: !!isOptional,
-    };
-    const dlpArgSpecs = Reflect.getMetadata(
-      DLP_ARG_SPECS_METADATA_KEY,
-      target
-    ) as Array<DlpArgSpec> | undefined;
-    if (dlpArgSpecs) {
-      dlpArgSpecs.push(dlpArgSpec);
-    } else {
-      Reflect.defineMetadata(DLP_ARG_SPECS_METADATA_KEY, [dlpArgSpec], target);
-    }
-  };
+  } as DlpArgDecorator<ValueT>;
 }
 
 /** Decorator for a required DLP argument. */
 export function dlpArg<ValueT>(
   argId: number,
   wrapperType?: new () => SerializableWrapper<ValueT>
-): PropertyDecorator {
+) {
   return registerDlpArg(argId, wrapperType, false);
 }
 
@@ -372,16 +396,14 @@ export function dlpArg<ValueT>(
 export function optDlpArg<ValueT>(
   argId: number,
   wrapperType?: new () => SerializableWrapper<ValueT>
-): PropertyDecorator {
+) {
   return registerDlpArg(argId, wrapperType, true);
 }
 
 /** Extract DlpArgSpec's defined via dlpArg on a DlpRequest or DlpResponse. */
 export function getDlpArgSpecs(targetInstance: Object) {
-  return (Reflect.getMetadata(
-    DLP_ARG_SPECS_METADATA_KEY,
-    Object.getPrototypeOf(targetInstance)
-  ) ?? []) as Array<DlpArgSpec>;
+  return (Object.getPrototypeOf(targetInstance)[DLP_ARG_SPECS_METADATA_KEY] ??
+    []) as Array<DlpArgSpec>;
 }
 
 /** Constructs DlpArg's on a DlpRequest or DlpResponse. */

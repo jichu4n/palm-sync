@@ -13,6 +13,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
-      - run: npm run --workspaces lint
-      - run: npm run --workspaces build
-      - run: npm test --workspaces
+      - run: npm run lint
+      - run: npm run uild
+      - run: npm test
