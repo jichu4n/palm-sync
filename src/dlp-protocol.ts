@@ -328,22 +328,13 @@ export interface DlpArgSpec {
   isOptional: boolean;
 }
 
-type DlpArgDecorator<ValueT> = {
-  (
-    value: Function,
-    context: ClassGetterDecoratorContext | ClassSetterDecoratorContext
-  ): void;
-  (value: undefined, context: ClassFieldDecoratorContext): (
-    initialValue: ValueT
-  ) => ValueT;
-};
-
 /** Actual implementation of dlpArg and optDlpArg. */
 function registerDlpArg<ValueT>(
   argId: number,
   wrapperType?: new () => SerializableWrapper<ValueT>,
   isOptional?: boolean
 ) {
+  const fieldDecorator = field(wrapperType);
   return function (
     value: undefined | Function,
     context:
@@ -351,17 +342,14 @@ function registerDlpArg<ValueT>(
       | ClassGetterDecoratorContext
       | ClassSetterDecoratorContext
   ) {
-    // Use @field to add property to SObject.
-    field(wrapperType)(value as any, context as any);
-    // Add DLP-specific metadata for the same property to
-    // DLP_ARG_SPECS_METADATA_KEY.
+    const returnValue = fieldDecorator(value as any, context as any);
     context.addInitializer(function () {
       const dlpArgSpec: DlpArgSpec = {
         propertyKey: context.name,
         argId,
         isOptional: !!isOptional,
       };
-      const targetPrototype = Object.getPrototypeOf(this);
+      const targetPrototype = this as any;
       const dlpArgSpecs = targetPrototype[DLP_ARG_SPECS_METADATA_KEY] as
         | Array<DlpArgSpec>
         | undefined;
@@ -371,17 +359,8 @@ function registerDlpArg<ValueT>(
         targetPrototype[DLP_ARG_SPECS_METADATA_KEY] = [dlpArgSpec];
       }
     });
-
-    switch (context.kind) {
-      case 'field':
-        return (initialValue: ValueT) => initialValue;
-      case 'getter':
-      case 'setter':
-        return;
-      default:
-        throw new Error('@field() should only be used on class properties');
-    }
-  } as DlpArgDecorator<ValueT>;
+    return returnValue;
+  };
 }
 
 /** Decorator for a required DLP argument. */
@@ -401,8 +380,8 @@ export function optDlpArg<ValueT>(
 }
 
 /** Extract DlpArgSpec's defined via dlpArg on a DlpRequest or DlpResponse. */
-export function getDlpArgSpecs(targetInstance: Object) {
-  return (Object.getPrototypeOf(targetInstance)[DLP_ARG_SPECS_METADATA_KEY] ??
+export function getDlpArgSpecs(targetInstance: any) {
+  return (targetInstance[DLP_ARG_SPECS_METADATA_KEY] ??
     []) as Array<DlpArgSpec>;
 }
 

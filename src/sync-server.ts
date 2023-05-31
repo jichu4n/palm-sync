@@ -66,7 +66,7 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
   async end() {
     await this.dlpConnection.execute(
       DlpAddSyncLogEntryRequest.with({
-        message: 'Thank you for using palm-dlp!',
+        message: 'Thank you for using Palmira!',
       })
     );
     await this.dlpConnection.execute(new DlpEndOfSyncRequest());
