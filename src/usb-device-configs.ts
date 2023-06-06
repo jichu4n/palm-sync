@@ -22,6 +22,8 @@ export enum UsbInitType {
   PALM_OS_3 = 'palmOs3',
   /** SONY CLIE specific. */
   SONY_CLIE = 'sonyClie',
+  /** Tapwave Zodiac specific. */
+  TAPWAVE = 'tapwave',
 }
 
 /** USB hardware configuration info for all known Palm OS devices.

@@ -16,7 +16,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "build:docs": "rm -rf ./docs/ && typedoc",
+    "build:docs": "rm -rf ./docs/ && typedoc && cp 'Palm OS Companion, vol II.pdf' ./docs/assets/",
     "lint": "prettier --check .",
     "test": "jest",
     "record-sync-session": "ts-node ./src/tests/record-sync-session.ts"
