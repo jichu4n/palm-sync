@@ -1,3 +1,11 @@
+/** Desktop Link Protocol (DLP) implementation.
+ *
+ * References:
+ *   - https://github.com/dwery/coldsync/blob/master/include/pconn/dlp.h
+ *   - https://github.com/jichu4n/pilot-link/blob/master/include/pi-dlp.h
+ *
+ * @module
+ */
 import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
