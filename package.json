@@ -1,7 +1,7 @@
 {
   "name": "palm-dlp",
   "version": "0.1.0",
-  "description": "Communicate with Palm OS devices using the HotSync",
+  "description": "Communicate with Palm OS devices over HotSync",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jichu4n/palm-dlp.git"
@@ -16,7 +16,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "build:docs": "rm -rf ./docs/ && typedoc && cp 'Palm OS Companion, vol II.pdf' ./docs/assets/",
+    "build:docs": "rm -rf ./docs/ && typedoc",
     "lint": "prettier --check .",
     "test": "jest",
     "record-sync-session": "ts-node ./src/tests/record-sync-session.ts"
@@ -25,16 +25,15 @@
     "@types/debug": "^4.1.8",
     "@types/duplexify": "^3.6.1",
     "@types/fs-extra": "^11.0.1",
-    "@types/jest": "^29.5.1",
-    "@types/lodash": "^4.14.194",
-    "@types/node": "^20.2.3",
+    "@types/jest": "^29.5.2",
+    "@types/lodash": "^4.14.195",
+    "@types/node": "^20.2.5",
     "commander": "^10.0.1",
     "prettier": "^2.8.8",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
-    "ts-node-dev": "^2.0.0",
-    "typedoc": "^0.24.7",
-    "typescript": "^5.0.4"
+    "typedoc": "^0.24.8",
+    "typescript": "^5.1.3"
   },
   "dependencies": {
     "debug": "^4.3.4",
@@ -43,9 +42,8 @@
     "lodash": "^4.17.21",
     "p-event": "^4.2.0",
     "palm-pdb": "^0.1.0",
-    "reflect-metadata": "^0.1.13",
     "serialport": "^11.0.0",
-    "serio": "^1.2.0",
+    "serio": "^1.2.1",
     "smart-buffer": "^4.2.0",
     "usb": "^2.9.0"
   }
