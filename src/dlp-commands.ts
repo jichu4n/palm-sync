@@ -564,13 +564,15 @@ export class DlpReadRecordIDListRequest extends DlpRequest<DlpReadRecordIDListRe
    * If true, the on-device application with the same DB creator will be called
    * to re-sort the records first.
    */
-  shouldSort = false;
-
+  get shouldSort() {
+    return !!(this.attrs | 0x80);
+  }
+  set shouldSort(v: boolean) {
+    this.attrs &= v ? 0x80 : ~0x80 & 0xff;
+  }
   /** Computed attrs. */
   @dlpArg(0, SUInt8)
-  private get attrs() {
-    return this.shouldSort ? 0x80 : 0;
-  }
+  private attrs = 0;
 
   /** Index of first record ID to return. */
   @dlpArg(0, SUInt16BE)
