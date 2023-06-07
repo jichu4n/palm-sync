@@ -24,20 +24,20 @@ class TestDlpRequest extends DlpRequest<TestDlpResponse> {
   commandId = COMMAND_ID;
   responseType = TestDlpResponse;
 
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   num1 = 0;
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   num2 = 0;
-  @dlpArg(DLP_ARG_ID_BASE + 1, SString)
+  @dlpArg(1, SString)
   str1 = '';
 }
 class TestDlpResponse extends DlpResponse {
   commandId = COMMAND_ID;
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   num1 = 0;
-  @optDlpArg(DLP_ARG_ID_BASE + 1, SStringNT)
+  @optDlpArg(1, SStringNT)
   str1 = '';
-  @optDlpArg(DLP_ARG_ID_BASE + 1, SString)
+  @optDlpArg(1, SString)
   str2 = '';
 }
 

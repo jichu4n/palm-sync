@@ -209,7 +209,7 @@ export abstract class DlpResponse extends SObject {
     actualCommandId &= DLP_RESPONSE_COMMAND_ID_BITMASK;
     if (actualCommandId !== this.commandId) {
       throw new Error(
-        'Command ID mismatch: ' +
+        `Command ID mismatch in ${this.constructor.name}: ` +
           `expected 0x${this.commandId.toString(16)}, ` +
           `got ${actualCommandId.toString(16)}`
       );
@@ -229,12 +229,14 @@ export abstract class DlpResponse extends SObject {
     } else {
       if (numDlpArgs !== 0) {
         throw new Error(
-          `Error response with non-zero arguments: ${numDlpArgs}`
+          `Error response with non-zero arguments in ${this.constructor.name}: ` +
+            `${numDlpArgs}`
         );
       }
       throw new Error(
         'DLP response status ' +
-          `0x${this.status.toString(16)} (${DlpResponseStatus[this.status]})`
+          `0x${this.status.toString(16)} (${DlpResponseStatus[this.status]}) ` +
+          `in ${this.constructor.name}`
       );
     }
 
@@ -280,7 +282,7 @@ function parseDlpArgs(
     args.length - _(args).map('isOptional').filter().size();
   if (numDlpArgs < numRequiredDlpArgs) {
     throw new Error(
-      'Argument count mismatch: ' +
+      `Argument count mismatch in ${dlpRequestOrResponse.constructor.name}: ` +
         `expected ${numRequiredDlpArgs}, got ${numDlpArgs}`
     );
   }
@@ -290,7 +292,8 @@ function parseDlpArgs(
     readOffset += arg.deserialize(buffer.slice(readOffset), opts);
     if (arg.value.value.length !== arg.dlpArgSpecs.length) {
       throw new Error(
-        'Argument field count mismatch: ' +
+        `Argument field count mismatch in ${dlpRequestOrResponse.constructor.name} ` +
+          `argument ${i + 1}: ` +
           `expected ${arg.dlpArgSpecs.length}, got ${arg.value.value.length}`
       );
     }
@@ -338,7 +341,7 @@ export interface DlpArgSpec {
 
 /** Actual implementation of dlpArg and optDlpArg. */
 function registerDlpArg<ValueT>(
-  argId: number,
+  argIdOffset: number,
   wrapperType?: new () => SerializableWrapper<ValueT>,
   isOptional?: boolean
 ) {
@@ -354,7 +357,7 @@ function registerDlpArg<ValueT>(
     context.addInitializer(function () {
       const dlpArgSpec: DlpArgSpec = {
         propertyKey: context.name,
-        argId,
+        argId: DLP_ARG_ID_BASE + argIdOffset,
         isOptional: !!isOptional,
       };
       const targetPrototype = this as any;
@@ -373,18 +376,18 @@ function registerDlpArg<ValueT>(
 
 /** Decorator for a required DLP argument. */
 export function dlpArg<ValueT>(
-  argId: number,
+  argIdOffset: number,
   wrapperType?: new () => SerializableWrapper<ValueT>
 ) {
-  return registerDlpArg(argId, wrapperType, false);
+  return registerDlpArg(argIdOffset, wrapperType, false);
 }
 
 /** Decorator for an optional DLP argument. */
 export function optDlpArg<ValueT>(
-  argId: number,
+  argIdOffset: number,
   wrapperType?: new () => SerializableWrapper<ValueT>
 ) {
-  return registerDlpArg(argId, wrapperType, true);
+  return registerDlpArg(argIdOffset, wrapperType, true);
 }
 
 /** Extract DlpArgSpec's defined via dlpArg on a DlpRequest or DlpResponse. */

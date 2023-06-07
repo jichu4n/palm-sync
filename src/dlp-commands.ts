@@ -20,7 +20,6 @@ import {
   DlpRequest,
   DlpResponse,
   DlpTimestamp,
-  DLP_ARG_ID_BASE,
   optDlpArg,
 } from './dlp-protocol';
 
@@ -187,7 +186,7 @@ export class DlpReadUserInfoResponse extends DlpResponse {
   commandId = DlpCommandId.ReadUserInfo;
 
   /** User information read from the device.  */
-  @dlpArg(DLP_ARG_ID_BASE)
+  @dlpArg(0)
   userInfo = new DlpUserInfo();
 }
 
@@ -199,7 +198,7 @@ export class DlpReadSysInfoRequest extends DlpRequest<DlpReadSysInfoResponse> {
   responseType = DlpReadSysInfoResponse;
 
   /** DLP version supported by the host. Hard-coded to 1.4 as per pilot-link. */
-  @dlpArg(DLP_ARG_ID_BASE)
+  @dlpArg(0)
   private hostDlpVersion = DlpVersion.with({major: 1, minor: 4});
 }
 
@@ -210,19 +209,19 @@ export class DlpReadSysInfoResponse extends DlpResponse {
    *
    * Format: 0xMMmmffssbb where MM=Major, * mm=minor, ff=fix, ss=stage, bb=build
    */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt32BE)
+  @dlpArg(0, SUInt32BE)
   romVersion = 0;
 
   /** Locale for this device. Not sure what the format is. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt32BE)
+  @dlpArg(0, SUInt32BE)
   locale = 0;
 
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   private padding1 = 0;
 
   /** Product ID. */
   @dlpArg(
-    DLP_ARG_ID_BASE,
+    0,
     class extends SDynamicBuffer<SUInt8> {
       lengthType = SUInt8;
     }
@@ -230,10 +229,10 @@ export class DlpReadSysInfoResponse extends DlpResponse {
   productId = Buffer.alloc(0);
 
   /** DLP protocol version on this device */
-  @optDlpArg(DLP_ARG_ID_BASE + 1)
+  @optDlpArg(1)
   clientDlpVersion = new DlpVersion();
   /** Minimum DLP version this device is compatible with */
-  @optDlpArg(DLP_ARG_ID_BASE + 1)
+  @optDlpArg(1)
   compatDlpVersion = new DlpVersion();
 
   /** Maximum record size.
@@ -241,7 +240,7 @@ export class DlpReadSysInfoResponse extends DlpResponse {
    * Usually <=0xFFFF or ==0 for older devices (means records are limited to
    * 64k), can be much larger for devices with DLP >= 1.4 (i.e. 0x00FFFFFE).
    */
-  @optDlpArg(DLP_ARG_ID_BASE + 1, SUInt32BE)
+  @optDlpArg(1, SUInt32BE)
   maxRecordSize = 0;
 }
 
@@ -253,15 +252,15 @@ export class DlpReadDBListRequest extends DlpRequest<DlpReadDBListResponse> {
   responseType = DlpReadDBListResponse;
 
   /** Flags (see DlpReadDBListMode). */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   mode: number = DlpReadDBListMode.LIST_RAM;
 
   /** Card number (typically 0). */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   cardId = 0;
 
   /** Index of first database to return. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   startIndex = 0;
 }
 
@@ -269,16 +268,16 @@ export class DlpReadDBListResponse extends DlpResponse {
   commandId = DlpCommandId.ReadDBList;
 
   /** Index of last database in response. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   lastIndex = 0;
 
   /** Flags - TODO */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   private flags = 0;
 
   /** Array of database metadata results. */
   @dlpArg(
-    DLP_ARG_ID_BASE,
+    0,
     class extends SDynamicArray<SUInt8, DlpDatabaseMetadata> {
       lengthType = SUInt8;
       valueType = DlpDatabaseMetadata;
@@ -313,15 +312,15 @@ export class DlpOpenDBRequest extends DlpRequest<DlpOpenDBResponse> {
   responseType = DlpOpenDBResponse;
 
   /** Card number (typically 0). */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   cardId = 0;
 
   /** Open mode (see DlpOpenMode). */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   mode: number = DlpOpenMode.READ;
 
   /** Database name. */
-  @dlpArg(DLP_ARG_ID_BASE, SStringNT)
+  @dlpArg(0, SStringNT)
   name = '';
 }
 
@@ -329,7 +328,7 @@ export class DlpOpenDBResponse extends DlpResponse {
   commandId = DlpCommandId.OpenDB;
 
   /** Handle to opened database. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   dbHandle = 0;
 }
 
@@ -355,30 +354,30 @@ export class DlpCreateDBRequest extends DlpRequest<DlpCreateDBResponse> {
   responseType = DlpCreateDBResponse;
 
   /** Database creator identifier (max 4 bytes). */
-  @dlpArg(DLP_ARG_ID_BASE, TypeId)
+  @dlpArg(0, TypeId)
   creator = 'AAAA';
 
   /** Database type identifier (max 4 bytes). */
-  @dlpArg(DLP_ARG_ID_BASE, TypeId)
+  @dlpArg(0, TypeId)
   type = 'AAAA';
 
   /** Card number (typically 0). */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   cardId = 0;
 
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   private padding1 = 0;
 
   /** Database attribute flags. */
-  @dlpArg(DLP_ARG_ID_BASE)
+  @dlpArg(0)
   attributes = new DatabaseAttrs();
 
   /** Database version (integer). */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   version = 0;
 
   /** Database name. */
-  @dlpArg(DLP_ARG_ID_BASE, SStringNT)
+  @dlpArg(0, SStringNT)
   name = '';
 }
 
@@ -386,7 +385,7 @@ export class DlpCreateDBResponse extends DlpResponse {
   commandId = DlpCommandId.CreateDB;
 
   /** Handle to opened database. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   dbHandle = 0;
 }
 
@@ -398,7 +397,7 @@ export class DlpCloseDBRequest extends DlpRequest<DlpCloseDBResponse> {
   responseType = DlpCloseDBResponse;
 
   /** Handle to opened database. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   dbHandle = 0;
 }
 
@@ -407,7 +406,7 @@ export class DlpCloseAllDBsRequest extends DlpRequest<DlpCloseDBResponse> {
   responseType = DlpCloseDBResponse;
 
   /** Handle to opened database. */
-  @dlpArg(DLP_ARG_ID_BASE + 1)
+  @dlpArg(1)
   dummy = new SBuffer();
 }
 
@@ -423,14 +422,14 @@ export class DlpDeleteDBRequest extends DlpRequest<DlpDeleteDBResponse> {
   responseType = DlpDeleteDBResponse;
 
   /** Card number (typically 0). */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   cardId = 0;
 
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   private padding1 = 0;
 
   /** Database name. */
-  @dlpArg(DLP_ARG_ID_BASE, SStringNT)
+  @dlpArg(0, SStringNT)
   name = '';
 }
 
@@ -446,32 +445,32 @@ export class DlpReadRecordByIDRequest extends DlpRequest<DlpReadRecordByIDRespon
   responseType = DlpReadRecordByIDResponse;
 
   /** Handle to opened database. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   dbHandle = 0;
 
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   private padding1 = 0;
 
   /** Record ID to read. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt32BE)
+  @dlpArg(0, SUInt32BE)
   recordId = 0;
 
   /** Offset into record data to start reading. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   offset = 0;
 
   /** Maximum length to read. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   maxLength = MAX_RECORD_DATA_LENGTH;
 }
 
 export class DlpReadRecordByIDResponse extends DlpResponse {
   commandId = DlpCommandId.ReadRecord;
 
-  @dlpArg(DLP_ARG_ID_BASE)
+  @dlpArg(0)
   metadata = new DlpRecordMetadata();
 
-  @dlpArg(DLP_ARG_ID_BASE)
+  @dlpArg(0)
   data = new SBuffer();
 }
 
@@ -482,7 +481,7 @@ export class DlpAddSyncLogEntryRequest extends DlpRequest<DlpAddSyncLogEntryResp
   commandId = DlpCommandId.AddSyncLogEntry;
   responseType = DlpAddSyncLogEntryResponse;
 
-  @dlpArg(DLP_ARG_ID_BASE, SStringNT)
+  @dlpArg(0, SStringNT)
   message = '';
 }
 
@@ -498,7 +497,7 @@ export class DlpReadOpenDBInfoRequest extends DlpRequest<DlpReadOpenDBInfoRespon
   responseType = DlpReadOpenDBInfoResponse;
 
   /** Handle to opened database. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   dbHandle = 0;
 }
 
@@ -506,7 +505,7 @@ export class DlpReadOpenDBInfoResponse extends DlpResponse {
   commandId = DlpCommandId.ReadOpenDBInfo;
 
   /** Number of records in database. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   numRecords = 0;
 }
 
@@ -529,7 +528,7 @@ export class DlpEndOfSyncRequest extends DlpRequest<DlpEndOfSyncResponse> {
   commandId = DlpCommandId.EndOfSync;
   responseType = DlpEndOfSyncResponse;
 
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   status = DlpEndOfSyncStatus.OK;
 }
 
@@ -557,7 +556,7 @@ export class DlpReadRecordIDListRequest extends DlpRequest<DlpReadRecordIDListRe
   responseType = DlpReadRecordIDListResponse;
 
   /** Handle to opened database. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   dbHandle = 0;
 
   /** Whether to return records in sorted order.
@@ -568,13 +567,13 @@ export class DlpReadRecordIDListRequest extends DlpRequest<DlpReadRecordIDListRe
   shouldSort = false;
 
   /** Computed attrs. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt8)
+  @dlpArg(0, SUInt8)
   private get attrs() {
     return this.shouldSort ? 0x80 : 0;
   }
 
   /** Index of first record ID to return. */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   startIndex = 0;
 
   /** Maximum number of records to return.
@@ -582,7 +581,7 @@ export class DlpReadRecordIDListRequest extends DlpRequest<DlpReadRecordIDListRe
    * According to Coldsync, this command apparently only returns up to 500
    * record IDs at a time as of PalmOS 3.3 even if this value is set higher.
    */
-  @dlpArg(DLP_ARG_ID_BASE, SUInt16BE)
+  @dlpArg(0, SUInt16BE)
   maxNumRecords = 0;
 }
 
@@ -591,7 +590,7 @@ export class DlpReadRecordIDListResponse extends DlpResponse {
 
   /** Single argument to DlpReadRecordIDListResponse.  */
   @dlpArg(
-    DLP_ARG_ID_BASE,
+    0,
     class extends SDynamicArray<SUInt16BE, SUInt32BE> {
       lengthType = SUInt16BE;
       valueType = SUInt32BE;
