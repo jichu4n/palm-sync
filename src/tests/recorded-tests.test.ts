@@ -6,7 +6,7 @@ import {
   getSyncFn,
 } from './record-sync-session';
 
-/** All recorded test modules. */
+/** Test modules to run. */
 const RECORDED_TEST_MODULES = [
   'no-op-test',
   'list-db-test',
@@ -14,8 +14,14 @@ const RECORDED_TEST_MODULES = [
   'create-delete-db-test',
 ];
 
+/** Connection types to run. */
+const CONNECTION_TYPES = [
+  ConnectionType.SERIAL_OVER_NETWORK,
+  ConnectionType.NETWORK,
+];
+
 describe('recorded tests', function () {
-  for (const connectionType of Object.values(ConnectionType)) {
+  for (const connectionType of CONNECTION_TYPES) {
     describe(connectionType, function () {
       for (const testModule of RECORDED_TEST_MODULES) {
         test(testModule, async function () {

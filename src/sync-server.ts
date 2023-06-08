@@ -64,11 +64,6 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
 
   /** Common DLP operations to run at the end of a HotSync session. */
   async end() {
-    await this.dlpConnection.execute(
-      DlpAddSyncLogEntryRequest.with({
-        message: 'Thank you for using Palmira!',
-      })
-    );
     await this.dlpConnection.execute(new DlpEndOfSyncRequest());
   }
 
