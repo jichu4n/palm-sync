@@ -185,6 +185,36 @@ export enum DlpResponseStatus {
   ERROR_UNKNOWN = 0x7f,
 }
 
+/** User-facing error messages.
+ *
+ * Reference: https://github.com/jichu4n/pilot-link/blob/master/libpisock/dlp.c#L67
+ */
+const DLP_RESPONSE_STATUS_MESSAGES: {[key in DlpResponseStatus]: string} = {
+  [DlpResponseStatus.OK]: 'No error',
+  [DlpResponseStatus.ERROR_SYSTEM]: 'General system error',
+  [DlpResponseStatus.ERROR_ILLEGAL_REQUEST]: 'Illegal function',
+  [DlpResponseStatus.ERROR_OUT_OF_MEMORY]: 'Out of memory',
+  [DlpResponseStatus.ERROR_INVALID_ARG]: 'Invalid parameter',
+  [DlpResponseStatus.ERROR_NOT_FOUND]: 'Not found',
+  [DlpResponseStatus.ERROR_NONE_OPEN]: 'None open',
+  [DlpResponseStatus.ERROR_ALREADY_OPEN]: 'Already open',
+  [DlpResponseStatus.ERROR_TOO_MANY_OPEN]: 'Too many open',
+  [DlpResponseStatus.ERROR_ALREADY_EXISTS]: 'Already exists',
+  [DlpResponseStatus.ERROR_OPEN]: 'Cannot open',
+  [DlpResponseStatus.ERROR_DELETED]: 'Record deleted',
+  [DlpResponseStatus.ERROR_BUSY]: 'Record busy',
+  [DlpResponseStatus.ERROR_UNSUPPORTED]: 'Operation not supported',
+  [DlpResponseStatus.UNUSED1]: '-Unused-',
+  [DlpResponseStatus.ERROR_READONLY]: 'Read only',
+  [DlpResponseStatus.ERROR_SPACE]: 'Not enough space',
+  [DlpResponseStatus.ERROR_LIMIT]: 'Limit exceeded',
+  [DlpResponseStatus.ERROR_USER_CANCELLED]: 'Sync cancelled',
+  [DlpResponseStatus.ERROR_INVALID_ARG_WRAPPER]: 'Bad arg wrapper',
+  [DlpResponseStatus.ERROR_MISSING_ARG]: 'Argument missing',
+  [DlpResponseStatus.ERROR_INVALID_ARG_SIZE]: 'Bad argument size',
+  [DlpResponseStatus.ERROR_UNKNOWN]: 'Unknown',
+};
+
 /** Command ID bitmask for DLP responses. */
 const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
 /** Bitmask for extracting the raw command ID from a DLP response command ID. */
@@ -234,9 +264,9 @@ export abstract class DlpResponse extends SObject {
         );
       }
       throw new Error(
-        'DLP response status ' +
-          `0x${this.status.toString(16)} (${DlpResponseStatus[this.status]}) ` +
-          `in ${this.constructor.name}`
+        `DLP error 0x${this.status.toString(16)} ` +
+          `in ${this.constructor.name}: ` +
+          DLP_RESPONSE_STATUS_MESSAGES[this.status]
       );
     }
 
