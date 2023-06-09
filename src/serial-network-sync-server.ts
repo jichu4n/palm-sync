@@ -13,7 +13,7 @@ import {
   DlpReadDBListMode,
   DlpReadDBListRequest,
   DlpReadOpenDBInfoRequest,
-  DlpReadRecordByIDRequest,
+  DlpReadRecordRequest,
   DlpReadRecordIDListRequest,
   doCmpHandshake,
   NetworkSyncServer,
@@ -70,7 +70,7 @@ if (require.main === module) {
     const memoRecords: Array<MemoRecord> = [];
     for (const recordId of recordIds) {
       const resp = await dlpConnection.execute(
-        DlpReadRecordByIDRequest.with({
+        DlpReadRecordRequest.with({
           dbHandle,
           recordId,
         })

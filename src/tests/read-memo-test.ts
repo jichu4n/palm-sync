@@ -6,7 +6,7 @@ import {
   DlpOpenDBRequest,
   DlpOpenMode,
   DlpReadOpenDBInfoRequest,
-  DlpReadRecordByIDRequest,
+  DlpReadRecordRequest,
   DlpReadRecordIDListRequest,
   NetSyncConnection,
 } from '..';
@@ -31,7 +31,7 @@ export async function run({dlpConnection}: NetSyncConnection) {
   const memoRecords: Array<MemoRecord> = [];
   for (const recordId of recordIds) {
     const resp = await dlpConnection.execute(
-      DlpReadRecordByIDRequest.with({
+      DlpReadRecordRequest.with({
         dbHandle,
         recordId,
       })
