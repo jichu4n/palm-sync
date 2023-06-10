@@ -1,9 +1,10 @@
-import {MemoRecord} from 'palm-pdb';
 import debug from 'debug';
 import EventEmitter from 'events';
 import pEvent from 'p-event';
+import {MemoRecord} from 'palm-pdb';
 import {SerialPort} from 'serialport';
 import {Duplex} from 'stream';
+import {doCmpHandshake} from './cmp-protocol';
 import {
   DlpCloseDBRequest,
   DlpOpenConduitRequest,
@@ -12,13 +13,11 @@ import {
   DlpReadDBListMode,
   DlpReadDBListRequest,
   DlpReadOpenDBInfoRequest,
-  DlpReadRecordRequest,
   DlpReadRecordIDListRequest,
-  doCmpHandshake,
-  PadpStream,
-  SyncConnection,
-  SyncFn,
-} from '.';
+  DlpReadRecordRequest,
+} from './dlp-commands';
+import {PadpStream} from './padp-protocol';
+import {SyncConnection, SyncFn} from './sync-server';
 
 /** Sync server using a serial port. */
 export class SerialSyncServer extends EventEmitter {

@@ -227,6 +227,10 @@ export abstract class DlpResponse extends SObject {
 
   /** Error code. */
   status = DlpResponseStatus.OK;
+  /** Human-readable error message corresponding to status. */
+  get statusMessage() {
+    return DLP_RESPONSE_STATUS_MESSAGES[this.status];
+  }
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
@@ -264,9 +268,8 @@ export abstract class DlpResponse extends SObject {
         );
       }
       throw new Error(
-        `DLP error 0x${this.status.toString(16)} ` +
-          `in ${this.constructor.name}: ` +
-          DLP_RESPONSE_STATUS_MESSAGES[this.status]
+        `Error 0x${this.status.toString(16).padStart(2, '0')} ` +
+          `in ${this.constructor.name}: ${this.statusMessage}`
       );
     }
 

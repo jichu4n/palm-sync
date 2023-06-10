@@ -71,7 +71,7 @@ describe('dlp-protocol', function () {
     // Set error status.
     responseBuffer[3] = DlpResponseStatus.ERROR_SYSTEM;
     expect(() => response.deserialize(responseBuffer)).toThrow(
-      /^DLP response status/
+      /^Error 0x01/
     );
     responseBuffer[3] = 0;
   });

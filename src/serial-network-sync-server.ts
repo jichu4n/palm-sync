@@ -5,6 +5,7 @@
  */
 import {MemoRecord} from 'palm-pdb';
 import {Duplex} from 'stream';
+import {doCmpHandshake} from './cmp-protocol';
 import {
   DlpCloseDBRequest,
   DlpOpenConduitRequest,
@@ -13,13 +14,11 @@ import {
   DlpReadDBListMode,
   DlpReadDBListRequest,
   DlpReadOpenDBInfoRequest,
-  DlpReadRecordRequest,
   DlpReadRecordIDListRequest,
-  doCmpHandshake,
-  NetworkSyncServer,
-  PadpStream,
-  SyncConnection,
-} from '.';
+  DlpReadRecordRequest,
+} from './dlp-commands';
+import {PadpStream} from './padp-protocol';
+import {NetworkSyncServer, SyncConnection} from './sync-server';
 
 /** Serial-over-TCP port to listen on.
  *

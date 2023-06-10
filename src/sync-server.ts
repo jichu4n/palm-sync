@@ -4,13 +4,12 @@ import {createServer, Server, Socket} from 'net';
 import pEvent from 'p-event';
 import {Duplex} from 'stream';
 import {
-  DlpAddSyncLogEntryRequest,
-  DlpConnection,
   DlpEndOfSyncRequest,
   DlpReadSysInfoRequest,
   DlpReadUserInfoRequest,
-  StreamRecorder,
-} from '.';
+} from './dlp-commands';
+import {DlpConnection} from './dlp-protocol';
+import {StreamRecorder} from './stream-recorder';
 
 /** Base class for HotSync connections.
  *

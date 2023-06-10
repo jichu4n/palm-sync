@@ -1,12 +1,10 @@
 import {Duplex} from 'stream';
+import {DlpReadDBListMode, DlpReadDBListRequest} from './dlp-commands';
 import {
-  createNetSyncDatagramStream,
-  DlpReadDBListMode,
-  DlpReadDBListRequest,
   NetSyncDatagramStream,
-  NetworkSyncServer,
-  SyncConnection,
-} from '.';
+  createNetSyncDatagramStream,
+} from './network-sync-protocol';
+import {NetworkSyncServer, SyncConnection} from './sync-server';
 import {readStream} from './utils';
 
 /** HotSync port to listen on. */
