@@ -12,12 +12,8 @@ import assert from 'assert';
 export async function run({dlpConnection}: SyncConnection) {
   const {userInfo} = await dlpConnection.execute(new DlpReadUserInfoRequest());
   const writeUserInfoReq = DlpWriteUserInfoRequest.with({
-    userName: `Test ${Math.floor(
-      userInfo.lastSyncTime.value.getTime() / 1000
-    )}`,
-    lastSyncTime: DlpTimestamp.with({
-      value: new Date(userInfo.lastSyncTime.value.getTime() + 5 * 60 * 1000),
-    }),
+    userName: `Test ${Math.floor(userInfo.lastSyncTime.getTime() / 1000)}`,
+    lastSyncTime: new Date(userInfo.lastSyncTime.getTime() + 5 * 60 * 1000),
     fieldMask: DlpUserInfoFieldMask.with({
       userName: true,
       lastSyncTime: true,
@@ -32,8 +28,8 @@ export async function run({dlpConnection}: SyncConnection) {
     writeUserInfoReq.userName
   );
   assert.strictEqual(
-    readUserInfoResp2.userInfo.lastSyncTime.value.toISOString(),
-    writeUserInfoReq.lastSyncTime.value.toISOString()
+    readUserInfoResp2.userInfo.lastSyncTime.toISOString(),
+    writeUserInfoReq.lastSyncTime.toISOString()
   );
 
   await dlpConnection.execute(new DlpGetSysDateTimeRequest());

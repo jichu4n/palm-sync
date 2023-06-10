@@ -9,7 +9,7 @@
 import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
-import {EPOCH_TIMESTAMP} from 'palm-pdb';
+import {EPOCH_TIMESTAMP, PDB_EPOCH} from 'palm-pdb';
 import {
   DeserializeOptions,
   field,
@@ -625,65 +625,67 @@ export class DlpArg extends SObject {
   }
 }
 
+class DlpTimestampObject extends SObject {
+  @field(SUInt16BE)
+  year = 0;
+  @field(SUInt8)
+  month = 0;
+  @field(SUInt8)
+  day = 0;
+  @field(SUInt8)
+  hour = 0;
+  @field(SUInt8)
+  minute = 0;
+  @field(SUInt8)
+  second = 0;
+  @field(SUInt8)
+  private padding1 = 0;
+}
+
 /** Timestamp value in DLP requests and responses.
  *
  * Unlike normal database timestamps found in database files and Palm OS APIs,
  * timestamps in the DLP layer are actual date and time values without timezone
  * info.
  */
-export class DlpTimestamp extends SObject {
+export class DlpTimestamp extends SerializableWrapper<Date> {
   /** JavaScript Date value corresponding to the time. */
-  value: Date = new Date();
-
-  @field(SUInt16BE)
-  private year = 0;
-
-  @field(SUInt8)
-  private month = 0;
-
-  @field(SUInt8)
-  private day = 0;
-
-  @field(SUInt8)
-  private hour = 0;
-
-  @field(SUInt8)
-  private minute = 0;
-
-  @field(SUInt8)
-  private second = 0;
-
-  @field(SUInt8)
-  private padding1 = 0;
+  value = PDB_EPOCH;
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
-    const readOffset = super.deserialize(buffer, opts);
-    if (this.year === 0) {
-      this.value = EPOCH_TIMESTAMP.value;
+    const obj = new DlpTimestampObject();
+    const readOffset = obj.deserialize(buffer, opts);
+    if (obj.year === 0) {
+      this.value.setTime(PDB_EPOCH.getTime());
     } else {
-      this.value.setFullYear(this.year, this.month - 1, this.day);
-      this.value.setHours(this.hour, this.minute, this.second);
+      this.value.setFullYear(obj.year, obj.month - 1, obj.day);
+      this.value.setHours(obj.hour, obj.minute, obj.second);
       this.value.setMilliseconds(0);
     }
     return readOffset;
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    if (this.value === EPOCH_TIMESTAMP.value) {
-      this.year = 0;
-      this.month = 0;
-      this.day = 0;
-      this.hour = 0;
-      this.minute = 0;
-      this.second = 0;
+    const obj = new DlpTimestampObject();
+    if (this.value === PDB_EPOCH) {
+      obj.year = 0;
+      obj.month = 0;
+      obj.day = 0;
+      obj.hour = 0;
+      obj.minute = 0;
+      obj.second = 0;
     } else {
-      this.year = this.value.getFullYear();
-      this.month = this.value.getMonth() + 1;
-      this.day = this.value.getDate();
-      this.hour = this.value.getHours();
-      this.minute = this.value.getMinutes();
-      this.second = this.value.getSeconds();
+      obj.year = this.value.getFullYear();
+      obj.month = this.value.getMonth() + 1;
+      obj.day = this.value.getDate();
+      obj.hour = this.value.getHours();
+      obj.minute = this.value.getMinutes();
+      obj.second = this.value.getSeconds();
     }
-    return super.serialize();
+    return obj.serialize(opts);
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return new DlpTimestampObject().getSerializedLength(opts);
   }
 }

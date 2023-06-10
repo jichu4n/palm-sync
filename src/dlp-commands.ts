@@ -1,27 +1,32 @@
-import {DatabaseAttrs, RecordAttrs, SDynamicArray, TypeId} from 'palm-pdb';
-import pick from 'lodash/pick';
 import {
-  bitfield,
-  decodeString,
+  DatabaseAttrs,
+  PDB_EPOCH,
+  RecordAttrs,
+  SDynamicArray,
+  TypeId,
+} from 'palm-pdb';
+import {
   DeserializeOptions,
-  encodeString,
-  field,
   SBitmask,
   SBuffer,
   SDynamicBuffer,
-  SerializeOptions,
   SObject,
   SStringNT,
   SUInt16BE,
   SUInt32BE,
   SUInt8,
+  SerializeOptions,
+  bitfield,
+  decodeString,
+  encodeString,
+  field,
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
 import {
-  dlpArg,
   DlpRequest,
   DlpResponse,
   DlpTimestamp,
+  dlpArg,
   optDlpArg,
 } from './dlp-protocol';
 
@@ -60,16 +65,16 @@ export class DlpDatabaseMetadata extends SObject {
   modificationNumber = 0;
 
   /** Database creation timestamp. */
-  @field()
-  creationDate = new DlpTimestamp();
+  @field(DlpTimestamp)
+  creationDate = PDB_EPOCH;
 
   /** Database modification timestamp. */
-  @field()
-  modificationDate = new DlpTimestamp();
+  @field(DlpTimestamp)
+  modificationDate = PDB_EPOCH;
 
   /** Last backup timestamp. */
-  @field()
-  lastBackupDate = new DlpTimestamp();
+  @field(DlpTimestamp)
+  lastBackupDate = PDB_EPOCH;
 
   /** Index of database in the response. */
   @field(SUInt16BE)
@@ -162,12 +167,12 @@ export class DlpUserInfo extends SObject {
   lastSyncPcId = 0;
 
   /** Timestamp of last successful sync. */
-  @field()
-  lastSuccessfulSyncTime = new DlpTimestamp();
+  @field(DlpTimestamp)
+  lastSuccessfulSyncTime = PDB_EPOCH;
 
   /** Timestamp of last sync attempt. */
-  @field()
-  lastSyncTime = new DlpTimestamp();
+  @field(DlpTimestamp)
+  lastSyncTime = PDB_EPOCH;
 
   /** Length of username, including NUL (0 if none) */
   @field(SUInt8)
@@ -429,8 +434,8 @@ export class DlpWriteUserInfoRequest extends DlpRequest<DlpWriteUserInfoResponse
   lastSyncPcId = 0;
 
   /** Timestamp of last sync. */
-  @dlpArg(0)
-  lastSyncTime = new DlpTimestamp();
+  @dlpArg(0, DlpTimestamp)
+  lastSyncTime = PDB_EPOCH;
 
   /** Which fields in userInfo to write to the device. */
   @dlpArg(0)
@@ -525,8 +530,8 @@ export class DlpGetSysDateTimeResponse extends DlpResponse {
   commandId = DlpCommandId.GetSysDateTime;
 
   /** Device system time. */
-  @dlpArg(0)
-  time = new DlpTimestamp();
+  @dlpArg(0, DlpTimestamp)
+  time = PDB_EPOCH;
 }
 
 // =============================================================================
@@ -537,8 +542,8 @@ export class DlpSetSysDateTimeRequest extends DlpRequest<DlpSetSysDateTimeRespon
   responseType = DlpSetSysDateTimeResponse;
 
   /** New device system time. */
-  @dlpArg(0)
-  time = new DlpTimestamp();
+  @dlpArg(0, DlpTimestamp)
+  time = PDB_EPOCH;
 }
 
 export class DlpSetSysDateTimeResponse extends DlpResponse {
