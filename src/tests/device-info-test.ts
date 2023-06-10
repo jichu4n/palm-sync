@@ -1,13 +1,12 @@
+import assert from 'assert';
 import {
   DlpGetSysDateTimeRequest,
   DlpReadUserInfoRequest,
   DlpSetSysDateTimeRequest,
-  DlpTimestamp,
   DlpUserInfoFieldMask,
   DlpWriteUserInfoRequest,
   SyncConnection,
 } from '..';
-import assert from 'assert';
 
 export async function run({dlpConnection}: SyncConnection) {
   const {userInfo} = await dlpConnection.execute(new DlpReadUserInfoRequest());
