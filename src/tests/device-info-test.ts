@@ -11,13 +11,16 @@ import {
 export async function run({dlpConnection}: SyncConnection) {
   const {userInfo} = await dlpConnection.execute(new DlpReadUserInfoRequest());
   const writeUserInfoReq = DlpWriteUserInfoRequest.with({
-    userName: `Test ${Math.floor(userInfo.lastSyncTime.getTime() / 1000)}`,
-    lastSyncTime: new Date(userInfo.lastSyncTime.getTime() + 5 * 60 * 1000),
+    userName: `Test ${Math.floor(userInfo.lastSyncTime.getSeconds())}`,
+    lastSyncTime: new Date(userInfo.lastSyncTime),
     fieldMask: DlpUserInfoFieldMask.with({
       userName: true,
       lastSyncTime: true,
     }),
   });
+  writeUserInfoReq.lastSyncTime.setSeconds(
+    (writeUserInfoReq.lastSyncTime.getSeconds() + 7) % 60
+  );
   await dlpConnection.execute(writeUserInfoReq);
   const readUserInfoResp2 = await dlpConnection.execute(
     new DlpReadUserInfoRequest()

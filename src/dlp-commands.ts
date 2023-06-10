@@ -66,15 +66,15 @@ export class DlpDatabaseMetadata extends SObject {
 
   /** Database creation timestamp. */
   @field(DlpTimestamp)
-  creationDate = PDB_EPOCH;
+  creationDate = new Date(PDB_EPOCH);
 
   /** Database modification timestamp. */
   @field(DlpTimestamp)
-  modificationDate = PDB_EPOCH;
+  modificationDate = new Date(PDB_EPOCH);
 
   /** Last backup timestamp. */
   @field(DlpTimestamp)
-  lastBackupDate = PDB_EPOCH;
+  lastBackupDate = new Date(PDB_EPOCH);
 
   /** Index of database in the response. */
   @field(SUInt16BE)
@@ -168,11 +168,11 @@ export class DlpUserInfo extends SObject {
 
   /** Timestamp of last successful sync. */
   @field(DlpTimestamp)
-  lastSuccessfulSyncTime = PDB_EPOCH;
+  lastSuccessfulSyncTime = new Date(PDB_EPOCH);
 
   /** Timestamp of last sync attempt. */
   @field(DlpTimestamp)
-  lastSyncTime = PDB_EPOCH;
+  lastSyncTime = new Date(PDB_EPOCH);
 
   /** Length of username, including NUL (0 if none) */
   @field(SUInt8)
@@ -435,7 +435,7 @@ export class DlpWriteUserInfoRequest extends DlpRequest<DlpWriteUserInfoResponse
 
   /** Timestamp of last sync. */
   @dlpArg(0, DlpTimestamp)
-  lastSyncTime = PDB_EPOCH;
+  lastSyncTime = new Date(PDB_EPOCH);
 
   /** Which fields in userInfo to write to the device. */
   @dlpArg(0)
@@ -531,7 +531,7 @@ export class DlpGetSysDateTimeResponse extends DlpResponse {
 
   /** Device system time. */
   @dlpArg(0, DlpTimestamp)
-  time = PDB_EPOCH;
+  time = new Date(PDB_EPOCH);
 }
 
 // =============================================================================
@@ -543,7 +543,7 @@ export class DlpSetSysDateTimeRequest extends DlpRequest<DlpSetSysDateTimeRespon
 
   /** New device system time. */
   @dlpArg(0, DlpTimestamp)
-  time = PDB_EPOCH;
+  time = new Date(PDB_EPOCH);
 }
 
 export class DlpSetSysDateTimeResponse extends DlpResponse {

@@ -650,7 +650,7 @@ class DlpTimestampObject extends SObject {
  */
 export class DlpTimestamp extends SerializableWrapper<Date> {
   /** JavaScript Date value corresponding to the time. */
-  value = PDB_EPOCH;
+  value = new Date(PDB_EPOCH);
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const obj = new DlpTimestampObject();
