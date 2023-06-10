@@ -9,7 +9,7 @@ import {
 
 /** Test modules to run. */
 const RECORDED_TEST_MODULES = [
-  'user-info-test',
+  'device-info-test',
   'no-op-test',
   'list-db-test',
   'read-memo-test',

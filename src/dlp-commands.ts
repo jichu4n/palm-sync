@@ -163,11 +163,11 @@ export class DlpUserInfo extends SObject {
 
   /** Timestamp of last successful sync. */
   @field()
-  lastSuccessfulSyncDate = new DlpTimestamp();
+  lastSuccessfulSyncTime = new DlpTimestamp();
 
   /** Timestamp of last sync attempt. */
   @field()
-  lastSyncDate = new DlpTimestamp();
+  lastSyncTime = new DlpTimestamp();
 
   /** Length of username, including NUL (0 if none) */
   @field(SUInt8)
@@ -229,7 +229,7 @@ export class DlpUserInfoFieldMask extends SBitmask.of(SUInt8) {
   @bitfield(1)
   lastSyncPcId = false;
   @bitfield(1)
-  lastSyncDate = false;
+  lastSyncTime = false;
   @bitfield(1)
   userName = false;
   @bitfield(1)
@@ -430,7 +430,7 @@ export class DlpWriteUserInfoRequest extends DlpRequest<DlpWriteUserInfoResponse
 
   /** Timestamp of last sync. */
   @dlpArg(0)
-  lastSyncDate = new DlpTimestamp();
+  lastSyncTime = new DlpTimestamp();
 
   /** Which fields in userInfo to write to the device. */
   @dlpArg(0)
@@ -514,39 +514,35 @@ export class DlpReadSysInfoResponse extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: GetSysDateTime (0x13)
+// GetSysDateTime (0x13)
 // =============================================================================
 export class DlpGetSysDateTimeRequest extends DlpRequest<DlpGetSysDateTimeResponse> {
   commandId = DlpCommandId.GetSysDateTime;
   responseType = DlpGetSysDateTimeResponse;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 export class DlpGetSysDateTimeResponse extends DlpResponse {
   commandId = DlpCommandId.GetSysDateTime;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Device system time. */
+  @dlpArg(0)
+  time = new DlpTimestamp();
 }
 
 // =============================================================================
-// TODO: SetSysDateTime (0x14)
+// SetSysDateTime (0x14)
 // =============================================================================
 export class DlpSetSysDateTimeRequest extends DlpRequest<DlpSetSysDateTimeResponse> {
   commandId = DlpCommandId.SetSysDateTime;
   responseType = DlpSetSysDateTimeResponse;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** New device system time. */
+  @dlpArg(0)
+  time = new DlpTimestamp();
 }
 
 export class DlpSetSysDateTimeResponse extends DlpResponse {
   commandId = DlpCommandId.SetSysDateTime;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
