@@ -1,4 +1,5 @@
 import {StreamRecorder} from '../stream-recorder';
+import fs from 'fs-extra';
 import {
   ConnectionType,
   getRecordedSessionFilePath,
@@ -8,6 +9,7 @@ import {
 
 /** Test modules to run. */
 const RECORDED_TEST_MODULES = [
+  'user-info-test',
   'no-op-test',
   'list-db-test',
   'read-memo-test',
@@ -26,8 +28,18 @@ describe('recorded tests', function () {
       for (const testModule of RECORDED_TEST_MODULES) {
         test(testModule, async function () {
           const syncFn = getSyncFn(testModule);
+          const recordedSessionFilePath = getRecordedSessionFilePath(
+            connectionType,
+            testModule
+          );
+          if (!(await fs.exists(recordedSessionFilePath))) {
+            console.log(
+              `No recorded session file found at ${recordedSessionFilePath}`
+            );
+            return;
+          }
           const recorder = await StreamRecorder.loadFromFile(
-            getRecordedSessionFilePath(connectionType, testModule)
+            recordedSessionFilePath
           );
           const syncServer =
             getServerTypeForConnectionType(connectionType)(syncFn);

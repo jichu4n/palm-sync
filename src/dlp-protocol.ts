@@ -679,7 +679,7 @@ export class DlpTimestamp extends SObject {
     } else {
       this.year = this.value.getFullYear();
       this.month = this.value.getMonth() + 1;
-      this.day = this.value.getDay();
+      this.day = this.value.getDate();
       this.hour = this.value.getHours();
       this.minute = this.value.getMinutes();
       this.second = this.value.getSeconds();

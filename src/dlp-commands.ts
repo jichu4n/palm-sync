@@ -1,10 +1,12 @@
 import {DatabaseAttrs, RecordAttrs, SDynamicArray, TypeId} from 'palm-pdb';
-import _ from 'lodash';
+import pick from 'lodash/pick';
 import {
+  bitfield,
   decodeString,
   DeserializeOptions,
   encodeString,
   field,
+  SBitmask,
   SBuffer,
   SDynamicBuffer,
   SerializeOptions,
@@ -134,6 +136,13 @@ export class DlpVersion extends SObject {
   }
 }
 
+/** Maximum length of user names.
+ *
+ * Reference:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLServer.h#L50
+ */
+const MAX_USER_NAME_LENGTH = 40;
+
 /** User information used in DlpReadUserInfo and DlpWriteUserInfo commands. */
 export class DlpUserInfo extends SObject {
   /** HotSync user ID number (0 if none) */
@@ -142,8 +151,8 @@ export class DlpUserInfo extends SObject {
 
   /** ID assigned to viewer by desktop app.
    *
-   * Not currently used, according to Palm:
-   * http://oasis.palm.com/dev/kb/manuals/1706.cfm
+   * Not currently used according to Palm:
+   * https://web.archive.org/web/20030320233614/http://oasis.palm.com/dev/kb/manuals/1706.cfm
    */
   @field(SUInt32BE)
   viewerId = 0;
@@ -168,10 +177,7 @@ export class DlpUserInfo extends SObject {
   @field(SUInt8)
   private passwordLength = 0;
 
-  /* User name.
-   *
-   * The max length is 41 per ColdSync, while pilot-link supports up to 128.
-   */
+  /* User name (max length MAX_USER_NAME_LENGTH). */
   userName = '';
 
   /** Encrypted password.
@@ -214,6 +220,22 @@ export class DlpUserInfo extends SObject {
   getSerializedLength(opts?: SerializeOptions) {
     return this.serialize(opts).length;
   }
+}
+
+/** Bitmask corresponding to the writable fields in DlpUserInfo. */
+export class DlpUserInfoFieldMask extends SBitmask.of(SUInt8) {
+  @bitfield(1)
+  userId = false;
+  @bitfield(1)
+  lastSyncPcId = false;
+  @bitfield(1)
+  lastSyncDate = false;
+  @bitfield(1)
+  userName = false;
+  @bitfield(1)
+  viewerId = false;
+  @bitfield(3)
+  private padding1 = 0;
 }
 
 /** DLP command ID constants. */
@@ -384,21 +406,57 @@ export class DlpReadUserInfoResponse extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: WriteUserInfo (0x11)
+// WriteUserInfo (0x11)
 // =============================================================================
 export class DlpWriteUserInfoRequest extends DlpRequest<DlpWriteUserInfoResponse> {
   commandId = DlpCommandId.WriteUserInfo;
   responseType = DlpWriteUserInfoResponse;
 
+  /** HotSync user ID number (0 if none) */
+  @dlpArg(0, SUInt32BE)
+  userId = 0;
+
+  /** ID assigned to viewer by desktop app.
+   *
+   * Not currently used:
+   * https://web.archive.org/web/20030320233614/http://oasis.palm.com/dev/kb/manuals/1706.cfm
+   */
+  @dlpArg(0, SUInt32BE)
+  viewerId = 0;
+
+  /** ID of last synced PC (0 if none). */
+  @dlpArg(0, SUInt32BE)
+  lastSyncPcId = 0;
+
+  /** Timestamp of last sync. */
+  @dlpArg(0)
+  lastSyncDate = new DlpTimestamp();
+
+  /** Which fields in userInfo to write to the device. */
+  @dlpArg(0)
+  fieldMask = new DlpUserInfoFieldMask();
+
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  private userNameLength = 0;
+
+  @dlpArg(0, SStringNT)
+  userName = '';
+
+  serialize(opts?: SerializeOptions): Buffer {
+    const encodedUserName = encodeString(this.userName, opts);
+    if (encodedUserName.length > MAX_USER_NAME_LENGTH) {
+      throw new Error(
+        'User name too long: ' +
+          `${encodedUserName.length} exceeds maximum length of ${MAX_USER_NAME_LENGTH}`
+      );
+    }
+    this.userNameLength = encodedUserName.length + 1;
+    return super.serialize(opts);
+  }
 }
 
 export class DlpWriteUserInfoResponse extends DlpResponse {
   commandId = DlpCommandId.WriteUserInfo;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
@@ -1172,7 +1230,7 @@ export class DlpReadRecordIDListResponse extends DlpResponse {
   private recordIdWrappers: Array<SUInt32BE> = [];
 
   get recordIds() {
-    return _.map(this.recordIdWrappers, 'value');
+    return this.recordIdWrappers.map(({value}) => value);
   }
 
   set recordIds(values: Array<number>) {
