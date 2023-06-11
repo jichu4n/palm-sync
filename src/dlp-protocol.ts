@@ -135,84 +135,85 @@ export type DlpResponseType<T> = T extends DlpRequest<infer DlpResponseT>
   ? DlpResponseT
   : never;
 
-/** DLP response status codes. */
-export enum DlpResponseStatus {
-  /** No error */
-  OK = 0x00,
-  /** General system error on the Palm device */
-  ERROR_SYSTEM = 0x01,
-  /** Illegal command ID, not supported by this version of DLP */
-  ERROR_ILLEGAL_REQUEST = 0x02,
-  /** Not enough memory */
-  ERROR_OUT_OF_MEMORY = 0x03,
-  /** Invalid parameter */
-  ERROR_INVALID_ARG = 0x04,
-  /** File, database or record not found */
-  ERROR_NOT_FOUND = 0x05,
-  /** No databases opened */
-  ERROR_NONE_OPEN = 0x06,
-  /** Database already open */
-  ERROR_ALREADY_OPEN = 0x07,
-  /** Too many open databases */
-  ERROR_TOO_MANY_OPEN = 0x08,
-  /** Database already exists */
-  ERROR_ALREADY_EXISTS = 0x09,
-  /** Can't open database */
-  ERROR_OPEN = 0x0a,
-  /** Record is deleted */
-  ERROR_DELETED = 0x0b,
-  /** Record busy */
-  ERROR_BUSY = 0x0c,
-  /** Requested operation not supported on given database type */
-  ERROR_UNSUPPORTED = 0x0d,
-  /** Unused */
-  UNUSED1 = 0x0e,
-  /** No write access or database is read-only */
-  ERROR_READONLY = 0x0f,
-  /** Not enough space left on device */
-  ERROR_SPACE = 0x10,
-  /** Size limit exceeded */
-  ERROR_LIMIT = 0x11,
-  /** Cancelled by user */
-  ERROR_USER_CANCELLED = 0x12,
-  /** Bad DLC argument wrapper */
-  ERROR_INVALID_ARG_WRAPPER = 0x13,
-  /** Required argument not provided */
-  ERROR_MISSING_ARG = 0x14,
-  /** Invalid argument size */
-  ERROR_INVALID_ARG_SIZE = 0x15,
-  /** Unknown error (0x7F) */
-  ERROR_UNKNOWN = 0x7f,
+/** DLP response status codes.
+ *
+ * Reference:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L225
+ */
+export enum DlpRespErrorCode {
+  /** Reserve 0 for no error. */
+  NONE = 0,
+  /** General Pilot system error. */
+  SYSTEM,
+  /** Unknown function ID. */
+  ILLEGAL_REQ,
+  /** Insufficient dynamic heap memory. */
+  MEMORY,
+  /** Invalid parameter. */
+  PARAM,
+  /** Database, record, file, or resource not found. */
+  NOT_FOUND,
+  /** There are no open databases. */
+  NONE_OPEN,
+  /** Database is open by someone else. */
+  DATABASE_OPEN,
+  /** There are too many open databases. */
+  TOO_MANY_OPEN_DATABASES,
+  /** DB or File already exists. */
+  ALREADY_EXISTS,
+  /** Couldn't open DB. */
+  CANT_OPEN,
+  /** Record is deleted. */
+  RECORD_DELETED,
+  /** Record is in use by someone else. */
+  RECORD_BUSY,
+  /** The requested operation is not supported on the given database type (record or resource). */
+  NOT_SUPPORTED,
+  /** Unused. */
+  UNUSED1,
+  /** Caller does not have write access (or DB is in ROM). */
+  READ_ONLY,
+  /** Not enough space in data store for record/resource/etc.. */
+  NOT_ENOUGH_SPACE,
+  /** Size limit exceeded. */
+  LIMIT_EXCEEDED,
+  /** Cancel the sync. */
+  CANCEL_SYNC,
+  /** Bad arg wrapper. */
+  BAD_WRAPPER,
+  /** Required arg not found. */
+  ARG_MISSING,
+  /** Invalid argument size. */
+  ARG_SIZE,
 }
 
 /** User-facing error messages.
  *
  * Reference: https://github.com/jichu4n/pilot-link/blob/master/libpisock/dlp.c#L67
  */
-const DLP_RESPONSE_STATUS_MESSAGES: {[key in DlpResponseStatus]: string} = {
-  [DlpResponseStatus.OK]: 'No error',
-  [DlpResponseStatus.ERROR_SYSTEM]: 'General system error',
-  [DlpResponseStatus.ERROR_ILLEGAL_REQUEST]: 'Illegal function',
-  [DlpResponseStatus.ERROR_OUT_OF_MEMORY]: 'Out of memory',
-  [DlpResponseStatus.ERROR_INVALID_ARG]: 'Invalid parameter',
-  [DlpResponseStatus.ERROR_NOT_FOUND]: 'Not found',
-  [DlpResponseStatus.ERROR_NONE_OPEN]: 'None open',
-  [DlpResponseStatus.ERROR_ALREADY_OPEN]: 'Already open',
-  [DlpResponseStatus.ERROR_TOO_MANY_OPEN]: 'Too many open',
-  [DlpResponseStatus.ERROR_ALREADY_EXISTS]: 'Already exists',
-  [DlpResponseStatus.ERROR_OPEN]: 'Cannot open',
-  [DlpResponseStatus.ERROR_DELETED]: 'Record deleted',
-  [DlpResponseStatus.ERROR_BUSY]: 'Record busy',
-  [DlpResponseStatus.ERROR_UNSUPPORTED]: 'Operation not supported',
-  [DlpResponseStatus.UNUSED1]: '-Unused-',
-  [DlpResponseStatus.ERROR_READONLY]: 'Read only',
-  [DlpResponseStatus.ERROR_SPACE]: 'Not enough space',
-  [DlpResponseStatus.ERROR_LIMIT]: 'Limit exceeded',
-  [DlpResponseStatus.ERROR_USER_CANCELLED]: 'Sync cancelled',
-  [DlpResponseStatus.ERROR_INVALID_ARG_WRAPPER]: 'Bad arg wrapper',
-  [DlpResponseStatus.ERROR_MISSING_ARG]: 'Argument missing',
-  [DlpResponseStatus.ERROR_INVALID_ARG_SIZE]: 'Bad argument size',
-  [DlpResponseStatus.ERROR_UNKNOWN]: 'Unknown',
+const DLP_RESPONSE_ERROR_MESSAGES: {[key in DlpRespErrorCode]: string} = {
+  [DlpRespErrorCode.NONE]: 'No error',
+  [DlpRespErrorCode.SYSTEM]: 'General system error',
+  [DlpRespErrorCode.ILLEGAL_REQ]: 'Unknown function ID',
+  [DlpRespErrorCode.MEMORY]: 'Out of memory',
+  [DlpRespErrorCode.PARAM]: 'Invalid parameter',
+  [DlpRespErrorCode.NOT_FOUND]: 'Not found',
+  [DlpRespErrorCode.NONE_OPEN]: 'No open databases',
+  [DlpRespErrorCode.DATABASE_OPEN]: 'Database is opened by another application',
+  [DlpRespErrorCode.TOO_MANY_OPEN_DATABASES]: 'Too many open databases',
+  [DlpRespErrorCode.ALREADY_EXISTS]: 'Database or file already exists',
+  [DlpRespErrorCode.CANT_OPEN]: 'Could not open database',
+  [DlpRespErrorCode.RECORD_DELETED]: 'Record deleted',
+  [DlpRespErrorCode.RECORD_BUSY]: 'Record is in use by another application',
+  [DlpRespErrorCode.NOT_SUPPORTED]: 'Operation not supported',
+  [DlpRespErrorCode.UNUSED1]: '-Unused-',
+  [DlpRespErrorCode.READ_ONLY]: 'No write access or database is in ROM',
+  [DlpRespErrorCode.NOT_ENOUGH_SPACE]: 'Not enough space',
+  [DlpRespErrorCode.LIMIT_EXCEEDED]: 'Size limit exceeded',
+  [DlpRespErrorCode.CANCEL_SYNC]: 'Sync cancelled',
+  [DlpRespErrorCode.BAD_WRAPPER]: 'Bad argument wrapper',
+  [DlpRespErrorCode.ARG_MISSING]: 'Required argument missing',
+  [DlpRespErrorCode.ARG_SIZE]: 'Invalid argument size',
 };
 
 /** Command ID bitmask for DLP responses. */
@@ -226,10 +227,10 @@ export abstract class DlpResponse extends SObject {
   abstract commandId: number;
 
   /** Error code. */
-  status = DlpResponseStatus.OK;
+  errorCode = DlpRespErrorCode.NONE;
   /** Human-readable error message corresponding to status. */
-  get statusMessage() {
-    return DLP_RESPONSE_STATUS_MESSAGES[this.status];
+  get errorMessage() {
+    return DLP_RESPONSE_ERROR_MESSAGES[this.errorCode] ?? 'Unknown error';
   }
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
@@ -250,10 +251,10 @@ export abstract class DlpResponse extends SObject {
     }
 
     const numDlpArgs = reader.readUInt8();
-    this.status = reader.readUInt16BE();
+    this.errorCode = reader.readUInt16BE();
 
     let {readOffset} = reader;
-    if (this.status === DlpResponseStatus.OK) {
+    if (this.errorCode === DlpRespErrorCode.NONE) {
       readOffset += parseDlpArgs(
         this,
         numDlpArgs,
@@ -268,8 +269,8 @@ export abstract class DlpResponse extends SObject {
         );
       }
       throw new Error(
-        `Error 0x${this.status.toString(16).padStart(2, '0')} ` +
-          `in ${this.constructor.name}: ${this.statusMessage}`
+        `Error 0x${this.errorCode.toString(16).padStart(2, '0')} ` +
+          `in ${this.constructor.name}: ${this.errorMessage}`
       );
     }
 
@@ -281,7 +282,7 @@ export abstract class DlpResponse extends SObject {
     const writer = new SmartBuffer();
     writer.writeUInt8(this.commandId | DLP_RESPONSE_TYPE_BITMASK);
     writer.writeUInt8(serializedArgs.length);
-    writer.writeUInt16BE(this.status);
+    writer.writeUInt16BE(this.errorCode);
     for (const serializedArg of serializedArgs) {
       writer.writeBuffer(serializedArg);
     }
@@ -296,8 +297,7 @@ export abstract class DlpResponse extends SObject {
 
   toJSON(): Object {
     return {
-      commandId: this.commandId,
-      status: this.status,
+      ..._.pick(this, 'commandId', 'errorCode', 'errorMessage'),
       args: getDlpArgsAsJson(this),
     };
   }

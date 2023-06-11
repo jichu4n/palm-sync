@@ -3,7 +3,7 @@ import {
   DLP_ARG_ID_BASE,
   DlpRequest,
   DlpResponse,
-  DlpResponseStatus,
+  DlpRespErrorCode,
   dlpArg,
   optDlpArg,
 } from '../dlp-protocol';
@@ -69,7 +69,7 @@ describe('dlp-protocol', function () {
     responseBuffer[0] -= 1;
 
     // Set error status.
-    responseBuffer[3] = DlpResponseStatus.ERROR_SYSTEM;
+    responseBuffer[3] = DlpRespErrorCode.SYSTEM;
     expect(() => response.deserialize(responseBuffer)).toThrow(/^Error 0x01/);
     responseBuffer[3] = 0;
   });
