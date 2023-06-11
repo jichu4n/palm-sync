@@ -3,42 +3,41 @@ import {
   DlpGetSysDateTimeReqType,
   DlpReadUserInfoReqType,
   DlpSetSysDateTimeReqType,
-  DlpUserInfoFieldMask,
+  DlpUserInfoModFlags,
   DlpWriteUserInfoReqType,
   SyncConnection,
 } from '..';
 
 export async function run({dlpConnection}: SyncConnection) {
-  const {userInfo} = await dlpConnection.execute(new DlpReadUserInfoReqType());
+  const readUserInfoResp = await dlpConnection.execute(
+    new DlpReadUserInfoReqType()
+  );
   const writeUserInfoReq = DlpWriteUserInfoReqType.with({
-    userName: `Test ${Math.floor(userInfo.lastSyncTime.getSeconds())}`,
-    lastSyncTime: new Date(userInfo.lastSyncTime),
-    fieldMask: DlpUserInfoFieldMask.with({
+    userName: `Test ${Math.floor(readUserInfoResp.lastSyncDate.getSeconds())}`,
+    lastSyncDate: new Date(readUserInfoResp.lastSyncDate),
+    modFlags: DlpUserInfoModFlags.with({
       userName: true,
-      lastSyncTime: true,
+      lastSyncDate: true,
     }),
   });
-  writeUserInfoReq.lastSyncTime.setSeconds(
-    (writeUserInfoReq.lastSyncTime.getSeconds() + 7) % 60
+  writeUserInfoReq.lastSyncDate.setSeconds(
+    (writeUserInfoReq.lastSyncDate.getSeconds() + 7) % 60
   );
   await dlpConnection.execute(writeUserInfoReq);
   const readUserInfoResp2 = await dlpConnection.execute(
     new DlpReadUserInfoReqType()
   );
+  assert.strictEqual(readUserInfoResp2.userName, writeUserInfoReq.userName);
   assert.strictEqual(
-    readUserInfoResp2.userInfo.userName,
-    writeUserInfoReq.userName
-  );
-  assert.strictEqual(
-    readUserInfoResp2.userInfo.lastSyncTime.toISOString(),
-    writeUserInfoReq.lastSyncTime.toISOString()
+    readUserInfoResp2.lastSyncDate.toISOString(),
+    writeUserInfoReq.lastSyncDate.toISOString()
   );
 
   await dlpConnection.execute(new DlpGetSysDateTimeReqType());
   // In POSE emulator, the device date time is synchronized with the host system
   // and so won't be actually modified.
   const setSysDateTimeReq = DlpSetSysDateTimeReqType.with({
-    dateTime: writeUserInfoReq.lastSyncTime,
+    dateTime: writeUserInfoReq.lastSyncDate,
   });
   await dlpConnection.execute(setSysDateTimeReq);
 }

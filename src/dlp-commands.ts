@@ -137,7 +137,7 @@ export class DlpRecordMetadata extends SObject {
  *
  * e.g. DLP version 1.4 => {major: 1, minor: 4}
  */
-export class DlpVersion extends SObject {
+export class DlpVersionType extends SObject {
   @field(SUInt16BE)
   major = 0;
 
@@ -151,108 +151,6 @@ export class DlpVersion extends SObject {
   toNumber() {
     return this.major + this.minor / 10;
   }
-}
-
-/** Maximum length of user names.
- *
- * Reference:
- *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLServer.h#L50
- */
-const MAX_USER_NAME_LENGTH = 40;
-
-/** User information used in DlpReadUserInfo and DlpWriteUserInfo commands. */
-export class DlpUserInfo extends SObject {
-  /** HotSync user ID number (0 if none) */
-  @field(SUInt32BE)
-  userId = 0;
-
-  /** ID assigned to viewer by desktop app.
-   *
-   * Not currently used according to Palm:
-   * https://web.archive.org/web/20030320233614/http://oasis.palm.com/dev/kb/manuals/1706.cfm
-   */
-  @field(SUInt32BE)
-  viewerId = 0;
-
-  /** ID of last synced PC (0 if none). */
-  @field(SUInt32BE)
-  lastSyncPcId = 0;
-
-  /** Timestamp of last successful sync. */
-  @field(DlpDateTimeType)
-  lastSuccessfulSyncTime = new Date(PDB_EPOCH);
-
-  /** Timestamp of last sync attempt. */
-  @field(DlpDateTimeType)
-  lastSyncTime = new Date(PDB_EPOCH);
-
-  /** Length of username, including NUL (0 if none) */
-  @field(SUInt8)
-  private userNameLength = 0;
-
-  /** Length of encrypted password (0 if none) */
-  @field(SUInt8)
-  private passwordLength = 0;
-
-  /* User name (max length MAX_USER_NAME_LENGTH). */
-  userName = '';
-
-  /** Encrypted password.
-   *
-   * ColdSync supports a max length of 256, while pilot-link supports
-   */
-  password = Buffer.alloc(0);
-
-  deserialize(buffer: Buffer, opts?: DeserializeOptions) {
-    const reader = SmartBuffer.fromBuffer(buffer);
-    reader.readOffset = super.deserialize(buffer, opts);
-    this.userName =
-      this.userNameLength === 0
-        ? ''
-        : decodeString(
-            reader
-              .readBuffer(this.userNameLength)
-              .slice(0, this.userNameLength - 1) // Drop trailing NUL byte
-          );
-    this.password = reader.readBuffer(this.passwordLength);
-    return reader.readOffset;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    const writer = new SmartBuffer();
-
-    const encodedUserName = encodeString(this.userName, opts);
-    this.userNameLength = encodedUserName.length + 1;
-    this.passwordLength = this.password.length;
-    writer.writeBuffer(super.serialize(opts));
-
-    writer.writeBuffer(encodedUserName);
-    writer.writeUInt8(0);
-
-    writer.writeBuffer(this.password);
-
-    return writer.toBuffer();
-  }
-
-  getSerializedLength(opts?: SerializeOptions) {
-    return this.serialize(opts).length;
-  }
-}
-
-/** Bitmask corresponding to the writable fields in DlpUserInfo. */
-export class DlpUserInfoFieldMask extends SBitmask.of(SUInt8) {
-  @bitfield(1)
-  userId = false;
-  @bitfield(1)
-  lastSyncPcId = false;
-  @bitfield(1)
-  lastSyncTime = false;
-  @bitfield(1)
-  userName = false;
-  @bitfield(1)
-  viewerId = false;
-  @bitfield(3)
-  private padding1 = 0;
 }
 
 /** DLP command ID constants.
@@ -413,6 +311,9 @@ export enum DlpCommandId {
 
 // =============================================================================
 // ReadUserInfo (0x10)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory
 // =============================================================================
 export class DlpReadUserInfoReqType extends DlpRequest<DlpReadUserInfoRespType> {
   commandId = DlpCommandId.ReadUserInfo;
@@ -422,13 +323,83 @@ export class DlpReadUserInfoReqType extends DlpRequest<DlpReadUserInfoRespType> 
 export class DlpReadUserInfoRespType extends DlpResponse {
   commandId = DlpCommandId.ReadUserInfo;
 
-  /** User information read from the device.  */
-  @dlpArg(0)
-  userInfo = new DlpUserInfo();
+  /** HotSync user ID number (0 if none) */
+  @dlpArg(0, SUInt32BE)
+  userId = 0;
+
+  /** ID assigned to viewer by desktop app.
+   *
+   * Not currently used according to Palm:
+   * https://web.archive.org/web/20030320233614/http://oasis.palm.com/dev/kb/manuals/1706.cfm
+   */
+  @dlpArg(0, SUInt32BE)
+  viewerId = 0;
+
+  /** ID of last synced PC (0 if none). */
+  @dlpArg(0, SUInt32BE)
+  lastSyncPc = 0;
+
+  /** Timestamp of last successful sync (year = 0 if none). */
+  @dlpArg(0, DlpDateTimeType)
+  succSyncDate = new Date(PDB_EPOCH);
+
+  /** Timestamp of last sync attempt (year = 0 if none). */
+  @dlpArg(0, DlpDateTimeType)
+  lastSyncDate = new Date(PDB_EPOCH);
+
+  /** Length of user name, including terminating NUL (0 = no user name set). */
+  @dlpArg(0, SUInt8)
+  private userNameLen = 0;
+
+  /** Length of encrypted password (0 = no password set). */
+  @dlpArg(0, SUInt8)
+  private passwordLen = 0;
+
+  @dlpArg(0, SBuffer)
+  private nameAndPassword = Buffer.alloc(0);
+
+  /* User name (max length MAX_USER_NAME_LENGTH). */
+  userName = '';
+
+  /** Encrypted password. */
+  password = Buffer.alloc(0);
+
+  deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
+    const offset = super.deserialize(buffer, opts);
+    this.userName =
+      this.userNameLen > 0
+        ? SStringNT.from(this.nameAndPassword, opts).value
+        : '';
+    this.password =
+      this.passwordLen > 0
+        ? this.nameAndPassword.subarray(this.userNameLen)
+        : Buffer.alloc(0);
+    return offset;
+  }
+
+  serialize(opts?: SerializeOptions): Buffer {
+    const userNameBuffer = SStringNT.of(this.userName).serialize(opts);
+    this.userNameLen = userNameBuffer.length;
+    this.passwordLen = this.password.length;
+    this.nameAndPassword = Buffer.concat([userNameBuffer, this.password]);
+    return super.serialize(opts);
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return (
+      30 +
+      SStringNT.of(this.userName).getSerializedLength(opts) +
+      this.password.length
+    );
+  }
 }
 
 // =============================================================================
 // WriteUserInfo (0x11)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrNotEnoughSpace,
+//			dlpRespErrParam
 // =============================================================================
 export class DlpWriteUserInfoReqType extends DlpRequest<DlpWriteUserInfoRespType> {
   commandId = DlpCommandId.WriteUserInfo;
@@ -448,41 +419,66 @@ export class DlpWriteUserInfoReqType extends DlpRequest<DlpWriteUserInfoRespType
 
   /** ID of last synced PC (0 if none). */
   @dlpArg(0, SUInt32BE)
-  lastSyncPcId = 0;
+  lastSyncPc = 0;
 
   /** Timestamp of last sync. */
   @dlpArg(0, DlpDateTimeType)
-  lastSyncTime = new Date(PDB_EPOCH);
+  lastSyncDate = new Date(PDB_EPOCH);
 
   /** Which fields in userInfo to write to the device. */
   @dlpArg(0)
-  fieldMask = new DlpUserInfoFieldMask();
+  modFlags = new DlpUserInfoModFlags();
 
   @dlpArg(0, SUInt8)
-  private userNameLength = 0;
+  private userNameLen = 0;
 
   @dlpArg(0, SStringNT)
   userName = '';
 
   serialize(opts?: SerializeOptions): Buffer {
-    const encodedUserName = encodeString(this.userName, opts);
-    if (encodedUserName.length > MAX_USER_NAME_LENGTH) {
+    this.userNameLen = SStringNT.of(this.userName).getSerializedLength(opts);
+    if (this.userNameLen - 1 > MAX_USER_NAME_LENGTH) {
       throw new Error(
         'User name too long: ' +
-          `${encodedUserName.length} exceeds maximum length of ${MAX_USER_NAME_LENGTH}`
+          `${this.userNameLen - 1} exceeds maximum length ` +
+          `of ${MAX_USER_NAME_LENGTH}`
       );
     }
-    this.userNameLength = encodedUserName.length + 1;
     return super.serialize(opts);
   }
+}
+
+/** Bitmask corresponding to the writable fields in DlpUserInfo. */
+export class DlpUserInfoModFlags extends SBitmask.of(SUInt8) {
+  @bitfield(1)
+  userId = false;
+  @bitfield(1)
+  lastSyncPc = false;
+  @bitfield(1)
+  lastSyncDate = false;
+  @bitfield(1)
+  userName = false;
+  @bitfield(1)
+  viewerId = false;
+  @bitfield(3)
+  private padding1 = 0;
 }
 
 export class DlpWriteUserInfoRespType extends DlpResponse {
   commandId = DlpCommandId.WriteUserInfo;
 }
 
+/** Maximum length of user names.
+ *
+ * Reference:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLServer.h#L50
+ */
+const MAX_USER_NAME_LENGTH = 40;
+
 // =============================================================================
 // ReadSysInfo (0x12)
+//		Possible error codes
+//			dlpRespErrSystem
 // =============================================================================
 export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
   commandId = DlpCommandId.ReadSysInfo;
@@ -490,7 +486,7 @@ export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
 
   /** DLP version supported by the host. Hard-coded to 1.4 as per pilot-link. */
   @dlpArg(0)
-  private hostDlpVersion = DlpVersion.with({major: 1, minor: 4});
+  private hostDlpVersion = DlpVersionType.with({major: 1, minor: 4});
 }
 
 export class DlpReadSysInfoRespType extends DlpResponse {
@@ -501,11 +497,11 @@ export class DlpReadSysInfoRespType extends DlpResponse {
    * Format: 0xMMmmffssbb where MM=Major, * mm=minor, ff=fix, ss=stage, bb=build
    */
   @dlpArg(0, SUInt32BE)
-  romVersion = 0;
+  romSWVersion = 0;
 
   /** Locale for this device. Not sure what the format is. */
   @dlpArg(0, SUInt32BE)
-  locale = 0;
+  localizationId = 0;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -517,14 +513,14 @@ export class DlpReadSysInfoRespType extends DlpResponse {
       lengthType = SUInt8;
     }
   )
-  productId = Buffer.alloc(0);
+  prodId = Buffer.alloc(0);
 
   /** DLP protocol version on this device */
   @optDlpArg(1)
-  clientDlpVersion = new DlpVersion();
+  dlpVer = new DlpVersionType();
   /** Minimum DLP version this device is compatible with */
   @optDlpArg(1)
-  compatDlpVersion = new DlpVersion();
+  compVer = new DlpVersionType();
 
   /** Maximum record size.
    *
@@ -532,11 +528,12 @@ export class DlpReadSysInfoRespType extends DlpResponse {
    * 64k), can be much larger for devices with DLP >= 1.4 (i.e. 0x00FFFFFE).
    */
   @optDlpArg(1, SUInt32BE)
-  maxRecordSize = 0;
+  maxRecSize = 0;
 }
 
 // =============================================================================
 // GetSysDateTime (0x13)
+//		Possible error codes: none
 // =============================================================================
 export class DlpGetSysDateTimeReqType extends DlpRequest<DlpGetSysDateTimeRespType> {
   commandId = DlpCommandId.GetSysDateTime;
@@ -553,6 +550,8 @@ export class DlpGetSysDateTimeRespType extends DlpResponse {
 
 // =============================================================================
 // SetSysDateTime (0x14)
+//		Possible error codes
+//			dlpRespErrParam
 // =============================================================================
 export class DlpSetSysDateTimeReqType extends DlpRequest<DlpSetSysDateTimeRespType> {
   commandId = DlpCommandId.SetSysDateTime;
@@ -569,6 +568,10 @@ export class DlpSetSysDateTimeRespType extends DlpResponse {
 
 // =============================================================================
 // TODO: ReadStorageInfo (0x15)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrNotFound
 // =============================================================================
 export class DlpReadStorageInfoReqType extends DlpRequest<DlpReadStorageInfoRespType> {
   commandId = DlpCommandId.ReadStorageInfo;
