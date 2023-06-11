@@ -9,17 +9,17 @@
 import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
-import {EPOCH_TIMESTAMP, PDB_EPOCH} from 'palm-pdb';
+import {PDB_EPOCH} from 'palm-pdb';
 import {
   DeserializeOptions,
-  field,
   SArray,
-  Serializable,
-  SerializableWrapper,
-  SerializeOptions,
   SObject,
   SUInt16BE,
   SUInt8,
+  Serializable,
+  SerializableWrapper,
+  SerializeOptions,
+  field,
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
 import {Duplex} from 'stream';

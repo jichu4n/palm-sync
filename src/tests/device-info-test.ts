@@ -38,7 +38,7 @@ export async function run({dlpConnection}: SyncConnection) {
   // In POSE emulator, the device date time is synchronized with the host system
   // and so won't be actually modified.
   const setSysDateTimeReq = DlpSetSysDateTimeRequest.with({
-    time: writeUserInfoReq.lastSyncTime,
+    dateTime: writeUserInfoReq.lastSyncTime,
   });
   await dlpConnection.execute(setSysDateTimeReq);
 }

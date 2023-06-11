@@ -1,3 +1,15 @@
+/** DLP command request and response structures.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h
+ *   - https://github.com/jichu4n/pilot-link/blob/master/include/pi-dlp.h
+ *   - https://github.com/jichu4n/pilot-link/blob/master/libpisock/dlp.c
+ *   - https://github.com/dwery/coldsync/blob/master/include/pconn/dlp_cmd.h
+ *   - https://github.com/dwery/coldsync/blob/master/libpconn/dlp_cmd.c
+ *
+ * @module
+ */
+
 import {
   DatabaseAttrs,
   PDB_EPOCH,
@@ -531,7 +543,7 @@ export class DlpGetSysDateTimeResponse extends DlpResponse {
 
   /** Device system time. */
   @dlpArg(0, DlpTimestamp)
-  time = new Date(PDB_EPOCH);
+  dateTime = new Date(PDB_EPOCH);
 }
 
 // =============================================================================
@@ -543,7 +555,7 @@ export class DlpSetSysDateTimeRequest extends DlpRequest<DlpSetSysDateTimeRespon
 
   /** New device system time. */
   @dlpArg(0, DlpTimestamp)
-  time = new Date(PDB_EPOCH);
+  dateTime = new Date(PDB_EPOCH);
 }
 
 export class DlpSetSysDateTimeResponse extends DlpResponse {
@@ -558,14 +570,16 @@ export class DlpReadStorageInfoRequest extends DlpRequest<DlpReadStorageInfoResp
   responseType = DlpReadStorageInfoResponse;
 
   @dlpArg(0, SUInt8)
+  cardNo = 0;
+
+  @dlpArg(0, SUInt8)
   private padding1 = 0;
 }
 
 export class DlpReadStorageInfoResponse extends DlpResponse {
   commandId = DlpCommandId.ReadStorageInfo;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  // TODO
 }
 
 // =============================================================================
@@ -581,7 +595,7 @@ export class DlpReadDBListRequest extends DlpRequest<DlpReadDBListResponse> {
 
   /** Card number (typically 0). */
   @dlpArg(0, SUInt8)
-  cardId = 0;
+  cardNo = 0;
 
   /** Index of first database to return. */
   @dlpArg(0, SUInt16BE)
@@ -637,7 +651,7 @@ export class DlpOpenDBRequest extends DlpRequest<DlpOpenDBResponse> {
 
   /** Card number (typically 0). */
   @dlpArg(0, SUInt8)
-  cardId = 0;
+  cardNo = 0;
 
   /** Open mode (see DlpOpenMode). */
   @dlpArg(0, SUInt8)
@@ -687,7 +701,7 @@ export class DlpCreateDBRequest extends DlpRequest<DlpCreateDBResponse> {
 
   /** Card number (typically 0). */
   @dlpArg(0, SUInt8)
-  cardId = 0;
+  cardNo = 0;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -747,7 +761,7 @@ export class DlpDeleteDBRequest extends DlpRequest<DlpDeleteDBResponse> {
 
   /** Card number (typically 0). */
   @dlpArg(0, SUInt8)
-  cardId = 0;
+  cardNo = 0;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
