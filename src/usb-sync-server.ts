@@ -389,18 +389,18 @@ if (require.main === module) {
 
       /*
       await dlpConnection.execute(new DlpOpenConduitReqType());
-      const {dbHandle} = await dlpConnection.execute(
+      const {dbId} = await dlpConnection.execute(
         DlpOpenDBReqType.with({
           mode: DlpOpenMode.READ,
           name: 'MemoDB',
         })
       );
       const {numRecords} = await dlpConnection.execute(
-        DlpReadOpenDBInfoReqType.with({dbHandle})
+        DlpReadOpenDBInfoReqType.with({dbId})
       );
       const {recordIds} = await dlpConnection.execute(
         DlpReadRecordIDListReqType.with({
-          dbHandle,
+          dbId,
           maxNumRecords: 500,
         })
       );
@@ -408,7 +408,7 @@ if (require.main === module) {
       for (const recordId of recordIds) {
         const resp = await dlpConnection.execute(
           DlpReadRecordReqType.with({
-            dbHandle,
+            dbId,
             recordId,
           })
         );
@@ -422,7 +422,7 @@ if (require.main === module) {
           .join('\n----------\n')}\n----------\n`
       );
 
-      await dlpConnection.execute(DlpCloseDBReqType.with({dbHandle}));
+      await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
       */
     })(connection);
     await connection.end();

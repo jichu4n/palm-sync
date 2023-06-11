@@ -653,6 +653,13 @@ export enum DlpReadDBListRespFlags {
 
 // =============================================================================
 // OpenDB (0x17)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound
+//			dlpRespErrTooManyOpenDatabases
+//			dlpRespErrCantOpen
 // =============================================================================
 export class DlpOpenDBReqType extends DlpRequest<DlpOpenDBRespType> {
   commandId = DlpCommandId.OpenDB;
@@ -676,7 +683,7 @@ export class DlpOpenDBRespType extends DlpResponse {
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  dbHandle = 0;
+  dbId = 0;
 }
 
 /** Database open modes, used in DlpOpenDBReqType. */
@@ -695,6 +702,14 @@ export enum DlpOpenMode {
 
 // =============================================================================
 // CreateDB (0x18)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrAlreadyExists,
+//			dlpRespErrCantOpen,
+//			dlpRespErrNotEnoughSpace,
+//			dlpRespErrTooManyOpenDatabases
 // =============================================================================
 export class DlpCreateDBReqType extends DlpRequest<DlpCreateDBRespType> {
   commandId = DlpCommandId.CreateDB;
@@ -715,9 +730,12 @@ export class DlpCreateDBReqType extends DlpRequest<DlpCreateDBRespType> {
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 
-  /** Database attribute flags. */
+  /** Database attribute flags.
+   *
+   * Allowed flags: resDB, backup, okToInstallNewer, resetAfterInstall
+   */
   @dlpArg(0)
-  attributes = new DatabaseAttrs();
+  dbFlags = new DatabaseAttrs();
 
   /** Database version (integer). */
   @dlpArg(0, SUInt16BE)
@@ -733,11 +751,16 @@ export class DlpCreateDBRespType extends DlpResponse {
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  dbHandle = 0;
+  dbId = 0;
 }
 
 // =============================================================================
 // CloseDB (0x19)
+//		Possible error codes
+//			dlpRespErrParam,
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpCloseDBReqType extends DlpRequest<DlpCloseDBRespType> {
   commandId = DlpCommandId.CloseDB;
@@ -745,7 +768,7 @@ export class DlpCloseDBReqType extends DlpRequest<DlpCloseDBRespType> {
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  dbHandle = 0;
+  dbId = 0;
 }
 
 export class DlpCloseAllDBsReqType extends DlpRequest<DlpCloseDBRespType> {
@@ -753,8 +776,8 @@ export class DlpCloseAllDBsReqType extends DlpRequest<DlpCloseDBRespType> {
   responseType = DlpCloseDBRespType;
 
   /** Handle to opened database. */
-  @dlpArg(1)
-  dummy = new SBuffer();
+  @dlpArg(1, SBuffer)
+  private dummy = Buffer.alloc(0);
 }
 
 export class DlpCloseDBRespType extends DlpResponse {
@@ -763,6 +786,12 @@ export class DlpCloseDBRespType extends DlpResponse {
 
 // =============================================================================
 // DeleteDB (0x1a)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound,
+//			dlpRespErrCantOpen,
+//			dlpRespErrDatabaseOpen{
 // =============================================================================
 export class DlpDeleteDBReqType extends DlpRequest<DlpDeleteDBRespType> {
   commandId = DlpCommandId.DeleteDB;
@@ -883,7 +912,7 @@ export class DlpReadRecordReqType extends DlpRequest<DlpReadRecordRespType> {
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  dbHandle = 0;
+  dbId = 0;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1075,13 +1104,18 @@ export class DlpResetSystemRespType extends DlpResponse {
 
 // =============================================================================
 // AddSyncLogEntry (0x2a)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrNotEnoughSpace,
+//			dlpRespErrLimitExceeded,
+//			dlpRespErrParam
 // =============================================================================
 export class DlpAddSyncLogEntryReqType extends DlpRequest<DlpAddSyncLogEntryRespType> {
   commandId = DlpCommandId.AddSyncLogEntry;
   responseType = DlpAddSyncLogEntryRespType;
 
   @dlpArg(0, SStringNT)
-  message = '';
+  text = '';
 }
 
 export class DlpAddSyncLogEntryRespType extends DlpResponse {
@@ -1090,6 +1124,9 @@ export class DlpAddSyncLogEntryRespType extends DlpResponse {
 
 // =============================================================================
 // ReadOpenDBInfo (0x2b)
+//		Possible error codes
+//			dlpRespErrNoneOpen
+//			dlpRespErrParam
 // =============================================================================
 export class DlpReadOpenDBInfoReqType extends DlpRequest<DlpReadOpenDBInfoRespType> {
   commandId = DlpCommandId.ReadOpenDBInfo;
@@ -1097,15 +1134,15 @@ export class DlpReadOpenDBInfoReqType extends DlpRequest<DlpReadOpenDBInfoRespTy
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  dbHandle = 0;
+  dbId = 0;
 }
 
 export class DlpReadOpenDBInfoRespType extends DlpResponse {
   commandId = DlpCommandId.ReadOpenDBInfo;
 
-  /** Number of records in database. */
+  /** Number of records or resources in database. */
   @dlpArg(0, SUInt16BE)
-  numRecords = 0;
+  numRec = 0;
 }
 
 // =============================================================================
@@ -1158,13 +1195,14 @@ export class DlpOpenConduitRespType extends DlpResponse {
 
 // =============================================================================
 // EndOfSync (0x2f)
+//		Possible error codes: none
 // =============================================================================
 export class DlpEndOfSyncReqType extends DlpRequest<DlpEndOfSyncRespType> {
   commandId = DlpCommandId.EndOfSync;
   responseType = DlpEndOfSyncRespType;
 
   @dlpArg(0, SUInt16BE)
-  status = DlpEndOfSyncStatus.OK;
+  termCode = DlpSyncTermCode.NORMAL;
 }
 
 export class DlpEndOfSyncRespType extends DlpResponse {
@@ -1172,15 +1210,17 @@ export class DlpEndOfSyncRespType extends DlpResponse {
 }
 
 /** Status codes for DlpEndOfSyncRespType. */
-export enum DlpEndOfSyncStatus {
+export enum DlpSyncTermCode {
   /** Normal termination. */
-  OK = 0x00,
-  /** Ended due to low memory on device */
-  ERROR_OUT_OF_MEMORY = 0x01,
-  /** Cancelled by user. */
-  ERROR_USER_CANCELLED = 0x02,
-  /** Any other reason. */
-  ERROR_UNKNOWN = 0x03,
+  NORMAL = 0x00,
+  /** Ended due to low memory on device. */
+  OUT_OF_MEMORY = 0x01,
+  /** User cancelled from desktop. */
+  USER_CAN = 0x02,
+  /** Catch-all abnormal termination code. */
+  OTHER = 0x03,
+  /** Incompatibility between desktop and handheld hotsync products. */
+  INCOMPATIBLE_PRODUCTS = 0x04,
 }
 
 // =============================================================================
@@ -1210,7 +1250,7 @@ export class DlpReadRecordIDListReqType extends DlpRequest<DlpReadRecordIDListRe
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  dbHandle = 0;
+  dbId = 0;
 
   /** Whether to return records in sorted order.
    *

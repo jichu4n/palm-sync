@@ -10,16 +10,16 @@ export async function run({dlpConnection}: NetSyncConnection) {
   try {
     await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
   } catch (e) {}
-  const {dbHandle: dbHandle2} = await dlpConnection.execute(
+  const {dbId: dbId2} = await dlpConnection.execute(
     DlpCreateDBReqType.with({
       creator: 'AAAA',
       type: 'DATA',
-      attributes: DatabaseAttrs.with({
+      dbFlags: DatabaseAttrs.with({
         backup: true,
       }),
       name: 'foobar',
     })
   );
-  await dlpConnection.execute(DlpCloseDBReqType.with({dbHandle: dbHandle2}));
+  await dlpConnection.execute(DlpCloseDBReqType.with({dbId: dbId2}));
   await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
 }
