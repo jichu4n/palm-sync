@@ -1,19 +1,18 @@
 import {MemoRecord} from 'palm-pdb';
-import assert from 'assert';
 import {
   DlpCloseDBReqType,
   DlpOpenConduitReqType,
   DlpOpenDBReqType,
   DlpOpenMode,
   DlpReadOpenDBInfoReqType,
-  DlpReadRecordReqType,
+  DlpReadRecordByIDReqType,
   DlpReadRecordIDListReqType,
   NetSyncConnection,
 } from '..';
 
 export async function run({dlpConnection}: NetSyncConnection) {
   await dlpConnection.execute(new DlpOpenConduitReqType());
-  const {dbId: dbId} = await dlpConnection.execute(
+  const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
       mode: DlpOpenMode.READ,
       name: 'MemoDB',
@@ -31,15 +30,15 @@ export async function run({dlpConnection}: NetSyncConnection) {
   const memoRecords: Array<MemoRecord> = [];
   for (const recordId of recordIds) {
     const resp = await dlpConnection.execute(
-      DlpReadRecordReqType.with({
+      DlpReadRecordByIDReqType.with({
         dbId,
         recordId,
       })
     );
-    memoRecords.push(MemoRecord.from(resp.data.value));
+    memoRecords.push(MemoRecord.from(resp.data));
   }
 
   console.log(memoRecords.map(({value}) => value).join('\n--------\n'));
 
-  await dlpConnection.execute(DlpCloseDBReqType.with({dbId: dbId}));
+  await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
 }

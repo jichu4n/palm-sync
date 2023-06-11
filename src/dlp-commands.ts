@@ -43,32 +43,6 @@ import {
 // Common structures
 // =============================================================================
 
-/** Maximum data length that can be returned in one ReadRecord request. */
-export const MAX_RECORD_DATA_LENGTH = 0xffff;
-
-/** Record metadata in DLP requests and responses. */
-export class DlpRecordMetadata extends SObject {
-  /** Record ID. */
-  @field(SUInt32BE)
-  recordId = 0;
-
-  /** Index of record in database. */
-  @field(SUInt16BE)
-  index = 0;
-
-  /** Size of record data. */
-  @field(SUInt16BE)
-  length = 0;
-
-  /** Record attributes. */
-  @field()
-  attributes: RecordAttrs = new RecordAttrs();
-
-  /** Record category. */
-  @field(SUInt8)
-  category = 0;
-}
-
 /** DLP version number.
  *
  * e.g. DLP version 1.4 => {major: 1, minor: 4}
@@ -904,9 +878,17 @@ export class DlpReadNextModifiedRecRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadRecord (0x20)
+// ReadRecord (0x20)
+//		Possible error codes
+//			dlpRespErrNotSupported,
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound,
+//			dlpRespErrRecordBusy,
+//			dlpRespErrNoneOpen
 // =============================================================================
-export class DlpReadRecordReqType extends DlpRequest<DlpReadRecordRespType> {
+export class DlpReadRecordByIDReqType extends DlpRequest<DlpReadRecordRespType> {
   commandId = DlpCommandId.ReadRecord;
   responseType = DlpReadRecordRespType;
 
@@ -925,19 +907,60 @@ export class DlpReadRecordReqType extends DlpRequest<DlpReadRecordRespType> {
   @dlpArg(0, SUInt16BE)
   offset = 0;
 
-  /** Maximum length to read. */
+  /** Maximum length to read (0xffff = "to the end"). */
   @dlpArg(0, SUInt16BE)
-  maxLength = MAX_RECORD_DATA_LENGTH;
+  numBytes = 0xffff;
+}
+
+export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespType> {
+  commandId = DlpCommandId.ReadRecord;
+  responseType = DlpReadRecordRespType;
+
+  /** Handle to opened database. */
+  @dlpArg(1, SUInt8)
+  dbId = 0;
+
+  @dlpArg(1, SUInt8)
+  private padding1 = 0;
+
+  /** Index of record to read. */
+  @dlpArg(1, SUInt16BE)
+  index = 0;
+
+  /** Offset into record data to start reading. */
+  @dlpArg(1, SUInt16BE)
+  offset = 0;
+
+  /** Maximum length to read (0xffff = "to the end"). */
+  @dlpArg(1, SUInt16BE)
+  numBytes = 0xffff;
 }
 
 export class DlpReadRecordRespType extends DlpResponse {
   commandId = DlpCommandId.ReadRecord;
 
-  @dlpArg(0)
-  metadata = new DlpRecordMetadata();
+  /** Record ID. */
+  @dlpArg(0, SUInt32BE)
+  recordId = 0;
 
+  /** Index of record in database. */
+  @dlpArg(0, SUInt16BE)
+  index = 0;
+
+  /** Size of record data. */
+  @dlpArg(0, SUInt16BE)
+  recSize = 0;
+
+  /** Record attributes. */
   @dlpArg(0)
-  data = new SBuffer();
+  attributes = new RecordAttrs();
+
+  /** Record category index. */
+  @dlpArg(0, SUInt8)
+  category = 0;
+
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
 }
 
 // =============================================================================
@@ -1183,6 +1206,8 @@ export class DlpProcessRPCRespType extends DlpResponse {
 
 // =============================================================================
 // OpenConduit (0x2e)
+//		Possible error codes
+//			dlpRespErrCancelSync
 // =============================================================================
 export class DlpOpenConduitReqType extends DlpRequest<DlpOpenConduitRespType> {
   commandId = DlpCommandId.OpenConduit;
@@ -2221,3 +2246,8 @@ if (require.main === module) {
   console.log(generateAllDlpRequestRespTypes());
 }
 */
+
+// See total commands:
+//  grep '^// .* \(0x' src/dlp-commands.ts | wc -l
+// See TODO commands:
+//   grep '^// TODO: .* \(0x' src/dlp-commands.ts | wc -l

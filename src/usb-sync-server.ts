@@ -407,12 +407,12 @@ if (require.main === module) {
       const memoRecords: Array<MemoRecord> = [];
       for (const recordId of recordIds) {
         const resp = await dlpConnection.execute(
-          DlpReadRecordReqType.with({
+          DlpReadRecordByIDReqType.with({
             dbId,
             recordId,
           })
         );
-        const record = MemoRecord.from(resp.data.value);
+        const record = MemoRecord.from(resp.data);
         memoRecords.push(record);
       }
       console.log(
