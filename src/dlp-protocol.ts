@@ -628,35 +628,21 @@ export class DlpArg extends SObject {
   }
 }
 
-class DlpTimestampObject extends SObject {
-  @field(SUInt16BE)
-  year = 0;
-  @field(SUInt8)
-  month = 0;
-  @field(SUInt8)
-  day = 0;
-  @field(SUInt8)
-  hour = 0;
-  @field(SUInt8)
-  minute = 0;
-  @field(SUInt8)
-  second = 0;
-  @field(SUInt8)
-  private padding1 = 0;
-}
-
 /** Timestamp value in DLP requests and responses.
  *
  * Unlike normal database timestamps found in database files and Palm OS APIs,
  * timestamps in the DLP layer are actual date and time values without timezone
  * info.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L301
  */
-export class DlpTimestamp extends SerializableWrapper<Date> {
+export class DlpDateTimeType extends SerializableWrapper<Date> {
   /** JavaScript Date value corresponding to the time. */
   value = new Date(PDB_EPOCH);
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
-    const obj = new DlpTimestampObject();
+    const obj = new DlpDateTimeObject();
     const readOffset = obj.deserialize(buffer, opts);
     if (obj.year === 0) {
       this.value.setTime(PDB_EPOCH.getTime());
@@ -669,15 +655,8 @@ export class DlpTimestamp extends SerializableWrapper<Date> {
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    const obj = new DlpTimestampObject();
-    if (this.value === PDB_EPOCH) {
-      obj.year = 0;
-      obj.month = 0;
-      obj.day = 0;
-      obj.hour = 0;
-      obj.minute = 0;
-      obj.second = 0;
-    } else {
+    const obj = new DlpDateTimeObject();
+    if (this.value !== PDB_EPOCH) {
       obj.year = this.value.getFullYear();
       obj.month = this.value.getMonth() + 1;
       obj.day = this.value.getDate();
@@ -689,6 +668,34 @@ export class DlpTimestamp extends SerializableWrapper<Date> {
   }
 
   getSerializedLength(opts?: SerializeOptions): number {
-    return new DlpTimestampObject().getSerializedLength(opts);
+    return new DlpDateTimeObject().getSerializedLength(opts);
   }
+}
+
+/** SObject used internally by DlpDateTimeType.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L301
+ */
+class DlpDateTimeObject extends SObject {
+  @field(SUInt16BE)
+  year = 0;
+  /** 1-12 */
+  @field(SUInt8)
+  month = 0;
+  /** 1-31 */
+  @field(SUInt8)
+  day = 0;
+  /** 0-23 */
+  @field(SUInt8)
+  hour = 0;
+  /** 0-59 */
+  @field(SUInt8)
+  minute = 0;
+  /** 0-59 */
+  @field(SUInt8)
+  second = 0;
+
+  @field(SUInt8)
+  private padding1 = 0;
 }

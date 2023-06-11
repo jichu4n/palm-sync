@@ -37,7 +37,7 @@ import {SmartBuffer} from 'smart-buffer';
 import {
   DlpRequest,
   DlpResponse,
-  DlpTimestamp,
+  DlpDateTimeType,
   dlpArg,
   optDlpArg,
 } from './dlp-protocol';
@@ -77,15 +77,15 @@ export class DlpDatabaseMetadata extends SObject {
   modificationNumber = 0;
 
   /** Database creation timestamp. */
-  @field(DlpTimestamp)
+  @field(DlpDateTimeType)
   creationDate = new Date(PDB_EPOCH);
 
   /** Database modification timestamp. */
-  @field(DlpTimestamp)
+  @field(DlpDateTimeType)
   modificationDate = new Date(PDB_EPOCH);
 
   /** Last backup timestamp. */
-  @field(DlpTimestamp)
+  @field(DlpDateTimeType)
   lastBackupDate = new Date(PDB_EPOCH);
 
   /** Index of database in the response. */
@@ -179,11 +179,11 @@ export class DlpUserInfo extends SObject {
   lastSyncPcId = 0;
 
   /** Timestamp of last successful sync. */
-  @field(DlpTimestamp)
+  @field(DlpDateTimeType)
   lastSuccessfulSyncTime = new Date(PDB_EPOCH);
 
   /** Timestamp of last sync attempt. */
-  @field(DlpTimestamp)
+  @field(DlpDateTimeType)
   lastSyncTime = new Date(PDB_EPOCH);
 
   /** Length of username, including NUL (0 if none) */
@@ -255,7 +255,12 @@ export class DlpUserInfoFieldMask extends SBitmask.of(SUInt8) {
   private padding1 = 0;
 }
 
-/** DLP command ID constants. */
+/** DLP command ID constants.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L22
+ *   - https://github.com/dwery/coldsync/blob/master/include/pconn/dlp_cmd.h#L21
+ */
 export enum DlpCommandId {
   // DLP 1.0 (PalmOS v1.0 and above)
   /** Get user info */
@@ -354,9 +359,9 @@ export enum DlpCommandId {
   LoopBackTest = 0x3b,
   /** Get the number of slots on the device */
   ExpSlotEnumerate = 0x3c,
-  /** Check if the card is present*/
+  /** Check if the card is present */
   ExpCardPresent = 0x3d,
-  /** Get infos on the installed exp card*/
+  /** Get infos on the installed exp card */
   ExpCardInfo = 0x3e,
 
   VFSCustomControl = 0x3f,
@@ -446,7 +451,7 @@ export class DlpWriteUserInfoReqType extends DlpRequest<DlpWriteUserInfoRespType
   lastSyncPcId = 0;
 
   /** Timestamp of last sync. */
-  @dlpArg(0, DlpTimestamp)
+  @dlpArg(0, DlpDateTimeType)
   lastSyncTime = new Date(PDB_EPOCH);
 
   /** Which fields in userInfo to write to the device. */
@@ -542,7 +547,7 @@ export class DlpGetSysDateTimeRespType extends DlpResponse {
   commandId = DlpCommandId.GetSysDateTime;
 
   /** Device system time. */
-  @dlpArg(0, DlpTimestamp)
+  @dlpArg(0, DlpDateTimeType)
   dateTime = new Date(PDB_EPOCH);
 }
 
@@ -554,7 +559,7 @@ export class DlpSetSysDateTimeReqType extends DlpRequest<DlpSetSysDateTimeRespTy
   responseType = DlpSetSysDateTimeRespType;
 
   /** New device system time. */
-  @dlpArg(0, DlpTimestamp)
+  @dlpArg(0, DlpDateTimeType)
   dateTime = new Date(PDB_EPOCH);
 }
 
