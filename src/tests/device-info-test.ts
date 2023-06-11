@@ -1,16 +1,16 @@
 import assert from 'assert';
 import {
-  DlpGetSysDateTimeRequest,
-  DlpReadUserInfoRequest,
-  DlpSetSysDateTimeRequest,
+  DlpGetSysDateTimeReqType,
+  DlpReadUserInfoReqType,
+  DlpSetSysDateTimeReqType,
   DlpUserInfoFieldMask,
-  DlpWriteUserInfoRequest,
+  DlpWriteUserInfoReqType,
   SyncConnection,
 } from '..';
 
 export async function run({dlpConnection}: SyncConnection) {
-  const {userInfo} = await dlpConnection.execute(new DlpReadUserInfoRequest());
-  const writeUserInfoReq = DlpWriteUserInfoRequest.with({
+  const {userInfo} = await dlpConnection.execute(new DlpReadUserInfoReqType());
+  const writeUserInfoReq = DlpWriteUserInfoReqType.with({
     userName: `Test ${Math.floor(userInfo.lastSyncTime.getSeconds())}`,
     lastSyncTime: new Date(userInfo.lastSyncTime),
     fieldMask: DlpUserInfoFieldMask.with({
@@ -23,7 +23,7 @@ export async function run({dlpConnection}: SyncConnection) {
   );
   await dlpConnection.execute(writeUserInfoReq);
   const readUserInfoResp2 = await dlpConnection.execute(
-    new DlpReadUserInfoRequest()
+    new DlpReadUserInfoReqType()
   );
   assert.strictEqual(
     readUserInfoResp2.userInfo.userName,
@@ -34,10 +34,10 @@ export async function run({dlpConnection}: SyncConnection) {
     writeUserInfoReq.lastSyncTime.toISOString()
   );
 
-  await dlpConnection.execute(new DlpGetSysDateTimeRequest());
+  await dlpConnection.execute(new DlpGetSysDateTimeReqType());
   // In POSE emulator, the device date time is synchronized with the host system
   // and so won't be actually modified.
-  const setSysDateTimeReq = DlpSetSysDateTimeRequest.with({
+  const setSysDateTimeReq = DlpSetSysDateTimeReqType.with({
     dateTime: writeUserInfoReq.lastSyncTime,
   });
   await dlpConnection.execute(setSysDateTimeReq);

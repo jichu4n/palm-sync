@@ -1,29 +1,29 @@
 import {MemoRecord} from 'palm-pdb';
 import assert from 'assert';
 import {
-  DlpCloseDBRequest,
-  DlpOpenConduitRequest,
-  DlpOpenDBRequest,
+  DlpCloseDBReqType,
+  DlpOpenConduitReqType,
+  DlpOpenDBReqType,
   DlpOpenMode,
-  DlpReadOpenDBInfoRequest,
-  DlpReadRecordRequest,
-  DlpReadRecordIDListRequest,
+  DlpReadOpenDBInfoReqType,
+  DlpReadRecordReqType,
+  DlpReadRecordIDListReqType,
   NetSyncConnection,
 } from '..';
 
 export async function run({dlpConnection}: NetSyncConnection) {
-  await dlpConnection.execute(new DlpOpenConduitRequest());
+  await dlpConnection.execute(new DlpOpenConduitReqType());
   const {dbHandle} = await dlpConnection.execute(
-    DlpOpenDBRequest.with({
+    DlpOpenDBReqType.with({
       mode: DlpOpenMode.READ,
       name: 'MemoDB',
     })
   );
   const {numRecords} = await dlpConnection.execute(
-    DlpReadOpenDBInfoRequest.with({dbHandle})
+    DlpReadOpenDBInfoReqType.with({dbHandle})
   );
   const {recordIds} = await dlpConnection.execute(
-    DlpReadRecordIDListRequest.with({
+    DlpReadRecordIDListReqType.with({
       dbHandle,
       maxNumRecords: 500,
     })
@@ -31,7 +31,7 @@ export async function run({dlpConnection}: NetSyncConnection) {
   const memoRecords: Array<MemoRecord> = [];
   for (const recordId of recordIds) {
     const resp = await dlpConnection.execute(
-      DlpReadRecordRequest.with({
+      DlpReadRecordReqType.with({
         dbHandle,
         recordId,
       })
@@ -41,5 +41,5 @@ export async function run({dlpConnection}: NetSyncConnection) {
 
   console.log(memoRecords.map(({value}) => value).join('\n--------\n'));
 
-  await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
+  await dlpConnection.execute(DlpCloseDBReqType.with({dbHandle}));
 }

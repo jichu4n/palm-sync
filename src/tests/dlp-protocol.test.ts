@@ -78,7 +78,7 @@ describe('dlp-protocol', function () {
     const request = TestDlpRequest.with({
       num1: 50,
       num2: 100,
-      str1: 'a'.repeat(300), // Longer than tiny arg max length (256)
+      str1: 'a'.repeat(300), // Longer than small arg max length (256)
     });
     const expectedRequestBuffer = Buffer.of(
       COMMAND_ID,

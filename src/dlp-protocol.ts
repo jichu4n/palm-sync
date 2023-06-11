@@ -458,7 +458,7 @@ export function getDlpArgs(targetInstance: SObject) {
 
 /** DLP argument type, as determined by the payload size. */
 export enum DlpArgType {
-  TINY = 'tiny',
+  SMALL = 'small',
   SHORT = 'short',
   LONG = 'long',
 }
@@ -477,9 +477,15 @@ export interface DlpArgTypeSpec {
   parseFromHeader: (header: Buffer) => {argId: number; dataLength: number};
 }
 
-/** Definition of DLP argument types. */
+/** Definition of DLP argument types.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L403
+ *   - https://github.com/jichu4n/pilot-link/blob/master/libpisock/dlp.c#L562
+ *   - https://github.com/dwery/coldsync/blob/master/libpconn/dlp.c#L89
+ */
 export const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
-  [DlpArgType.TINY]: {
+  [DlpArgType.SMALL]: {
     maxLength: 0xff,
     bitmask: 0x00, // 0000 0000
     headerLength: 2,
@@ -517,9 +523,6 @@ export const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
       };
     },
   },
-  // WARNING: The logic for LONG type arguments differs between pilot-link and
-  // ColdSync. Not sure which one is correct - going with the (simpler)
-  // pilot-link logic here.
   [DlpArgType.LONG]: {
     maxLength: 0xffffffff,
     bitmask: 0x40, // 0100 0000

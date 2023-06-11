@@ -1,17 +1,17 @@
 import {DatabaseAttrs} from 'palm-pdb';
 import {
-  DlpCloseDBRequest,
-  DlpCreateDBRequest,
-  DlpDeleteDBRequest,
+  DlpCloseDBReqType,
+  DlpCreateDBReqType,
+  DlpDeleteDBReqType,
   NetSyncConnection,
 } from '..';
 
 export async function run({dlpConnection}: NetSyncConnection) {
   try {
-    await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
+    await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
   } catch (e) {}
   const {dbHandle: dbHandle2} = await dlpConnection.execute(
-    DlpCreateDBRequest.with({
+    DlpCreateDBReqType.with({
       creator: 'AAAA',
       type: 'DATA',
       attributes: DatabaseAttrs.with({
@@ -20,6 +20,6 @@ export async function run({dlpConnection}: NetSyncConnection) {
       name: 'foobar',
     })
   );
-  await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle: dbHandle2}));
-  await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
+  await dlpConnection.execute(DlpCloseDBReqType.with({dbHandle: dbHandle2}));
+  await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
 }

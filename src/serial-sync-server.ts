@@ -6,15 +6,15 @@ import {SerialPort} from 'serialport';
 import {Duplex} from 'stream';
 import {doCmpHandshake} from './cmp-protocol';
 import {
-  DlpCloseDBRequest,
-  DlpOpenConduitRequest,
-  DlpOpenDBRequest,
+  DlpCloseDBReqType,
+  DlpOpenConduitReqType,
+  DlpOpenDBReqType,
   DlpOpenMode,
   DlpReadDBListMode,
-  DlpReadDBListRequest,
-  DlpReadOpenDBInfoRequest,
-  DlpReadRecordIDListRequest,
-  DlpReadRecordRequest,
+  DlpReadDBListReqType,
+  DlpReadOpenDBInfoReqType,
+  DlpReadRecordIDListReqType,
+  DlpReadRecordReqType,
 } from './dlp-commands';
 import {PadpStream} from './padp-protocol';
 import {SyncConnection, SyncFn} from './sync-server';
@@ -108,24 +108,24 @@ if (require.main === module) {
     '/dev/ttyS0',
     async ({dlpConnection}) => {
       const readDbListResp = await dlpConnection.execute(
-        DlpReadDBListRequest.with({
+        DlpReadDBListReqType.with({
           mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
         })
       );
       console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
 
-      await dlpConnection.execute(new DlpOpenConduitRequest());
+      await dlpConnection.execute(new DlpOpenConduitReqType());
       const {dbHandle} = await dlpConnection.execute(
-        DlpOpenDBRequest.with({
+        DlpOpenDBReqType.with({
           mode: DlpOpenMode.READ,
           name: 'MemoDB',
         })
       );
       const {numRecords} = await dlpConnection.execute(
-        DlpReadOpenDBInfoRequest.with({dbHandle})
+        DlpReadOpenDBInfoReqType.with({dbHandle})
       );
       const {recordIds} = await dlpConnection.execute(
-        DlpReadRecordIDListRequest.with({
+        DlpReadRecordIDListReqType.with({
           dbHandle,
           maxNumRecords: 500,
         })
@@ -133,7 +133,7 @@ if (require.main === module) {
       const memoRecords: Array<MemoRecord> = [];
       for (const recordId of recordIds) {
         const resp = await dlpConnection.execute(
-          DlpReadRecordRequest.with({
+          DlpReadRecordReqType.with({
             dbHandle,
             recordId,
           })
@@ -148,7 +148,7 @@ if (require.main === module) {
           .join('\n----------\n')}\n----------\n`
       );
 
-      await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
+      await dlpConnection.execute(DlpCloseDBReqType.with({dbHandle}));
     }
   );
   syncServer.start();

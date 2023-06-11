@@ -4,9 +4,9 @@ import {createServer, Server, Socket} from 'net';
 import pEvent from 'p-event';
 import {Duplex} from 'stream';
 import {
-  DlpEndOfSyncRequest,
-  DlpReadSysInfoRequest,
-  DlpReadUserInfoRequest,
+  DlpEndOfSyncReqType,
+  DlpReadSysInfoReqType,
+  DlpReadUserInfoReqType,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
 import {StreamRecorder} from './stream-recorder';
@@ -52,18 +52,18 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
   /** Common DLP operations to run at the start of a HotSync session. */
   async start() {
     const sysInfoResp = await this.dlpConnection.execute(
-      new DlpReadSysInfoRequest()
+      new DlpReadSysInfoReqType()
     );
     this.log(JSON.stringify(sysInfoResp));
     const userInfoResp = await this.dlpConnection.execute(
-      new DlpReadUserInfoRequest()
+      new DlpReadUserInfoReqType()
     );
     this.log(JSON.stringify(userInfoResp));
   }
 
   /** Common DLP operations to run at the end of a HotSync session. */
   async end() {
-    await this.dlpConnection.execute(new DlpEndOfSyncRequest());
+    await this.dlpConnection.execute(new DlpEndOfSyncReqType());
   }
 
   /** DLP connection for communicating with the device. */
