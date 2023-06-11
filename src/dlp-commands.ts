@@ -63,13 +63,13 @@ export class DlpVersionType extends SObject {
   }
 }
 
-/** DLP command ID constants.
+/** DLP function ID constants.
  *
  * References:
  *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L22
  *   - https://github.com/dwery/coldsync/blob/master/include/pconn/dlp_cmd.h#L21
  */
-export enum DlpCommandId {
+export enum DlpFuncId {
   // DLP 1.0 (PalmOS v1.0 and above)
   /** Get user info */
   ReadUserInfo = 0x10,
@@ -226,12 +226,12 @@ export enum DlpCommandId {
 //			dlpRespErrMemory
 // =============================================================================
 export class DlpReadUserInfoReqType extends DlpRequest<DlpReadUserInfoRespType> {
-  commandId = DlpCommandId.ReadUserInfo;
+  funcId = DlpFuncId.ReadUserInfo;
   responseType = DlpReadUserInfoRespType;
 }
 
 export class DlpReadUserInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadUserInfo;
+  funcId = DlpFuncId.ReadUserInfo;
 
   /** HotSync user ID number (0 if none) */
   @dlpArg(0, SUInt32BE)
@@ -312,7 +312,7 @@ export class DlpReadUserInfoRespType extends DlpResponse {
 //			dlpRespErrParam
 // =============================================================================
 export class DlpWriteUserInfoReqType extends DlpRequest<DlpWriteUserInfoRespType> {
-  commandId = DlpCommandId.WriteUserInfo;
+  funcId = DlpFuncId.WriteUserInfo;
   responseType = DlpWriteUserInfoRespType;
 
   /** HotSync user ID number (0 if none) */
@@ -375,7 +375,7 @@ export class DlpUserInfoModFlags extends SBitmask.of(SUInt8) {
 }
 
 export class DlpWriteUserInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteUserInfo;
+  funcId = DlpFuncId.WriteUserInfo;
 }
 
 /** Maximum length of user names.
@@ -391,7 +391,7 @@ const MAX_USER_NAME_LENGTH = 40;
 //			dlpRespErrSystem
 // =============================================================================
 export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
-  commandId = DlpCommandId.ReadSysInfo;
+  funcId = DlpFuncId.ReadSysInfo;
   responseType = DlpReadSysInfoRespType;
 
   /** DLP version supported by the host. Hard-coded to 1.4 as per pilot-link. */
@@ -400,7 +400,7 @@ export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
 }
 
 export class DlpReadSysInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadSysInfo;
+  funcId = DlpFuncId.ReadSysInfo;
 
   /** Version of the device ROM.
    *
@@ -446,12 +446,12 @@ export class DlpReadSysInfoRespType extends DlpResponse {
 //		Possible error codes: none
 // =============================================================================
 export class DlpGetSysDateTimeReqType extends DlpRequest<DlpGetSysDateTimeRespType> {
-  commandId = DlpCommandId.GetSysDateTime;
+  funcId = DlpFuncId.GetSysDateTime;
   responseType = DlpGetSysDateTimeRespType;
 }
 
 export class DlpGetSysDateTimeRespType extends DlpResponse {
-  commandId = DlpCommandId.GetSysDateTime;
+  funcId = DlpFuncId.GetSysDateTime;
 
   /** Device system time. */
   @dlpArg(0, DlpDateTimeType)
@@ -464,7 +464,7 @@ export class DlpGetSysDateTimeRespType extends DlpResponse {
 //			dlpRespErrParam
 // =============================================================================
 export class DlpSetSysDateTimeReqType extends DlpRequest<DlpSetSysDateTimeRespType> {
-  commandId = DlpCommandId.SetSysDateTime;
+  funcId = DlpFuncId.SetSysDateTime;
   responseType = DlpSetSysDateTimeRespType;
 
   /** New device system time. */
@@ -473,7 +473,7 @@ export class DlpSetSysDateTimeReqType extends DlpRequest<DlpSetSysDateTimeRespTy
 }
 
 export class DlpSetSysDateTimeRespType extends DlpResponse {
-  commandId = DlpCommandId.SetSysDateTime;
+  funcId = DlpFuncId.SetSysDateTime;
 }
 
 // =============================================================================
@@ -484,7 +484,7 @@ export class DlpSetSysDateTimeRespType extends DlpResponse {
 //			dlpRespErrNotFound
 // =============================================================================
 export class DlpReadStorageInfoReqType extends DlpRequest<DlpReadStorageInfoRespType> {
-  commandId = DlpCommandId.ReadStorageInfo;
+  funcId = DlpFuncId.ReadStorageInfo;
   responseType = DlpReadStorageInfoRespType;
 
   @dlpArg(0, SUInt8)
@@ -495,7 +495,7 @@ export class DlpReadStorageInfoReqType extends DlpRequest<DlpReadStorageInfoResp
 }
 
 export class DlpReadStorageInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadStorageInfo;
+  funcId = DlpFuncId.ReadStorageInfo;
 
   // TODO
 }
@@ -508,7 +508,7 @@ export class DlpReadStorageInfoRespType extends DlpResponse {
 //			dlpRespErrNotFound
 // =============================================================================
 export class DlpReadDBListReqType extends DlpRequest<DlpReadDBListRespType> {
-  commandId = DlpCommandId.ReadDBList;
+  funcId = DlpFuncId.ReadDBList;
   responseType = DlpReadDBListRespType;
 
   /** Flags - see DlpReadDBListFlags. */
@@ -604,7 +604,7 @@ export enum DlpDbInfoMiscFlags {
 }
 
 export class DlpReadDBListRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadDBList;
+  funcId = DlpFuncId.ReadDBList;
 
   /** Index of last database in response. */
   @dlpArg(0, SUInt16BE)
@@ -636,7 +636,7 @@ export enum DlpReadDBListRespFlags {
 //			dlpRespErrCantOpen
 // =============================================================================
 export class DlpOpenDBReqType extends DlpRequest<DlpOpenDBRespType> {
-  commandId = DlpCommandId.OpenDB;
+  funcId = DlpFuncId.OpenDB;
   responseType = DlpOpenDBRespType;
 
   /** Card number (typically 0). */
@@ -653,7 +653,7 @@ export class DlpOpenDBReqType extends DlpRequest<DlpOpenDBRespType> {
 }
 
 export class DlpOpenDBRespType extends DlpResponse {
-  commandId = DlpCommandId.OpenDB;
+  funcId = DlpFuncId.OpenDB;
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
@@ -686,7 +686,7 @@ export enum DlpOpenMode {
 //			dlpRespErrTooManyOpenDatabases
 // =============================================================================
 export class DlpCreateDBReqType extends DlpRequest<DlpCreateDBRespType> {
-  commandId = DlpCommandId.CreateDB;
+  funcId = DlpFuncId.CreateDB;
   responseType = DlpCreateDBRespType;
 
   /** Database creator identifier (max 4 bytes). */
@@ -721,7 +721,7 @@ export class DlpCreateDBReqType extends DlpRequest<DlpCreateDBRespType> {
 }
 
 export class DlpCreateDBRespType extends DlpResponse {
-  commandId = DlpCommandId.CreateDB;
+  funcId = DlpFuncId.CreateDB;
 
   /** Handle to opened database. */
   @dlpArg(0, SUInt8)
@@ -737,7 +737,7 @@ export class DlpCreateDBRespType extends DlpResponse {
 //			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpCloseDBReqType extends DlpRequest<DlpCloseDBRespType> {
-  commandId = DlpCommandId.CloseDB;
+  funcId = DlpFuncId.CloseDB;
   responseType = DlpCloseDBRespType;
 
   /** Handle to opened database. */
@@ -746,7 +746,7 @@ export class DlpCloseDBReqType extends DlpRequest<DlpCloseDBRespType> {
 }
 
 export class DlpCloseAllDBsReqType extends DlpRequest<DlpCloseDBRespType> {
-  commandId = DlpCommandId.CloseDB;
+  funcId = DlpFuncId.CloseDB;
   responseType = DlpCloseDBRespType;
 
   /** Handle to opened database. */
@@ -755,7 +755,7 @@ export class DlpCloseAllDBsReqType extends DlpRequest<DlpCloseDBRespType> {
 }
 
 export class DlpCloseDBRespType extends DlpResponse {
-  commandId = DlpCommandId.CloseDB;
+  funcId = DlpFuncId.CloseDB;
 }
 
 // =============================================================================
@@ -768,7 +768,7 @@ export class DlpCloseDBRespType extends DlpResponse {
 //			dlpRespErrDatabaseOpen{
 // =============================================================================
 export class DlpDeleteDBReqType extends DlpRequest<DlpDeleteDBRespType> {
-  commandId = DlpCommandId.DeleteDB;
+  funcId = DlpFuncId.DeleteDB;
   responseType = DlpDeleteDBRespType;
 
   /** Card number (typically 0). */
@@ -784,14 +784,14 @@ export class DlpDeleteDBReqType extends DlpRequest<DlpDeleteDBRespType> {
 }
 
 export class DlpDeleteDBRespType extends DlpResponse {
-  commandId = DlpCommandId.DeleteDB;
+  funcId = DlpFuncId.DeleteDB;
 }
 
 // =============================================================================
 // TODO: ReadAppBlock (0x1b)
 // =============================================================================
 export class DlpReadAppBlockReqType extends DlpRequest<DlpReadAppBlockRespType> {
-  commandId = DlpCommandId.ReadAppBlock;
+  funcId = DlpFuncId.ReadAppBlock;
   responseType = DlpReadAppBlockRespType;
 
   @dlpArg(0, SUInt8)
@@ -799,7 +799,7 @@ export class DlpReadAppBlockReqType extends DlpRequest<DlpReadAppBlockRespType> 
 }
 
 export class DlpReadAppBlockRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadAppBlock;
+  funcId = DlpFuncId.ReadAppBlock;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -809,7 +809,7 @@ export class DlpReadAppBlockRespType extends DlpResponse {
 // TODO: WriteAppBlock (0x1c)
 // =============================================================================
 export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType> {
-  commandId = DlpCommandId.WriteAppBlock;
+  funcId = DlpFuncId.WriteAppBlock;
   responseType = DlpWriteAppBlockRespType;
 
   @dlpArg(0, SUInt8)
@@ -817,7 +817,7 @@ export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType
 }
 
 export class DlpWriteAppBlockRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteAppBlock;
+  funcId = DlpFuncId.WriteAppBlock;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -827,7 +827,7 @@ export class DlpWriteAppBlockRespType extends DlpResponse {
 // TODO: ReadSortBlock (0x1d)
 // =============================================================================
 export class DlpReadSortBlockReqType extends DlpRequest<DlpReadSortBlockRespType> {
-  commandId = DlpCommandId.ReadSortBlock;
+  funcId = DlpFuncId.ReadSortBlock;
   responseType = DlpReadSortBlockRespType;
 
   @dlpArg(0, SUInt8)
@@ -835,7 +835,7 @@ export class DlpReadSortBlockReqType extends DlpRequest<DlpReadSortBlockRespType
 }
 
 export class DlpReadSortBlockRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadSortBlock;
+  funcId = DlpFuncId.ReadSortBlock;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -845,7 +845,7 @@ export class DlpReadSortBlockRespType extends DlpResponse {
 // TODO: WriteSortBlock (0x1e)
 // =============================================================================
 export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespType> {
-  commandId = DlpCommandId.WriteSortBlock;
+  funcId = DlpFuncId.WriteSortBlock;
   responseType = DlpWriteSortBlockRespType;
 
   @dlpArg(0, SUInt8)
@@ -853,7 +853,7 @@ export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespTy
 }
 
 export class DlpWriteSortBlockRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteSortBlock;
+  funcId = DlpFuncId.WriteSortBlock;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -863,7 +863,7 @@ export class DlpWriteSortBlockRespType extends DlpResponse {
 // TODO: ReadNextModifiedRec (0x1f)
 // =============================================================================
 export class DlpReadNextModifiedRecReqType extends DlpRequest<DlpReadNextModifiedRecRespType> {
-  commandId = DlpCommandId.ReadNextModifiedRec;
+  funcId = DlpFuncId.ReadNextModifiedRec;
   responseType = DlpReadNextModifiedRecRespType;
 
   @dlpArg(0, SUInt8)
@@ -871,7 +871,7 @@ export class DlpReadNextModifiedRecReqType extends DlpRequest<DlpReadNextModifie
 }
 
 export class DlpReadNextModifiedRecRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadNextModifiedRec;
+  funcId = DlpFuncId.ReadNextModifiedRec;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -889,7 +889,7 @@ export class DlpReadNextModifiedRecRespType extends DlpResponse {
 //			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpReadRecordByIDReqType extends DlpRequest<DlpReadRecordRespType> {
-  commandId = DlpCommandId.ReadRecord;
+  funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
 
   /** Handle to opened database. */
@@ -913,7 +913,7 @@ export class DlpReadRecordByIDReqType extends DlpRequest<DlpReadRecordRespType> 
 }
 
 export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespType> {
-  commandId = DlpCommandId.ReadRecord;
+  funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
 
   /** Handle to opened database. */
@@ -937,7 +937,7 @@ export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespTyp
 }
 
 export class DlpReadRecordRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadRecord;
+  funcId = DlpFuncId.ReadRecord;
 
   /** Record ID. */
   @dlpArg(0, SUInt32BE)
@@ -967,7 +967,7 @@ export class DlpReadRecordRespType extends DlpResponse {
 // TODO: WriteRecord (0x21)
 // =============================================================================
 export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
-  commandId = DlpCommandId.WriteRecord;
+  funcId = DlpFuncId.WriteRecord;
   responseType = DlpWriteRecordRespType;
 
   @dlpArg(0, SUInt8)
@@ -975,7 +975,7 @@ export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
 }
 
 export class DlpWriteRecordRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteRecord;
+  funcId = DlpFuncId.WriteRecord;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -985,7 +985,7 @@ export class DlpWriteRecordRespType extends DlpResponse {
 // TODO: DeleteRecord (0x22)
 // =============================================================================
 export class DlpDeleteRecordReqType extends DlpRequest<DlpDeleteRecordRespType> {
-  commandId = DlpCommandId.DeleteRecord;
+  funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
 
   @dlpArg(0, SUInt8)
@@ -993,7 +993,7 @@ export class DlpDeleteRecordReqType extends DlpRequest<DlpDeleteRecordRespType> 
 }
 
 export class DlpDeleteRecordRespType extends DlpResponse {
-  commandId = DlpCommandId.DeleteRecord;
+  funcId = DlpFuncId.DeleteRecord;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1003,7 +1003,7 @@ export class DlpDeleteRecordRespType extends DlpResponse {
 // TODO: ReadResource (0x23)
 // =============================================================================
 export class DlpReadResourceReqType extends DlpRequest<DlpReadResourceRespType> {
-  commandId = DlpCommandId.ReadResource;
+  funcId = DlpFuncId.ReadResource;
   responseType = DlpReadResourceRespType;
 
   @dlpArg(0, SUInt8)
@@ -1011,7 +1011,7 @@ export class DlpReadResourceReqType extends DlpRequest<DlpReadResourceRespType> 
 }
 
 export class DlpReadResourceRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadResource;
+  funcId = DlpFuncId.ReadResource;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1021,7 +1021,7 @@ export class DlpReadResourceRespType extends DlpResponse {
 // TODO: WriteResource (0x24)
 // =============================================================================
 export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType> {
-  commandId = DlpCommandId.WriteResource;
+  funcId = DlpFuncId.WriteResource;
   responseType = DlpWriteResourceRespType;
 
   @dlpArg(0, SUInt8)
@@ -1029,7 +1029,7 @@ export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType
 }
 
 export class DlpWriteResourceRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteResource;
+  funcId = DlpFuncId.WriteResource;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1039,7 +1039,7 @@ export class DlpWriteResourceRespType extends DlpResponse {
 // TODO: DeleteResource (0x25)
 // =============================================================================
 export class DlpDeleteResourceReqType extends DlpRequest<DlpDeleteResourceRespType> {
-  commandId = DlpCommandId.DeleteResource;
+  funcId = DlpFuncId.DeleteResource;
   responseType = DlpDeleteResourceRespType;
 
   @dlpArg(0, SUInt8)
@@ -1047,7 +1047,7 @@ export class DlpDeleteResourceReqType extends DlpRequest<DlpDeleteResourceRespTy
 }
 
 export class DlpDeleteResourceRespType extends DlpResponse {
-  commandId = DlpCommandId.DeleteResource;
+  funcId = DlpFuncId.DeleteResource;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1057,7 +1057,7 @@ export class DlpDeleteResourceRespType extends DlpResponse {
 // TODO: CleanUpDatabase (0x26)
 // =============================================================================
 export class DlpCleanUpDatabaseReqType extends DlpRequest<DlpCleanUpDatabaseRespType> {
-  commandId = DlpCommandId.CleanUpDatabase;
+  funcId = DlpFuncId.CleanUpDatabase;
   responseType = DlpCleanUpDatabaseRespType;
 
   @dlpArg(0, SUInt8)
@@ -1065,7 +1065,7 @@ export class DlpCleanUpDatabaseReqType extends DlpRequest<DlpCleanUpDatabaseResp
 }
 
 export class DlpCleanUpDatabaseRespType extends DlpResponse {
-  commandId = DlpCommandId.CleanUpDatabase;
+  funcId = DlpFuncId.CleanUpDatabase;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1075,7 +1075,7 @@ export class DlpCleanUpDatabaseRespType extends DlpResponse {
 // TODO: ResetSyncFlags (0x27)
 // =============================================================================
 export class DlpResetSyncFlagsReqType extends DlpRequest<DlpResetSyncFlagsRespType> {
-  commandId = DlpCommandId.ResetSyncFlags;
+  funcId = DlpFuncId.ResetSyncFlags;
   responseType = DlpResetSyncFlagsRespType;
 
   @dlpArg(0, SUInt8)
@@ -1083,7 +1083,7 @@ export class DlpResetSyncFlagsReqType extends DlpRequest<DlpResetSyncFlagsRespTy
 }
 
 export class DlpResetSyncFlagsRespType extends DlpResponse {
-  commandId = DlpCommandId.ResetSyncFlags;
+  funcId = DlpFuncId.ResetSyncFlags;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1093,7 +1093,7 @@ export class DlpResetSyncFlagsRespType extends DlpResponse {
 // TODO: CallApplication (0x28)
 // =============================================================================
 export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationRespType> {
-  commandId = DlpCommandId.CallApplication;
+  funcId = DlpFuncId.CallApplication;
   responseType = DlpCallApplicationRespType;
 
   @dlpArg(0, SUInt8)
@@ -1101,7 +1101,7 @@ export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationResp
 }
 
 export class DlpCallApplicationRespType extends DlpResponse {
-  commandId = DlpCommandId.CallApplication;
+  funcId = DlpFuncId.CallApplication;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1111,7 +1111,7 @@ export class DlpCallApplicationRespType extends DlpResponse {
 // TODO: ResetSystem (0x29)
 // =============================================================================
 export class DlpResetSystemReqType extends DlpRequest<DlpResetSystemRespType> {
-  commandId = DlpCommandId.ResetSystem;
+  funcId = DlpFuncId.ResetSystem;
   responseType = DlpResetSystemRespType;
 
   @dlpArg(0, SUInt8)
@@ -1119,7 +1119,7 @@ export class DlpResetSystemReqType extends DlpRequest<DlpResetSystemRespType> {
 }
 
 export class DlpResetSystemRespType extends DlpResponse {
-  commandId = DlpCommandId.ResetSystem;
+  funcId = DlpFuncId.ResetSystem;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1134,7 +1134,7 @@ export class DlpResetSystemRespType extends DlpResponse {
 //			dlpRespErrParam
 // =============================================================================
 export class DlpAddSyncLogEntryReqType extends DlpRequest<DlpAddSyncLogEntryRespType> {
-  commandId = DlpCommandId.AddSyncLogEntry;
+  funcId = DlpFuncId.AddSyncLogEntry;
   responseType = DlpAddSyncLogEntryRespType;
 
   @dlpArg(0, SStringNT)
@@ -1142,7 +1142,7 @@ export class DlpAddSyncLogEntryReqType extends DlpRequest<DlpAddSyncLogEntryResp
 }
 
 export class DlpAddSyncLogEntryRespType extends DlpResponse {
-  commandId = DlpCommandId.AddSyncLogEntry;
+  funcId = DlpFuncId.AddSyncLogEntry;
 }
 
 // =============================================================================
@@ -1152,7 +1152,7 @@ export class DlpAddSyncLogEntryRespType extends DlpResponse {
 //			dlpRespErrParam
 // =============================================================================
 export class DlpReadOpenDBInfoReqType extends DlpRequest<DlpReadOpenDBInfoRespType> {
-  commandId = DlpCommandId.ReadOpenDBInfo;
+  funcId = DlpFuncId.ReadOpenDBInfo;
   responseType = DlpReadOpenDBInfoRespType;
 
   /** Handle to opened database. */
@@ -1161,7 +1161,7 @@ export class DlpReadOpenDBInfoReqType extends DlpRequest<DlpReadOpenDBInfoRespTy
 }
 
 export class DlpReadOpenDBInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadOpenDBInfo;
+  funcId = DlpFuncId.ReadOpenDBInfo;
 
   /** Number of records or resources in database. */
   @dlpArg(0, SUInt16BE)
@@ -1172,7 +1172,7 @@ export class DlpReadOpenDBInfoRespType extends DlpResponse {
 // TODO: MoveCategory (0x2c)
 // =============================================================================
 export class DlpMoveCategoryReqType extends DlpRequest<DlpMoveCategoryRespType> {
-  commandId = DlpCommandId.MoveCategory;
+  funcId = DlpFuncId.MoveCategory;
   responseType = DlpMoveCategoryRespType;
 
   @dlpArg(0, SUInt8)
@@ -1180,7 +1180,7 @@ export class DlpMoveCategoryReqType extends DlpRequest<DlpMoveCategoryRespType> 
 }
 
 export class DlpMoveCategoryRespType extends DlpResponse {
-  commandId = DlpCommandId.MoveCategory;
+  funcId = DlpFuncId.MoveCategory;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1190,7 +1190,7 @@ export class DlpMoveCategoryRespType extends DlpResponse {
 // TODO: ProcessRPC (0x2d)
 // =============================================================================
 export class DlpProcessRPCReqType extends DlpRequest<DlpProcessRPCRespType> {
-  commandId = DlpCommandId.ProcessRPC;
+  funcId = DlpFuncId.ProcessRPC;
   responseType = DlpProcessRPCRespType;
 
   @dlpArg(0, SUInt8)
@@ -1198,7 +1198,7 @@ export class DlpProcessRPCReqType extends DlpRequest<DlpProcessRPCRespType> {
 }
 
 export class DlpProcessRPCRespType extends DlpResponse {
-  commandId = DlpCommandId.ProcessRPC;
+  funcId = DlpFuncId.ProcessRPC;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1210,12 +1210,12 @@ export class DlpProcessRPCRespType extends DlpResponse {
 //			dlpRespErrCancelSync
 // =============================================================================
 export class DlpOpenConduitReqType extends DlpRequest<DlpOpenConduitRespType> {
-  commandId = DlpCommandId.OpenConduit;
+  funcId = DlpFuncId.OpenConduit;
   responseType = DlpOpenConduitRespType;
 }
 
 export class DlpOpenConduitRespType extends DlpResponse {
-  commandId = DlpCommandId.OpenConduit;
+  funcId = DlpFuncId.OpenConduit;
 }
 
 // =============================================================================
@@ -1223,7 +1223,7 @@ export class DlpOpenConduitRespType extends DlpResponse {
 //		Possible error codes: none
 // =============================================================================
 export class DlpEndOfSyncReqType extends DlpRequest<DlpEndOfSyncRespType> {
-  commandId = DlpCommandId.EndOfSync;
+  funcId = DlpFuncId.EndOfSync;
   responseType = DlpEndOfSyncRespType;
 
   @dlpArg(0, SUInt16BE)
@@ -1231,7 +1231,7 @@ export class DlpEndOfSyncReqType extends DlpRequest<DlpEndOfSyncRespType> {
 }
 
 export class DlpEndOfSyncRespType extends DlpResponse {
-  commandId = DlpCommandId.EndOfSync;
+  funcId = DlpFuncId.EndOfSync;
 }
 
 /** Status codes for DlpEndOfSyncRespType. */
@@ -1252,7 +1252,7 @@ export enum DlpSyncTermCode {
 // TODO: ResetRecordIndex (0x30)
 // =============================================================================
 export class DlpResetRecordIndexReqType extends DlpRequest<DlpResetRecordIndexRespType> {
-  commandId = DlpCommandId.ResetRecordIndex;
+  funcId = DlpFuncId.ResetRecordIndex;
   responseType = DlpResetRecordIndexRespType;
 
   @dlpArg(0, SUInt8)
@@ -1260,7 +1260,7 @@ export class DlpResetRecordIndexReqType extends DlpRequest<DlpResetRecordIndexRe
 }
 
 export class DlpResetRecordIndexRespType extends DlpResponse {
-  commandId = DlpCommandId.ResetRecordIndex;
+  funcId = DlpFuncId.ResetRecordIndex;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1270,7 +1270,7 @@ export class DlpResetRecordIndexRespType extends DlpResponse {
 // ReadRecordIDList (0x31)
 // =============================================================================
 export class DlpReadRecordIDListReqType extends DlpRequest<DlpReadRecordIDListRespType> {
-  commandId = DlpCommandId.ReadRecordIDList;
+  funcId = DlpFuncId.ReadRecordIDList;
   responseType = DlpReadRecordIDListRespType;
 
   /** Handle to opened database. */
@@ -1306,7 +1306,7 @@ export class DlpReadRecordIDListReqType extends DlpRequest<DlpReadRecordIDListRe
 }
 
 export class DlpReadRecordIDListRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadRecordIDList;
+  funcId = DlpFuncId.ReadRecordIDList;
 
   /** Single argument to DlpReadRecordIDListRespType.  */
   @dlpArg(0, SDynamicArray.of(SUInt16BE, SUInt32BE))
@@ -1325,7 +1325,7 @@ export class DlpReadRecordIDListRespType extends DlpResponse {
 // TODO: ReadNextRecInCategory (0x32)
 // =============================================================================
 export class DlpReadNextRecInCategoryReqType extends DlpRequest<DlpReadNextRecInCategoryRespType> {
-  commandId = DlpCommandId.ReadNextRecInCategory;
+  funcId = DlpFuncId.ReadNextRecInCategory;
   responseType = DlpReadNextRecInCategoryRespType;
 
   @dlpArg(0, SUInt8)
@@ -1333,7 +1333,7 @@ export class DlpReadNextRecInCategoryReqType extends DlpRequest<DlpReadNextRecIn
 }
 
 export class DlpReadNextRecInCategoryRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadNextRecInCategory;
+  funcId = DlpFuncId.ReadNextRecInCategory;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1343,7 +1343,7 @@ export class DlpReadNextRecInCategoryRespType extends DlpResponse {
 // TODO: ReadNextModifiedRecInCategory (0x33)
 // =============================================================================
 export class DlpReadNextModifiedRecInCategoryReqType extends DlpRequest<DlpReadNextModifiedRecInCategoryRespType> {
-  commandId = DlpCommandId.ReadNextModifiedRecInCategory;
+  funcId = DlpFuncId.ReadNextModifiedRecInCategory;
   responseType = DlpReadNextModifiedRecInCategoryRespType;
 
   @dlpArg(0, SUInt8)
@@ -1351,7 +1351,7 @@ export class DlpReadNextModifiedRecInCategoryReqType extends DlpRequest<DlpReadN
 }
 
 export class DlpReadNextModifiedRecInCategoryRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadNextModifiedRecInCategory;
+  funcId = DlpFuncId.ReadNextModifiedRecInCategory;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1361,7 +1361,7 @@ export class DlpReadNextModifiedRecInCategoryRespType extends DlpResponse {
 // TODO: ReadAppPreference (0x34)
 // =============================================================================
 export class DlpReadAppPreferenceReqType extends DlpRequest<DlpReadAppPreferenceRespType> {
-  commandId = DlpCommandId.ReadAppPreference;
+  funcId = DlpFuncId.ReadAppPreference;
   responseType = DlpReadAppPreferenceRespType;
 
   @dlpArg(0, SUInt8)
@@ -1369,7 +1369,7 @@ export class DlpReadAppPreferenceReqType extends DlpRequest<DlpReadAppPreference
 }
 
 export class DlpReadAppPreferenceRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadAppPreference;
+  funcId = DlpFuncId.ReadAppPreference;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1379,7 +1379,7 @@ export class DlpReadAppPreferenceRespType extends DlpResponse {
 // TODO: WriteAppPreference (0x35)
 // =============================================================================
 export class DlpWriteAppPreferenceReqType extends DlpRequest<DlpWriteAppPreferenceRespType> {
-  commandId = DlpCommandId.WriteAppPreference;
+  funcId = DlpFuncId.WriteAppPreference;
   responseType = DlpWriteAppPreferenceRespType;
 
   @dlpArg(0, SUInt8)
@@ -1387,7 +1387,7 @@ export class DlpWriteAppPreferenceReqType extends DlpRequest<DlpWriteAppPreferen
 }
 
 export class DlpWriteAppPreferenceRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteAppPreference;
+  funcId = DlpFuncId.WriteAppPreference;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1397,7 +1397,7 @@ export class DlpWriteAppPreferenceRespType extends DlpResponse {
 // TODO: ReadNetSyncInfo (0x36)
 // =============================================================================
 export class DlpReadNetSyncInfoReqType extends DlpRequest<DlpReadNetSyncInfoRespType> {
-  commandId = DlpCommandId.ReadNetSyncInfo;
+  funcId = DlpFuncId.ReadNetSyncInfo;
   responseType = DlpReadNetSyncInfoRespType;
 
   @dlpArg(0, SUInt8)
@@ -1405,7 +1405,7 @@ export class DlpReadNetSyncInfoReqType extends DlpRequest<DlpReadNetSyncInfoResp
 }
 
 export class DlpReadNetSyncInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadNetSyncInfo;
+  funcId = DlpFuncId.ReadNetSyncInfo;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1415,7 +1415,7 @@ export class DlpReadNetSyncInfoRespType extends DlpResponse {
 // TODO: WriteNetSyncInfo (0x37)
 // =============================================================================
 export class DlpWriteNetSyncInfoReqType extends DlpRequest<DlpWriteNetSyncInfoRespType> {
-  commandId = DlpCommandId.WriteNetSyncInfo;
+  funcId = DlpFuncId.WriteNetSyncInfo;
   responseType = DlpWriteNetSyncInfoRespType;
 
   @dlpArg(0, SUInt8)
@@ -1423,7 +1423,7 @@ export class DlpWriteNetSyncInfoReqType extends DlpRequest<DlpWriteNetSyncInfoRe
 }
 
 export class DlpWriteNetSyncInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteNetSyncInfo;
+  funcId = DlpFuncId.WriteNetSyncInfo;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1433,7 +1433,7 @@ export class DlpWriteNetSyncInfoRespType extends DlpResponse {
 // TODO: ReadFeature (0x38)
 // =============================================================================
 export class DlpReadFeatureReqType extends DlpRequest<DlpReadFeatureRespType> {
-  commandId = DlpCommandId.ReadFeature;
+  funcId = DlpFuncId.ReadFeature;
   responseType = DlpReadFeatureRespType;
 
   @dlpArg(0, SUInt8)
@@ -1441,7 +1441,7 @@ export class DlpReadFeatureReqType extends DlpRequest<DlpReadFeatureRespType> {
 }
 
 export class DlpReadFeatureRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadFeature;
+  funcId = DlpFuncId.ReadFeature;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1451,7 +1451,7 @@ export class DlpReadFeatureRespType extends DlpResponse {
 // TODO: FindDB (0x39)
 // =============================================================================
 export class DlpFindDBReqType extends DlpRequest<DlpFindDBRespType> {
-  commandId = DlpCommandId.FindDB;
+  funcId = DlpFuncId.FindDB;
   responseType = DlpFindDBRespType;
 
   @dlpArg(0, SUInt8)
@@ -1459,7 +1459,7 @@ export class DlpFindDBReqType extends DlpRequest<DlpFindDBRespType> {
 }
 
 export class DlpFindDBRespType extends DlpResponse {
-  commandId = DlpCommandId.FindDB;
+  funcId = DlpFuncId.FindDB;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1469,7 +1469,7 @@ export class DlpFindDBRespType extends DlpResponse {
 // TODO: SetDBInfo (0x3a)
 // =============================================================================
 export class DlpSetDBInfoReqType extends DlpRequest<DlpSetDBInfoRespType> {
-  commandId = DlpCommandId.SetDBInfo;
+  funcId = DlpFuncId.SetDBInfo;
   responseType = DlpSetDBInfoRespType;
 
   @dlpArg(0, SUInt8)
@@ -1477,7 +1477,7 @@ export class DlpSetDBInfoReqType extends DlpRequest<DlpSetDBInfoRespType> {
 }
 
 export class DlpSetDBInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.SetDBInfo;
+  funcId = DlpFuncId.SetDBInfo;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1487,7 +1487,7 @@ export class DlpSetDBInfoRespType extends DlpResponse {
 // TODO: LoopBackTest (0x3b)
 // =============================================================================
 export class DlpLoopBackTestReqType extends DlpRequest<DlpLoopBackTestRespType> {
-  commandId = DlpCommandId.LoopBackTest;
+  funcId = DlpFuncId.LoopBackTest;
   responseType = DlpLoopBackTestRespType;
 
   @dlpArg(0, SUInt8)
@@ -1495,7 +1495,7 @@ export class DlpLoopBackTestReqType extends DlpRequest<DlpLoopBackTestRespType> 
 }
 
 export class DlpLoopBackTestRespType extends DlpResponse {
-  commandId = DlpCommandId.LoopBackTest;
+  funcId = DlpFuncId.LoopBackTest;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1505,7 +1505,7 @@ export class DlpLoopBackTestRespType extends DlpResponse {
 // TODO: ExpSlotEnumerate (0x3c)
 // =============================================================================
 export class DlpExpSlotEnumerateReqType extends DlpRequest<DlpExpSlotEnumerateRespType> {
-  commandId = DlpCommandId.ExpSlotEnumerate;
+  funcId = DlpFuncId.ExpSlotEnumerate;
   responseType = DlpExpSlotEnumerateRespType;
 
   @dlpArg(0, SUInt8)
@@ -1513,7 +1513,7 @@ export class DlpExpSlotEnumerateReqType extends DlpRequest<DlpExpSlotEnumerateRe
 }
 
 export class DlpExpSlotEnumerateRespType extends DlpResponse {
-  commandId = DlpCommandId.ExpSlotEnumerate;
+  funcId = DlpFuncId.ExpSlotEnumerate;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1523,7 +1523,7 @@ export class DlpExpSlotEnumerateRespType extends DlpResponse {
 // TODO: ExpCardPresent (0x3d)
 // =============================================================================
 export class DlpExpCardPresentReqType extends DlpRequest<DlpExpCardPresentRespType> {
-  commandId = DlpCommandId.ExpCardPresent;
+  funcId = DlpFuncId.ExpCardPresent;
   responseType = DlpExpCardPresentRespType;
 
   @dlpArg(0, SUInt8)
@@ -1531,7 +1531,7 @@ export class DlpExpCardPresentReqType extends DlpRequest<DlpExpCardPresentRespTy
 }
 
 export class DlpExpCardPresentRespType extends DlpResponse {
-  commandId = DlpCommandId.ExpCardPresent;
+  funcId = DlpFuncId.ExpCardPresent;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1541,7 +1541,7 @@ export class DlpExpCardPresentRespType extends DlpResponse {
 // TODO: ExpCardInfo (0x3e)
 // =============================================================================
 export class DlpExpCardInfoReqType extends DlpRequest<DlpExpCardInfoRespType> {
-  commandId = DlpCommandId.ExpCardInfo;
+  funcId = DlpFuncId.ExpCardInfo;
   responseType = DlpExpCardInfoRespType;
 
   @dlpArg(0, SUInt8)
@@ -1549,7 +1549,7 @@ export class DlpExpCardInfoReqType extends DlpRequest<DlpExpCardInfoRespType> {
 }
 
 export class DlpExpCardInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.ExpCardInfo;
+  funcId = DlpFuncId.ExpCardInfo;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1559,7 +1559,7 @@ export class DlpExpCardInfoRespType extends DlpResponse {
 // TODO: VFSCustomControl (0x3f)
 // =============================================================================
 export class DlpVFSCustomControlReqType extends DlpRequest<DlpVFSCustomControlRespType> {
-  commandId = DlpCommandId.VFSCustomControl;
+  funcId = DlpFuncId.VFSCustomControl;
   responseType = DlpVFSCustomControlRespType;
 
   @dlpArg(0, SUInt8)
@@ -1567,7 +1567,7 @@ export class DlpVFSCustomControlReqType extends DlpRequest<DlpVFSCustomControlRe
 }
 
 export class DlpVFSCustomControlRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSCustomControl;
+  funcId = DlpFuncId.VFSCustomControl;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1577,7 +1577,7 @@ export class DlpVFSCustomControlRespType extends DlpResponse {
 // TODO: VFSGetDefaultDir (0x40)
 // =============================================================================
 export class DlpVFSGetDefaultDirReqType extends DlpRequest<DlpVFSGetDefaultDirRespType> {
-  commandId = DlpCommandId.VFSGetDefaultDir;
+  funcId = DlpFuncId.VFSGetDefaultDir;
   responseType = DlpVFSGetDefaultDirRespType;
 
   @dlpArg(0, SUInt8)
@@ -1585,7 +1585,7 @@ export class DlpVFSGetDefaultDirReqType extends DlpRequest<DlpVFSGetDefaultDirRe
 }
 
 export class DlpVFSGetDefaultDirRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSGetDefaultDir;
+  funcId = DlpFuncId.VFSGetDefaultDir;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1595,7 +1595,7 @@ export class DlpVFSGetDefaultDirRespType extends DlpResponse {
 // TODO: VFSImportDatabaseFromFile (0x41)
 // =============================================================================
 export class DlpVFSImportDatabaseFromFileReqType extends DlpRequest<DlpVFSImportDatabaseFromFileRespType> {
-  commandId = DlpCommandId.VFSImportDatabaseFromFile;
+  funcId = DlpFuncId.VFSImportDatabaseFromFile;
   responseType = DlpVFSImportDatabaseFromFileRespType;
 
   @dlpArg(0, SUInt8)
@@ -1603,7 +1603,7 @@ export class DlpVFSImportDatabaseFromFileReqType extends DlpRequest<DlpVFSImport
 }
 
 export class DlpVFSImportDatabaseFromFileRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSImportDatabaseFromFile;
+  funcId = DlpFuncId.VFSImportDatabaseFromFile;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1613,7 +1613,7 @@ export class DlpVFSImportDatabaseFromFileRespType extends DlpResponse {
 // TODO: VFSExportDatabaseToFile (0x42)
 // =============================================================================
 export class DlpVFSExportDatabaseToFileReqType extends DlpRequest<DlpVFSExportDatabaseToFileRespType> {
-  commandId = DlpCommandId.VFSExportDatabaseToFile;
+  funcId = DlpFuncId.VFSExportDatabaseToFile;
   responseType = DlpVFSExportDatabaseToFileRespType;
 
   @dlpArg(0, SUInt8)
@@ -1621,7 +1621,7 @@ export class DlpVFSExportDatabaseToFileReqType extends DlpRequest<DlpVFSExportDa
 }
 
 export class DlpVFSExportDatabaseToFileRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSExportDatabaseToFile;
+  funcId = DlpFuncId.VFSExportDatabaseToFile;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1631,7 +1631,7 @@ export class DlpVFSExportDatabaseToFileRespType extends DlpResponse {
 // TODO: VFSFileCreate (0x43)
 // =============================================================================
 export class DlpVFSFileCreateReqType extends DlpRequest<DlpVFSFileCreateRespType> {
-  commandId = DlpCommandId.VFSFileCreate;
+  funcId = DlpFuncId.VFSFileCreate;
   responseType = DlpVFSFileCreateRespType;
 
   @dlpArg(0, SUInt8)
@@ -1639,7 +1639,7 @@ export class DlpVFSFileCreateReqType extends DlpRequest<DlpVFSFileCreateRespType
 }
 
 export class DlpVFSFileCreateRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileCreate;
+  funcId = DlpFuncId.VFSFileCreate;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1649,7 +1649,7 @@ export class DlpVFSFileCreateRespType extends DlpResponse {
 // TODO: VFSFileOpen (0x44)
 // =============================================================================
 export class DlpVFSFileOpenReqType extends DlpRequest<DlpVFSFileOpenRespType> {
-  commandId = DlpCommandId.VFSFileOpen;
+  funcId = DlpFuncId.VFSFileOpen;
   responseType = DlpVFSFileOpenRespType;
 
   @dlpArg(0, SUInt8)
@@ -1657,7 +1657,7 @@ export class DlpVFSFileOpenReqType extends DlpRequest<DlpVFSFileOpenRespType> {
 }
 
 export class DlpVFSFileOpenRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileOpen;
+  funcId = DlpFuncId.VFSFileOpen;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1667,7 +1667,7 @@ export class DlpVFSFileOpenRespType extends DlpResponse {
 // TODO: VFSFileClose (0x45)
 // =============================================================================
 export class DlpVFSFileCloseReqType extends DlpRequest<DlpVFSFileCloseRespType> {
-  commandId = DlpCommandId.VFSFileClose;
+  funcId = DlpFuncId.VFSFileClose;
   responseType = DlpVFSFileCloseRespType;
 
   @dlpArg(0, SUInt8)
@@ -1675,7 +1675,7 @@ export class DlpVFSFileCloseReqType extends DlpRequest<DlpVFSFileCloseRespType> 
 }
 
 export class DlpVFSFileCloseRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileClose;
+  funcId = DlpFuncId.VFSFileClose;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1685,7 +1685,7 @@ export class DlpVFSFileCloseRespType extends DlpResponse {
 // TODO: VFSFileWrite (0x46)
 // =============================================================================
 export class DlpVFSFileWriteReqType extends DlpRequest<DlpVFSFileWriteRespType> {
-  commandId = DlpCommandId.VFSFileWrite;
+  funcId = DlpFuncId.VFSFileWrite;
   responseType = DlpVFSFileWriteRespType;
 
   @dlpArg(0, SUInt8)
@@ -1693,7 +1693,7 @@ export class DlpVFSFileWriteReqType extends DlpRequest<DlpVFSFileWriteRespType> 
 }
 
 export class DlpVFSFileWriteRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileWrite;
+  funcId = DlpFuncId.VFSFileWrite;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1703,7 +1703,7 @@ export class DlpVFSFileWriteRespType extends DlpResponse {
 // TODO: VFSFileRead (0x47)
 // =============================================================================
 export class DlpVFSFileReadReqType extends DlpRequest<DlpVFSFileReadRespType> {
-  commandId = DlpCommandId.VFSFileRead;
+  funcId = DlpFuncId.VFSFileRead;
   responseType = DlpVFSFileReadRespType;
 
   @dlpArg(0, SUInt8)
@@ -1711,7 +1711,7 @@ export class DlpVFSFileReadReqType extends DlpRequest<DlpVFSFileReadRespType> {
 }
 
 export class DlpVFSFileReadRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileRead;
+  funcId = DlpFuncId.VFSFileRead;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1721,7 +1721,7 @@ export class DlpVFSFileReadRespType extends DlpResponse {
 // TODO: VFSFileDelete (0x48)
 // =============================================================================
 export class DlpVFSFileDeleteReqType extends DlpRequest<DlpVFSFileDeleteRespType> {
-  commandId = DlpCommandId.VFSFileDelete;
+  funcId = DlpFuncId.VFSFileDelete;
   responseType = DlpVFSFileDeleteRespType;
 
   @dlpArg(0, SUInt8)
@@ -1729,7 +1729,7 @@ export class DlpVFSFileDeleteReqType extends DlpRequest<DlpVFSFileDeleteRespType
 }
 
 export class DlpVFSFileDeleteRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileDelete;
+  funcId = DlpFuncId.VFSFileDelete;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1739,7 +1739,7 @@ export class DlpVFSFileDeleteRespType extends DlpResponse {
 // TODO: VFSFileRename (0x49)
 // =============================================================================
 export class DlpVFSFileRenameReqType extends DlpRequest<DlpVFSFileRenameRespType> {
-  commandId = DlpCommandId.VFSFileRename;
+  funcId = DlpFuncId.VFSFileRename;
   responseType = DlpVFSFileRenameRespType;
 
   @dlpArg(0, SUInt8)
@@ -1747,7 +1747,7 @@ export class DlpVFSFileRenameReqType extends DlpRequest<DlpVFSFileRenameRespType
 }
 
 export class DlpVFSFileRenameRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileRename;
+  funcId = DlpFuncId.VFSFileRename;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1757,7 +1757,7 @@ export class DlpVFSFileRenameRespType extends DlpResponse {
 // TODO: VFSFileEOF (0x4a)
 // =============================================================================
 export class DlpVFSFileEOFReqType extends DlpRequest<DlpVFSFileEOFRespType> {
-  commandId = DlpCommandId.VFSFileEOF;
+  funcId = DlpFuncId.VFSFileEOF;
   responseType = DlpVFSFileEOFRespType;
 
   @dlpArg(0, SUInt8)
@@ -1765,7 +1765,7 @@ export class DlpVFSFileEOFReqType extends DlpRequest<DlpVFSFileEOFRespType> {
 }
 
 export class DlpVFSFileEOFRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileEOF;
+  funcId = DlpFuncId.VFSFileEOF;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1775,7 +1775,7 @@ export class DlpVFSFileEOFRespType extends DlpResponse {
 // TODO: VFSFileTell (0x4b)
 // =============================================================================
 export class DlpVFSFileTellReqType extends DlpRequest<DlpVFSFileTellRespType> {
-  commandId = DlpCommandId.VFSFileTell;
+  funcId = DlpFuncId.VFSFileTell;
   responseType = DlpVFSFileTellRespType;
 
   @dlpArg(0, SUInt8)
@@ -1783,7 +1783,7 @@ export class DlpVFSFileTellReqType extends DlpRequest<DlpVFSFileTellRespType> {
 }
 
 export class DlpVFSFileTellRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileTell;
+  funcId = DlpFuncId.VFSFileTell;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1793,7 +1793,7 @@ export class DlpVFSFileTellRespType extends DlpResponse {
 // TODO: VFSFileGetAttributes (0x4c)
 // =============================================================================
 export class DlpVFSFileGetAttributesReqType extends DlpRequest<DlpVFSFileGetAttributesRespType> {
-  commandId = DlpCommandId.VFSFileGetAttributes;
+  funcId = DlpFuncId.VFSFileGetAttributes;
   responseType = DlpVFSFileGetAttributesRespType;
 
   @dlpArg(0, SUInt8)
@@ -1801,7 +1801,7 @@ export class DlpVFSFileGetAttributesReqType extends DlpRequest<DlpVFSFileGetAttr
 }
 
 export class DlpVFSFileGetAttributesRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileGetAttributes;
+  funcId = DlpFuncId.VFSFileGetAttributes;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1811,7 +1811,7 @@ export class DlpVFSFileGetAttributesRespType extends DlpResponse {
 // TODO: VFSFileSetAttributes (0x4d)
 // =============================================================================
 export class DlpVFSFileSetAttributesReqType extends DlpRequest<DlpVFSFileSetAttributesRespType> {
-  commandId = DlpCommandId.VFSFileSetAttributes;
+  funcId = DlpFuncId.VFSFileSetAttributes;
   responseType = DlpVFSFileSetAttributesRespType;
 
   @dlpArg(0, SUInt8)
@@ -1819,7 +1819,7 @@ export class DlpVFSFileSetAttributesReqType extends DlpRequest<DlpVFSFileSetAttr
 }
 
 export class DlpVFSFileSetAttributesRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileSetAttributes;
+  funcId = DlpFuncId.VFSFileSetAttributes;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1829,7 +1829,7 @@ export class DlpVFSFileSetAttributesRespType extends DlpResponse {
 // TODO: VFSFileGetDate (0x4e)
 // =============================================================================
 export class DlpVFSFileGetDateReqType extends DlpRequest<DlpVFSFileGetDateRespType> {
-  commandId = DlpCommandId.VFSFileGetDate;
+  funcId = DlpFuncId.VFSFileGetDate;
   responseType = DlpVFSFileGetDateRespType;
 
   @dlpArg(0, SUInt8)
@@ -1837,7 +1837,7 @@ export class DlpVFSFileGetDateReqType extends DlpRequest<DlpVFSFileGetDateRespTy
 }
 
 export class DlpVFSFileGetDateRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileGetDate;
+  funcId = DlpFuncId.VFSFileGetDate;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1847,7 +1847,7 @@ export class DlpVFSFileGetDateRespType extends DlpResponse {
 // TODO: VFSFileSetDate (0x4f)
 // =============================================================================
 export class DlpVFSFileSetDateReqType extends DlpRequest<DlpVFSFileSetDateRespType> {
-  commandId = DlpCommandId.VFSFileSetDate;
+  funcId = DlpFuncId.VFSFileSetDate;
   responseType = DlpVFSFileSetDateRespType;
 
   @dlpArg(0, SUInt8)
@@ -1855,7 +1855,7 @@ export class DlpVFSFileSetDateReqType extends DlpRequest<DlpVFSFileSetDateRespTy
 }
 
 export class DlpVFSFileSetDateRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileSetDate;
+  funcId = DlpFuncId.VFSFileSetDate;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1865,7 +1865,7 @@ export class DlpVFSFileSetDateRespType extends DlpResponse {
 // TODO: VFSDirCreate (0x50)
 // =============================================================================
 export class DlpVFSDirCreateReqType extends DlpRequest<DlpVFSDirCreateRespType> {
-  commandId = DlpCommandId.VFSDirCreate;
+  funcId = DlpFuncId.VFSDirCreate;
   responseType = DlpVFSDirCreateRespType;
 
   @dlpArg(0, SUInt8)
@@ -1873,7 +1873,7 @@ export class DlpVFSDirCreateReqType extends DlpRequest<DlpVFSDirCreateRespType> 
 }
 
 export class DlpVFSDirCreateRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSDirCreate;
+  funcId = DlpFuncId.VFSDirCreate;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1883,7 +1883,7 @@ export class DlpVFSDirCreateRespType extends DlpResponse {
 // TODO: VFSDirEntryEnumerate (0x51)
 // =============================================================================
 export class DlpVFSDirEntryEnumerateReqType extends DlpRequest<DlpVFSDirEntryEnumerateRespType> {
-  commandId = DlpCommandId.VFSDirEntryEnumerate;
+  funcId = DlpFuncId.VFSDirEntryEnumerate;
   responseType = DlpVFSDirEntryEnumerateRespType;
 
   @dlpArg(0, SUInt8)
@@ -1891,7 +1891,7 @@ export class DlpVFSDirEntryEnumerateReqType extends DlpRequest<DlpVFSDirEntryEnu
 }
 
 export class DlpVFSDirEntryEnumerateRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSDirEntryEnumerate;
+  funcId = DlpFuncId.VFSDirEntryEnumerate;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1901,7 +1901,7 @@ export class DlpVFSDirEntryEnumerateRespType extends DlpResponse {
 // TODO: VFSGetFile (0x52)
 // =============================================================================
 export class DlpVFSGetFileReqType extends DlpRequest<DlpVFSGetFileRespType> {
-  commandId = DlpCommandId.VFSGetFile;
+  funcId = DlpFuncId.VFSGetFile;
   responseType = DlpVFSGetFileRespType;
 
   @dlpArg(0, SUInt8)
@@ -1909,7 +1909,7 @@ export class DlpVFSGetFileReqType extends DlpRequest<DlpVFSGetFileRespType> {
 }
 
 export class DlpVFSGetFileRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSGetFile;
+  funcId = DlpFuncId.VFSGetFile;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1919,7 +1919,7 @@ export class DlpVFSGetFileRespType extends DlpResponse {
 // TODO: VFSPutFile (0x53)
 // =============================================================================
 export class DlpVFSPutFileReqType extends DlpRequest<DlpVFSPutFileRespType> {
-  commandId = DlpCommandId.VFSPutFile;
+  funcId = DlpFuncId.VFSPutFile;
   responseType = DlpVFSPutFileRespType;
 
   @dlpArg(0, SUInt8)
@@ -1927,7 +1927,7 @@ export class DlpVFSPutFileReqType extends DlpRequest<DlpVFSPutFileRespType> {
 }
 
 export class DlpVFSPutFileRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSPutFile;
+  funcId = DlpFuncId.VFSPutFile;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1937,7 +1937,7 @@ export class DlpVFSPutFileRespType extends DlpResponse {
 // TODO: VFSVolumeFormat (0x54)
 // =============================================================================
 export class DlpVFSVolumeFormatReqType extends DlpRequest<DlpVFSVolumeFormatRespType> {
-  commandId = DlpCommandId.VFSVolumeFormat;
+  funcId = DlpFuncId.VFSVolumeFormat;
   responseType = DlpVFSVolumeFormatRespType;
 
   @dlpArg(0, SUInt8)
@@ -1945,7 +1945,7 @@ export class DlpVFSVolumeFormatReqType extends DlpRequest<DlpVFSVolumeFormatResp
 }
 
 export class DlpVFSVolumeFormatRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSVolumeFormat;
+  funcId = DlpFuncId.VFSVolumeFormat;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1955,7 +1955,7 @@ export class DlpVFSVolumeFormatRespType extends DlpResponse {
 // TODO: VFSVolumeEnumerate (0x55)
 // =============================================================================
 export class DlpVFSVolumeEnumerateReqType extends DlpRequest<DlpVFSVolumeEnumerateRespType> {
-  commandId = DlpCommandId.VFSVolumeEnumerate;
+  funcId = DlpFuncId.VFSVolumeEnumerate;
   responseType = DlpVFSVolumeEnumerateRespType;
 
   @dlpArg(0, SUInt8)
@@ -1963,7 +1963,7 @@ export class DlpVFSVolumeEnumerateReqType extends DlpRequest<DlpVFSVolumeEnumera
 }
 
 export class DlpVFSVolumeEnumerateRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSVolumeEnumerate;
+  funcId = DlpFuncId.VFSVolumeEnumerate;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1973,7 +1973,7 @@ export class DlpVFSVolumeEnumerateRespType extends DlpResponse {
 // TODO: VFSVolumeInfo (0x56)
 // =============================================================================
 export class DlpVFSVolumeInfoReqType extends DlpRequest<DlpVFSVolumeInfoRespType> {
-  commandId = DlpCommandId.VFSVolumeInfo;
+  funcId = DlpFuncId.VFSVolumeInfo;
   responseType = DlpVFSVolumeInfoRespType;
 
   @dlpArg(0, SUInt8)
@@ -1981,7 +1981,7 @@ export class DlpVFSVolumeInfoReqType extends DlpRequest<DlpVFSVolumeInfoRespType
 }
 
 export class DlpVFSVolumeInfoRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSVolumeInfo;
+  funcId = DlpFuncId.VFSVolumeInfo;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1991,7 +1991,7 @@ export class DlpVFSVolumeInfoRespType extends DlpResponse {
 // TODO: VFSVolumeGetLabel (0x57)
 // =============================================================================
 export class DlpVFSVolumeGetLabelReqType extends DlpRequest<DlpVFSVolumeGetLabelRespType> {
-  commandId = DlpCommandId.VFSVolumeGetLabel;
+  funcId = DlpFuncId.VFSVolumeGetLabel;
   responseType = DlpVFSVolumeGetLabelRespType;
 
   @dlpArg(0, SUInt8)
@@ -1999,7 +1999,7 @@ export class DlpVFSVolumeGetLabelReqType extends DlpRequest<DlpVFSVolumeGetLabel
 }
 
 export class DlpVFSVolumeGetLabelRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSVolumeGetLabel;
+  funcId = DlpFuncId.VFSVolumeGetLabel;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2009,7 +2009,7 @@ export class DlpVFSVolumeGetLabelRespType extends DlpResponse {
 // TODO: VFSVolumeSetLabel (0x58)
 // =============================================================================
 export class DlpVFSVolumeSetLabelReqType extends DlpRequest<DlpVFSVolumeSetLabelRespType> {
-  commandId = DlpCommandId.VFSVolumeSetLabel;
+  funcId = DlpFuncId.VFSVolumeSetLabel;
   responseType = DlpVFSVolumeSetLabelRespType;
 
   @dlpArg(0, SUInt8)
@@ -2017,7 +2017,7 @@ export class DlpVFSVolumeSetLabelReqType extends DlpRequest<DlpVFSVolumeSetLabel
 }
 
 export class DlpVFSVolumeSetLabelRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSVolumeSetLabel;
+  funcId = DlpFuncId.VFSVolumeSetLabel;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2027,7 +2027,7 @@ export class DlpVFSVolumeSetLabelRespType extends DlpResponse {
 // TODO: VFSVolumeSize (0x59)
 // =============================================================================
 export class DlpVFSVolumeSizeReqType extends DlpRequest<DlpVFSVolumeSizeRespType> {
-  commandId = DlpCommandId.VFSVolumeSize;
+  funcId = DlpFuncId.VFSVolumeSize;
   responseType = DlpVFSVolumeSizeRespType;
 
   @dlpArg(0, SUInt8)
@@ -2035,7 +2035,7 @@ export class DlpVFSVolumeSizeReqType extends DlpRequest<DlpVFSVolumeSizeRespType
 }
 
 export class DlpVFSVolumeSizeRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSVolumeSize;
+  funcId = DlpFuncId.VFSVolumeSize;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2045,7 +2045,7 @@ export class DlpVFSVolumeSizeRespType extends DlpResponse {
 // TODO: VFSFileSeek (0x5a)
 // =============================================================================
 export class DlpVFSFileSeekReqType extends DlpRequest<DlpVFSFileSeekRespType> {
-  commandId = DlpCommandId.VFSFileSeek;
+  funcId = DlpFuncId.VFSFileSeek;
   responseType = DlpVFSFileSeekRespType;
 
   @dlpArg(0, SUInt8)
@@ -2053,7 +2053,7 @@ export class DlpVFSFileSeekReqType extends DlpRequest<DlpVFSFileSeekRespType> {
 }
 
 export class DlpVFSFileSeekRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileSeek;
+  funcId = DlpFuncId.VFSFileSeek;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2063,7 +2063,7 @@ export class DlpVFSFileSeekRespType extends DlpResponse {
 // TODO: VFSFileResize (0x5b)
 // =============================================================================
 export class DlpVFSFileResizeReqType extends DlpRequest<DlpVFSFileResizeRespType> {
-  commandId = DlpCommandId.VFSFileResize;
+  funcId = DlpFuncId.VFSFileResize;
   responseType = DlpVFSFileResizeRespType;
 
   @dlpArg(0, SUInt8)
@@ -2071,7 +2071,7 @@ export class DlpVFSFileResizeReqType extends DlpRequest<DlpVFSFileResizeRespType
 }
 
 export class DlpVFSFileResizeRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileResize;
+  funcId = DlpFuncId.VFSFileResize;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2081,7 +2081,7 @@ export class DlpVFSFileResizeRespType extends DlpResponse {
 // TODO: VFSFileSize (0x5c)
 // =============================================================================
 export class DlpVFSFileSizeReqType extends DlpRequest<DlpVFSFileSizeRespType> {
-  commandId = DlpCommandId.VFSFileSize;
+  funcId = DlpFuncId.VFSFileSize;
   responseType = DlpVFSFileSizeRespType;
 
   @dlpArg(0, SUInt8)
@@ -2089,7 +2089,7 @@ export class DlpVFSFileSizeReqType extends DlpRequest<DlpVFSFileSizeRespType> {
 }
 
 export class DlpVFSFileSizeRespType extends DlpResponse {
-  commandId = DlpCommandId.VFSFileSize;
+  funcId = DlpFuncId.VFSFileSize;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2099,7 +2099,7 @@ export class DlpVFSFileSizeRespType extends DlpResponse {
 // TODO: ExpSlotMediaType (0x5d)
 // =============================================================================
 export class DlpExpSlotMediaTypeReqType extends DlpRequest<DlpExpSlotMediaTypeRespType> {
-  commandId = DlpCommandId.ExpSlotMediaType;
+  funcId = DlpFuncId.ExpSlotMediaType;
   responseType = DlpExpSlotMediaTypeRespType;
 
   @dlpArg(0, SUInt8)
@@ -2107,7 +2107,7 @@ export class DlpExpSlotMediaTypeReqType extends DlpRequest<DlpExpSlotMediaTypeRe
 }
 
 export class DlpExpSlotMediaTypeRespType extends DlpResponse {
-  commandId = DlpCommandId.ExpSlotMediaType;
+  funcId = DlpFuncId.ExpSlotMediaType;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2117,7 +2117,7 @@ export class DlpExpSlotMediaTypeRespType extends DlpResponse {
 // TODO: WriteRecordEx (0x5e)
 // =============================================================================
 export class DlpWriteRecordExReqType extends DlpRequest<DlpWriteRecordExRespType> {
-  commandId = DlpCommandId.WriteRecordEx;
+  funcId = DlpFuncId.WriteRecordEx;
   responseType = DlpWriteRecordExRespType;
 
   @dlpArg(0, SUInt8)
@@ -2125,7 +2125,7 @@ export class DlpWriteRecordExReqType extends DlpRequest<DlpWriteRecordExRespType
 }
 
 export class DlpWriteRecordExRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteRecordEx;
+  funcId = DlpFuncId.WriteRecordEx;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2135,7 +2135,7 @@ export class DlpWriteRecordExRespType extends DlpResponse {
 // TODO: WriteResourceEx (0x5f)
 // =============================================================================
 export class DlpWriteResourceExReqType extends DlpRequest<DlpWriteResourceExRespType> {
-  commandId = DlpCommandId.WriteResourceEx;
+  funcId = DlpFuncId.WriteResourceEx;
   responseType = DlpWriteResourceExRespType;
 
   @dlpArg(0, SUInt8)
@@ -2143,7 +2143,7 @@ export class DlpWriteResourceExReqType extends DlpRequest<DlpWriteResourceExResp
 }
 
 export class DlpWriteResourceExRespType extends DlpResponse {
-  commandId = DlpCommandId.WriteResourceEx;
+  funcId = DlpFuncId.WriteResourceEx;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2153,7 +2153,7 @@ export class DlpWriteResourceExRespType extends DlpResponse {
 // TODO: ReadRecordEx (0x60)
 // =============================================================================
 export class DlpReadRecordExReqType extends DlpRequest<DlpReadRecordExRespType> {
-  commandId = DlpCommandId.ReadRecordEx;
+  funcId = DlpFuncId.ReadRecordEx;
   responseType = DlpReadRecordExRespType;
 
   @dlpArg(0, SUInt8)
@@ -2161,7 +2161,7 @@ export class DlpReadRecordExReqType extends DlpRequest<DlpReadRecordExRespType> 
 }
 
 export class DlpReadRecordExRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadRecordEx;
+  funcId = DlpFuncId.ReadRecordEx;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2171,7 +2171,7 @@ export class DlpReadRecordExRespType extends DlpResponse {
 // TODO: ReadResourceEx (0x64)
 // =============================================================================
 export class DlpReadResourceExReqType extends DlpRequest<DlpReadResourceExRespType> {
-  commandId = DlpCommandId.ReadResourceEx;
+  funcId = DlpFuncId.ReadResourceEx;
   responseType = DlpReadResourceExRespType;
 
   @dlpArg(0, SUInt8)
@@ -2179,7 +2179,7 @@ export class DlpReadResourceExReqType extends DlpRequest<DlpReadResourceExRespTy
 }
 
 export class DlpReadResourceExRespType extends DlpResponse {
-  commandId = DlpCommandId.ReadResourceEx;
+  funcId = DlpFuncId.ReadResourceEx;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -2189,13 +2189,13 @@ export class DlpReadResourceExRespType extends DlpResponse {
 // Request and response classes above generated via the following script:
 //
 /*
-function generateDlpRequestRespType(commandId: number, name: string) {
+function generateDlpRequestRespType(fundId: number, name: string) {
   return [
     '// =============================================================================',
-    `// TODO: ${name} (0x${commandId.toString(16)})`,
+    `// TODO: ${name} (0x${fundId.toString(16)})`,
     '// =============================================================================',
     `export class Dlp${name}Request extends DlpRequest<Dlp${name}Response> {`,
-    `  commandId = DlpCommandId.${name};`,
+    `  fundId = DlpFuncId.${name};`,
     `  responseType = Dlp${name}Response;`,
     '',
     '  @dlpArg(0, SUInt8)',
@@ -2203,7 +2203,7 @@ function generateDlpRequestRespType(commandId: number, name: string) {
     '}',
     '',
     `export class Dlp${name}Response extends DlpResponse {`,
-    `  commandId = DlpCommandId.${name};`,
+    `  funcId = DlpFuncId.${name};`,
     '',
     '  @dlpArg(0, SUInt8)',
     '  private padding1 = 0;',
@@ -2213,12 +2213,12 @@ function generateDlpRequestRespType(commandId: number, name: string) {
 }
 
 function generatePlaceholderForExistingRequestResponse(
-  commandId: number,
+  fundId: number,
   name: string
 ) {
   return [
     '// =============================================================================',
-    `// ${name} (0x${commandId.toString(16)})`,
+    `// ${name} (0x${fundId.toString(16)})`,
     '// =============================================================================',
     '// ALREADY EXISTS',
     '',
@@ -2228,15 +2228,15 @@ function generatePlaceholderForExistingRequestResponse(
 function generateAllDlpRequestRespTypes() {
   const dlpCommandsModule = require('./dlp-commands');
   const pieces: Array<string> = [];
-  for (const commandId in DlpCommandId) {
-    if (isNaN(Number(commandId))) {
+  for (const fundId in DlpFuncId) {
+    if (isNaN(Number(fundId))) {
       continue;
     }
-    const name = DlpCommandId[commandId];
+    const name = DlpFuncId[fundId];
     pieces.push(
       dlpCommandsModule[`Dlp${name}Request`]
-        ? generatePlaceholderForExistingRequestResponse(Number(commandId), name)
-        : generateDlpRequestRespType(Number(commandId), name)
+        ? generatePlaceholderForExistingRequestResponse(Number(fundId), name)
+        : generateDlpRequestRespType(Number(fundId), name)
     );
   }
   return pieces.join('\n');
@@ -2247,7 +2247,7 @@ if (require.main === module) {
 }
 */
 
-// See total commands:
+// See all commands:
 //  grep '^// .* \(0x' src/dlp-commands.ts | wc -l
 // See TODO commands:
 //   grep '^// TODO: .* \(0x' src/dlp-commands.ts | wc -l

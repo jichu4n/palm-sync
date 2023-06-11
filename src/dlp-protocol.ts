@@ -74,8 +74,8 @@ export class DlpConnection {
 export abstract class DlpRequest<
   DlpResponseT extends DlpResponse
 > extends SObject {
-  /** DLP command ID. */
-  abstract commandId: number;
+  /** DLP function ID. */
+  abstract funcId: number;
 
   /** The response class corresponding to this request. */
   abstract responseType: new () => DlpResponseT;
@@ -83,12 +83,12 @@ export abstract class DlpRequest<
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
 
-    const actualCommandId = reader.readUInt8();
-    if (actualCommandId !== this.commandId) {
+    const actualFuncId = reader.readUInt8();
+    if (actualFuncId !== this.funcId) {
       throw new Error(
-        'Command ID mismatch: ' +
-          `expected 0x${this.commandId.toString(16)}, ` +
-          `got ${actualCommandId.toString(16)}`
+        'Function ID mismatch: ' +
+          `expected 0x${this.funcId.toString(16)}, ` +
+          `got ${actualFuncId.toString(16)}`
       );
     }
 
@@ -108,7 +108,7 @@ export abstract class DlpRequest<
   serialize(opts?: SerializeOptions): Buffer {
     const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
     const writer = new SmartBuffer();
-    writer.writeUInt8(this.commandId);
+    writer.writeUInt8(this.funcId);
     writer.writeUInt8(serializedArgs.length);
     for (const serializedArg of serializedArgs) {
       writer.writeBuffer(serializedArg);
@@ -124,7 +124,7 @@ export abstract class DlpRequest<
 
   toJSON(): Object {
     return {
-      commandId: this.commandId,
+      funcId: this.funcId,
       args: getDlpArgsAsJson(this),
     };
   }
@@ -216,15 +216,15 @@ const DLP_RESPONSE_ERROR_MESSAGES: {[key in DlpRespErrorCode]: string} = {
   [DlpRespErrorCode.ARG_SIZE]: 'Invalid argument size',
 };
 
-/** Command ID bitmask for DLP responses. */
+/** Function ID bitmask for DLP responses. */
 const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
-/** Bitmask for extracting the raw command ID from a DLP response command ID. */
-const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
+/** Bitmask for extracting the raw function ID from a DLP response function ID. */
+const DLP_RESPONSE_FUNC_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
 
 /** Base class for DLP responses. */
 export abstract class DlpResponse extends SObject {
-  /** Expected DLP command ID. */
-  abstract commandId: number;
+  /** Expected DLP function ID. */
+  abstract funcId: number;
 
   /** Error code. */
   errorCode = DlpRespErrorCode.NONE;
@@ -235,18 +235,18 @@ export abstract class DlpResponse extends SObject {
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
-    let actualCommandId = reader.readUInt8();
-    if (!(actualCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
+    let actualFuncId = reader.readUInt8();
+    if (!(actualFuncId & DLP_RESPONSE_TYPE_BITMASK)) {
       throw new Error(
-        `Invalid response command ID: 0x${actualCommandId.toString(16)}`
+        `Invalid response function ID: 0x${actualFuncId.toString(16)}`
       );
     }
-    actualCommandId &= DLP_RESPONSE_COMMAND_ID_BITMASK;
-    if (actualCommandId !== this.commandId) {
+    actualFuncId &= DLP_RESPONSE_FUNC_ID_BITMASK;
+    if (actualFuncId !== this.funcId) {
       throw new Error(
-        `Command ID mismatch in ${this.constructor.name}: ` +
-          `expected 0x${this.commandId.toString(16)}, ` +
-          `got ${actualCommandId.toString(16)}`
+        `Function ID mismatch in ${this.constructor.name}: ` +
+          `expected 0x${this.funcId.toString(16)}, ` +
+          `got ${actualFuncId.toString(16)}`
       );
     }
 
@@ -280,7 +280,7 @@ export abstract class DlpResponse extends SObject {
   serialize(opts?: SerializeOptions): Buffer {
     const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
     const writer = new SmartBuffer();
-    writer.writeUInt8(this.commandId | DLP_RESPONSE_TYPE_BITMASK);
+    writer.writeUInt8(this.funcId | DLP_RESPONSE_TYPE_BITMASK);
     writer.writeUInt8(serializedArgs.length);
     writer.writeUInt16BE(this.errorCode);
     for (const serializedArg of serializedArgs) {
@@ -297,7 +297,7 @@ export abstract class DlpResponse extends SObject {
 
   toJSON(): Object {
     return {
-      ..._.pick(this, 'commandId', 'errorCode', 'errorMessage'),
+      ..._.pick(this, 'funcId', 'errorCode', 'errorMessage'),
       args: getDlpArgsAsJson(this),
     };
   }
