@@ -12,7 +12,7 @@ import {
 } from 'serio';
 import {Duplex, DuplexOptions} from 'stream';
 import {WebUSB} from 'usb';
-import {DlpReadDBListMode, DlpReadDBListReqType} from './dlp-commands';
+import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
 import {NetSyncConnection} from './network-sync-server';
 import {SyncConnection} from './sync-server';
 import {
@@ -382,10 +382,10 @@ if (require.main === module) {
     await (async ({dlpConnection}: SyncConnection) => {
       const readDbListResp = await dlpConnection.execute(
         DlpReadDBListReqType.with({
-          mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+          srchFlags: DlpReadDBListFlags.RAM | DlpReadDBListFlags.MULTIPLE,
         })
       );
-      console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
+      console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
 
       /*
       await dlpConnection.execute(new DlpOpenConduitReqType());

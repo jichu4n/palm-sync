@@ -1,11 +1,11 @@
-import {DlpReadDBListMode, DlpReadDBListReqType, NetSyncConnection} from '..';
+import {DlpReadDBListFlags, DlpReadDBListReqType, NetSyncConnection} from '..';
 
 export async function run({dlpConnection}: NetSyncConnection) {
   const readDbListResp = await dlpConnection.execute(
     DlpReadDBListReqType.with({
-      mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+      srchFlags: DlpReadDBListFlags.RAM | DlpReadDBListFlags.MULTIPLE,
     })
   );
-  const dbNames = readDbListResp.metadataList.map(({name}) => name);
+  const dbNames = readDbListResp.dbInfo.map(({name}) => name);
   console.log(dbNames.join('\n'));
 }

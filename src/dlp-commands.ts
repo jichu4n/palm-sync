@@ -29,15 +29,12 @@ import {
   SUInt8,
   SerializeOptions,
   bitfield,
-  decodeString,
-  encodeString,
   field,
 } from 'serio';
-import {SmartBuffer} from 'smart-buffer';
 import {
+  DlpDateTimeType,
   DlpRequest,
   DlpResponse,
-  DlpDateTimeType,
   dlpArg,
   optDlpArg,
 } from './dlp-protocol';
@@ -45,67 +42,6 @@ import {
 // =============================================================================
 // Common structures
 // =============================================================================
-
-/** Database metadata in DLP requests and responses. */
-export class DlpDatabaseMetadata extends SObject {
-  /** Total length of metadata structure. */
-  @field(SUInt8)
-  private length = 0;
-
-  /** Misc flags (see DlpDatabaseMiscFlags). */
-  @field(SUInt8)
-  miscFlags = 0;
-
-  /** Database attribute flags. */
-  @field()
-  attributes = new DatabaseAttrs();
-
-  /** Database type identifier (max 4 bytes). */
-  @field(TypeId)
-  type = 'AAAA';
-
-  /** Database creator identifier (max 4 bytes). */
-  @field(TypeId)
-  creator = 'AAAA';
-
-  /** Database version (integer). */
-  @field(SUInt16BE)
-  version = 0;
-
-  /** Modification number (integer). */
-  @field(SUInt32BE)
-  modificationNumber = 0;
-
-  /** Database creation timestamp. */
-  @field(DlpDateTimeType)
-  creationDate = new Date(PDB_EPOCH);
-
-  /** Database modification timestamp. */
-  @field(DlpDateTimeType)
-  modificationDate = new Date(PDB_EPOCH);
-
-  /** Last backup timestamp. */
-  @field(DlpDateTimeType)
-  lastBackupDate = new Date(PDB_EPOCH);
-
-  /** Index of database in the response. */
-  @field(SUInt16BE)
-  index = 0;
-
-  /** Database name (max 31 bytes). */
-  @field(SStringNT)
-  name = '';
-
-  deserialize(buffer: Buffer, opts?: DeserializeOptions) {
-    super.deserialize(buffer, opts);
-    return this.length;
-  }
-
-  serialize(opts?: SerializeOptions) {
-    this.length = this.getSerializedLength(opts);
-    return super.serialize(opts);
-  }
-}
 
 /** Maximum data length that can be returned in one ReadRecord request. */
 export const MAX_RECORD_DATA_LENGTH = 0xffff;
@@ -592,14 +528,18 @@ export class DlpReadStorageInfoRespType extends DlpResponse {
 
 // =============================================================================
 // ReadDBList (0x16)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrNotFound
 // =============================================================================
 export class DlpReadDBListReqType extends DlpRequest<DlpReadDBListRespType> {
   commandId = DlpCommandId.ReadDBList;
   responseType = DlpReadDBListRespType;
 
-  /** Flags (see DlpReadDBListMode). */
+  /** Flags - see DlpReadDBListFlags. */
   @dlpArg(0, SUInt8)
-  mode: number = DlpReadDBListMode.LIST_RAM;
+  srchFlags: number = DlpReadDBListFlags.RAM;
 
   /** Card number (typically 0). */
   @dlpArg(0, SUInt8)
@@ -610,6 +550,85 @@ export class DlpReadDBListReqType extends DlpRequest<DlpReadDBListRespType> {
   startIndex = 0;
 }
 
+/** Database search flags, used in DlpReadDBListReqType. */
+export enum DlpReadDBListFlags {
+  /** List databases in RAM. */
+  RAM = 0x80,
+  /** List databases in ROM. */
+  ROM = 0x40,
+  /** Return as many databases as possible at once (DLP 1.2+). */
+  MULTIPLE = 0x20,
+}
+
+/** Database info, used in DlpReadDBListRespType. */
+export class DlpDBInfoType extends SObject {
+  /** Total length of this structure. */
+  @field(SUInt8)
+  private totalSize = 0;
+
+  /** Misc flags - see DlpDbInfoMiscFlags. */
+  @field(SUInt8)
+  miscFlags = 0;
+
+  /** Database attribute flags. */
+  @field()
+  dbFlags = new DatabaseAttrs();
+
+  /** Database type identifier (max 4 bytes). */
+  @field(TypeId)
+  type = 'AAAA';
+
+  /** Database creator identifier (max 4 bytes). */
+  @field(TypeId)
+  creator = 'AAAA';
+
+  /** Database version (integer). */
+  @field(SUInt16BE)
+  version = 0;
+
+  /** Modification number (integer). */
+  @field(SUInt32BE)
+  modNum = 0;
+
+  /** Database creation timestamp. */
+  @field(DlpDateTimeType)
+  crDate = new Date(PDB_EPOCH);
+
+  /** Database modification timestamp. */
+  @field(DlpDateTimeType)
+  modDate = new Date(PDB_EPOCH);
+
+  /** Last backup timestamp. */
+  @field(DlpDateTimeType)
+  backupDate = new Date(PDB_EPOCH);
+
+  /** Index of database in the response. */
+  @field(SUInt16BE)
+  dbIndex = 0;
+
+  /** Database name (max 31 bytes). */
+  @field(SStringNT)
+  name = '';
+
+  deserialize(buffer: Buffer, opts?: DeserializeOptions) {
+    super.deserialize(buffer, opts);
+    return this.totalSize;
+  }
+
+  serialize(opts?: SerializeOptions) {
+    this.totalSize = this.getSerializedLength(opts);
+    return super.serialize(opts);
+  }
+}
+
+/** Misc flags in DlpDBInfoType. */
+export enum DlpDbInfoMiscFlags {
+  /** Exclude this database from sync (DLP 1.1+). */
+  EXCLUDE_FROM_SYNC = 0x80,
+  /** This database is in RAM (DLP 1.2+). */
+  RAM_BASED = 0x40,
+}
+
 export class DlpReadDBListRespType extends DlpResponse {
   commandId = DlpCommandId.ReadDBList;
 
@@ -617,37 +636,19 @@ export class DlpReadDBListRespType extends DlpResponse {
   @dlpArg(0, SUInt16BE)
   lastIndex = 0;
 
-  /** Flags - TODO */
+  /** Flags - see DlpReadDBListRespFlags. */
   @dlpArg(0, SUInt8)
   private flags = 0;
 
   /** Array of database metadata results. */
-  @dlpArg(
-    0,
-    class extends SDynamicArray<SUInt8, DlpDatabaseMetadata> {
-      lengthType = SUInt8;
-      valueType = DlpDatabaseMetadata;
-    }
-  )
-  metadataList: Array<DlpDatabaseMetadata> = [];
+  @dlpArg(0, SDynamicArray.of(SUInt8, DlpDBInfoType))
+  dbInfo: Array<DlpDBInfoType> = [];
 }
 
-/** Database search flags, used in DlpReadDBListReqType. */
-export enum DlpReadDBListMode {
-  /** List databases in RAM. */
-  LIST_RAM = 0x80,
-  /** List databases in ROM. */
-  LIST_ROM = 0x40,
-  /** Return as many databases as possible at once (DLP 1.2+). */
-  LIST_MULTIPLE = 0x20,
-}
-
-/** Misc flags in DlpDatabaseMetadata. */
-export enum DlpDatabaseMiscFlags {
-  /** Exclude this database from sync (DLP 1.1+). */
-  EXCLUDE_FROM_SYNC = 0x80,
-  /** This database is in RAM (DLP 1.2+). */
-  IS_IN_RAM = 0x40,
+/** Flags in DlpReadDBListRespType. */
+export enum DlpReadDBListRespFlags {
+  /** if set, indicates that there are more databases to list. */
+  MORE = 0x80,
 }
 
 // =============================================================================
@@ -1243,13 +1244,7 @@ export class DlpReadRecordIDListRespType extends DlpResponse {
   commandId = DlpCommandId.ReadRecordIDList;
 
   /** Single argument to DlpReadRecordIDListRespType.  */
-  @dlpArg(
-    0,
-    class extends SDynamicArray<SUInt16BE, SUInt32BE> {
-      lengthType = SUInt16BE;
-      valueType = SUInt32BE;
-    }
-  )
+  @dlpArg(0, SDynamicArray.of(SUInt16BE, SUInt32BE))
   private recordIdWrappers: Array<SUInt32BE> = [];
 
   get recordIds() {

@@ -11,7 +11,7 @@ import {
   DlpOpenConduitReqType,
   DlpOpenDBReqType,
   DlpOpenMode,
-  DlpReadDBListMode,
+  DlpReadDBListFlags,
   DlpReadDBListReqType,
   DlpReadOpenDBInfoReqType,
   DlpReadRecordIDListReqType,
@@ -45,10 +45,10 @@ if (require.main === module) {
   const syncServer = new SerialNetworkSyncServer(async ({dlpConnection}) => {
     const readDbListResp = await dlpConnection.execute(
       DlpReadDBListReqType.with({
-        mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+        srchFlags: DlpReadDBListFlags.RAM | DlpReadDBListFlags.MULTIPLE,
       })
     );
-    console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
+    console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
 
     await dlpConnection.execute(new DlpOpenConduitReqType());
     const {dbHandle} = await dlpConnection.execute(

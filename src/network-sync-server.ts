@@ -1,5 +1,5 @@
 import {Duplex} from 'stream';
-import {DlpReadDBListMode, DlpReadDBListReqType} from './dlp-commands';
+import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
 import {
   NetSyncDatagramStream,
   createNetSyncDatagramStream,
@@ -63,10 +63,10 @@ if (require.main === module) {
   const syncServer = new NetSyncServer(async ({dlpConnection}) => {
     const readDbListResp = await dlpConnection.execute(
       DlpReadDBListReqType.with({
-        mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+        srchFlags: DlpReadDBListFlags.RAM | DlpReadDBListFlags.MULTIPLE,
       })
     );
-    console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
+    console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
   });
   syncServer.start();
 }
