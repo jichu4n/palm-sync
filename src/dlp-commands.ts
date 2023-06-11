@@ -39,30 +39,6 @@ import {
   optDlpArg,
 } from './dlp-protocol';
 
-// =============================================================================
-// Common structures
-// =============================================================================
-
-/** DLP version number.
- *
- * e.g. DLP version 1.4 => {major: 1, minor: 4}
- */
-export class DlpVersionType extends SObject {
-  @field(SUInt16BE)
-  major = 0;
-
-  @field(SUInt16BE)
-  minor = 0;
-
-  toString() {
-    return `${this.major}.${this.minor}`;
-  }
-
-  toNumber() {
-    return this.major + this.minor / 10;
-  }
-}
-
 /** DLP function ID constants.
  *
  * References:
@@ -439,6 +415,26 @@ export class DlpReadSysInfoRespType extends DlpResponse {
    */
   @optDlpArg(1, SUInt32BE)
   maxRecSize = 0;
+}
+
+/** DLP version number.
+ *
+ * e.g. DLP version 1.4 => {major: 1, minor: 4}
+ */
+export class DlpVersionType extends SObject {
+  @field(SUInt16BE)
+  major = 0;
+
+  @field(SUInt16BE)
+  minor = 0;
+
+  toString() {
+    return `${this.major}.${this.minor}`;
+  }
+
+  toNumber() {
+    return this.major + this.minor / 10;
+  }
 }
 
 // =============================================================================
