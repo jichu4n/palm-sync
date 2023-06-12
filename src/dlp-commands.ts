@@ -1264,12 +1264,13 @@ export class DlpReadResourceRespType extends DlpResponse {
   @dlpArg(0, SUInt16BE)
   index = 0;
 
-  /** Total resource data size . */
-  @dlpArg(0, SUInt16BE)
-  resSize = 0;
-
   /** Resource data. */
-  @dlpArg(0, SBuffer)
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt16BE> {
+      lengthType = SUInt16BE;
+    }
+  )
   resData = Buffer.alloc(0);
 }
 
@@ -1300,12 +1301,13 @@ export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType
   @dlpArg(0, SUInt16BE)
   id = 0;
 
-  /** Total resource data size . */
-  @dlpArg(0, SUInt16BE)
-  resSize = 0;
-
   /** Resource data. */
-  @dlpArg(0, SBuffer)
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt16BE> {
+      lengthType = SUInt16BE;
+    }
+  )
   data = Buffer.alloc(0);
 }
 
@@ -1436,12 +1438,13 @@ export class DlpCallApplicationReqTypeV10 extends DlpRequest<DlpCallApplicationR
   @dlpArg(0, SUInt16BE)
   action = 0;
 
-  /** Custom parameter size. */
-  @dlpArg(0, SUInt16BE)
-  paramSize = 0;
-
   /** Custom parameter data. */
-  @dlpArg(0, SBuffer)
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt16BE> {
+      lengthType = SUInt16BE;
+    }
+  )
   paramData = Buffer.alloc(0);
 }
 
@@ -1456,12 +1459,13 @@ export class DlpCallApplicationRespTypeV10 extends DlpResponse {
   @dlpArg(0, SUInt16BE)
   resultCode = 0;
 
-  /** Custom result data size. */
-  @dlpArg(0, SUInt16BE)
-  resultSize = 0;
-
   /** Custom result data. */
-  @dlpArg(0, SBuffer)
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt16BE> {
+      lengthType = SUInt16BE;
+    }
+  )
   resultData = Buffer.alloc(0);
 }
 
@@ -1484,7 +1488,7 @@ export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationResp
 
   /** Custom parameter size. */
   @dlpArg(1, SUInt32BE)
-  dwParamSize = 0;
+  private dwParamSize = 0;
 
   @dlpArg(1, SArray.ofLength(2, SUInt32BE))
   private padding1 = [];
@@ -1492,6 +1496,11 @@ export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationResp
   /** Custom parameter data. */
   @dlpArg(1, SBuffer)
   paramData = Buffer.alloc(0);
+
+  serialize(opts?: SerializeOptions): Buffer {
+    this.dwParamSize = this.paramData.length;
+    return super.serialize(opts);
+  }
 }
 
 export class DlpCallApplicationRespType extends DlpResponse {
@@ -1503,7 +1512,7 @@ export class DlpCallApplicationRespType extends DlpResponse {
 
   /** Custom result data size. */
   @dlpArg(1, SUInt32BE)
-  dwResultSize = 0;
+  private dwResultSize = 0;
 
   @dlpArg(1, SArray.ofLength(2, SUInt32BE))
   private padding1 = [];
@@ -1571,11 +1580,28 @@ export class DlpReadOpenDBInfoRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: MoveCategory (0x2c)
+// MoveCategory (0x2c)
+//		Possible error codes
+//			dlpRespErrNoneOpen
+//			dlpRespErrParam
+//			dlpRespErrNotSupported
+//			dlpRespErrReadOnly
 // =============================================================================
 export class DlpMoveCategoryReqType extends DlpRequest<DlpMoveCategoryRespType> {
   funcId = DlpFuncId.MoveCategory;
   responseType = DlpMoveCategoryRespType;
+
+  /** Handle to opened database. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
+  /** Current category index. */
+  @dlpArg(0, SUInt8)
+  fromCategory = 0;
+
+  /** New category index. */
+  @dlpArg(0, SUInt8)
+  toCategory = 0;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
@@ -1583,13 +1609,12 @@ export class DlpMoveCategoryReqType extends DlpRequest<DlpMoveCategoryRespType> 
 
 export class DlpMoveCategoryRespType extends DlpResponse {
   funcId = DlpFuncId.MoveCategory;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
 // TODO: ProcessRPC (0x2d)
+//		Remote Procedure Call interface
+// NOTE: this is a low-level system command which does not use arg wrappers.
 // =============================================================================
 export class DlpProcessRPCReqType extends DlpRequest<DlpProcessRPCRespType> {
   funcId = DlpFuncId.ProcessRPC;
@@ -1626,6 +1651,8 @@ export class DlpOpenConduitRespType extends DlpResponse {
 
 // =============================================================================
 // EndOfSync (0x2f)
+//		This command is sent by the desktop to end the sync.
+//
 //		Possible error codes: none
 // =============================================================================
 export class DlpEndOfSyncReqType extends DlpRequest<DlpEndOfSyncRespType> {
@@ -1655,21 +1682,24 @@ export enum DlpSyncTermCode {
 }
 
 // =============================================================================
-// TODO: ResetRecordIndex (0x30)
+// ResetRecordIndex (0x30)
+//	Resets the "next modified record" index to the beginning
+//
+//		Possible error codes
+//			dlpRespErrParam
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpResetRecordIndexReqType extends DlpRequest<DlpResetRecordIndexRespType> {
   funcId = DlpFuncId.ResetRecordIndex;
   responseType = DlpResetRecordIndexRespType;
 
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  dbId = 0;
 }
 
 export class DlpResetRecordIndexRespType extends DlpResponse {
   funcId = DlpFuncId.ResetRecordIndex;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
@@ -1728,39 +1758,59 @@ export class DlpReadRecordIDListRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadNextRecInCategory (0x32)
+// ReadNextRecInCategory (0x32)
+//		Possible error codes
+//			dlpRespErrNotSupported,
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound,
+//			dlpRespErrRecordBusy,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpReadNextRecInCategoryReqType extends DlpRequest<DlpReadNextRecInCategoryRespType> {
   funcId = DlpFuncId.ReadNextRecInCategory;
   responseType = DlpReadNextRecInCategoryRespType;
 
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  dbId = 0;
+
+  /** Category ID. */
+  @dlpArg(0, SUInt8)
+  category = 0;
 }
 
-export class DlpReadNextRecInCategoryRespType extends DlpResponse {
+export class DlpReadNextRecInCategoryRespType extends DlpBaseReadRecordRespType {
   funcId = DlpFuncId.ReadNextRecInCategory;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
-// TODO: ReadNextModifiedRecInCategory (0x33)
+// ReadNextModifiedRecInCategory (0x33)
+//		Possible error codes
+//			dlpRespErrNotSupported,
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound,
+//			dlpRespErrRecordBusy,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpReadNextModifiedRecInCategoryReqType extends DlpRequest<DlpReadNextModifiedRecInCategoryRespType> {
   funcId = DlpFuncId.ReadNextModifiedRecInCategory;
   responseType = DlpReadNextModifiedRecInCategoryRespType;
 
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  dbId = 0;
+
+  /** Category ID. */
+  @dlpArg(0, SUInt8)
+  category = 0;
 }
 
-export class DlpReadNextModifiedRecInCategoryRespType extends DlpResponse {
+export class DlpReadNextModifiedRecInCategoryRespType extends DlpBaseReadRecordRespType {
   funcId = DlpFuncId.ReadNextModifiedRecInCategory;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
