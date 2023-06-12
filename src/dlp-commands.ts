@@ -1135,7 +1135,7 @@ export class DlpWriteRecordRespType extends DlpResponse {
 //			dlpRespErrReadOnly
 //			dlpRespErrNoneOpen
 // =============================================================================
-export class DlpDeleteRecordByIDReqType extends DlpRequest<DlpDeleteRecordRespType> {
+export class DlpDeleteRecordByReqType extends DlpRequest<DlpDeleteRecordRespType> {
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
 
@@ -1164,7 +1164,6 @@ export class DlpDeleteAllRecordsReqType extends DlpRequest<DlpDeleteRecordRespTy
   @dlpArg(0, SUInt8)
   private flags = 0x80;
 
-  /** Record ID to delete. */
   @dlpArg(0, SUInt32BE)
   private padding1 = 0;
 }
@@ -1182,9 +1181,8 @@ export class DlpDeleteRecordByCategoryReqType extends DlpRequest<DlpDeleteRecord
   @dlpArg(0, SUInt8)
   private flags = 0x40;
 
-  /** Record ID to delete. */
   @dlpArg(0, SArray.ofLength(3, SUInt8))
-  private padding1 = [0, 0, 0];
+  private padding1 = [];
 
   /** Category index to delete. */
   @dlpArg(0, SUInt8)
@@ -1196,57 +1194,178 @@ export class DlpDeleteRecordRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadResource (0x23)
+// ReadResource (0x23)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound
+//			dlpRespErrNoneOpen
 // =============================================================================
-export class DlpReadResourceReqType extends DlpRequest<DlpReadResourceRespType> {
+export class DlpReadResourceByIndexReqType extends DlpRequest<DlpReadResourceRespType> {
   funcId = DlpFuncId.ReadResource;
   responseType = DlpReadResourceRespType;
 
+  /** Handle to opened database. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** Index of resource to read. */
+  @dlpArg(0, SUInt16BE)
+  index = 0;
+
+  /** Offset into resource data to start reading. */
+  @dlpArg(0, SUInt16BE)
+  offset = 0;
+
+  /** Maximum length to read (0xffff = "to the end"). */
+  @dlpArg(0, SUInt16BE)
+  numBytes = 0xffff;
+}
+
+export class DlpReadResourceByTypeReqType extends DlpRequest<DlpReadResourceRespType> {
+  funcId = DlpFuncId.ReadResource;
+  responseType = DlpReadResourceRespType;
+
+  /** Handle to opened database. */
+  @dlpArg(1, SUInt8)
+  dbId = 0;
+
+  @dlpArg(1, SUInt8)
+  private padding1 = 0;
+
+  /** Resource type to read. */
+  @dlpArg(1, SUInt32BE)
+  type = 0;
+
+  /** Resource ID to read. */
+  @dlpArg(1, SUInt16BE)
+  id = 0;
+
+  /** Offset into resource data to start reading. */
+  @dlpArg(1, SUInt16BE)
+  offset = 0;
+
+  /** Maximum length to read (0xffff = "to the end"). */
+  @dlpArg(1, SUInt16BE)
+  numBytes = 0xffff;
 }
 
 export class DlpReadResourceRespType extends DlpResponse {
   funcId = DlpFuncId.ReadResource;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Resource type. */
+  @dlpArg(0, SUInt32BE)
+  type = 0;
+
+  /** Resource ID. */
+  @dlpArg(0, SUInt16BE)
+  id = 0;
+
+  /** Resource index. */
+  @dlpArg(0, SUInt16BE)
+  index = 0;
+
+  /** Total resource data size . */
+  @dlpArg(0, SUInt16BE)
+  resSize = 0;
+
+  /** Resource data. */
+  @dlpArg(0, SBuffer)
+  resData = Buffer.alloc(0);
 }
 
 // =============================================================================
-// TODO: WriteResource (0x24)
+// WriteResource (0x24)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrNotEnoughSpace,
+//			dlpRespErrParam,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType> {
   funcId = DlpFuncId.WriteResource;
   responseType = DlpWriteResourceRespType;
 
+  /** Handle to opened database. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** Resource type to write. */
+  @dlpArg(0, SUInt32BE)
+  type = 0;
+
+  /** Resource ID to write. */
+  @dlpArg(0, SUInt16BE)
+  id = 0;
+
+  /** Total resource data size . */
+  @dlpArg(0, SUInt16BE)
+  resSize = 0;
+
+  /** Resource data. */
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
 }
 
 export class DlpWriteResourceRespType extends DlpResponse {
   funcId = DlpFuncId.WriteResource;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
-// TODO: DeleteResource (0x25)
+// DeleteResource (0x25)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound
+//			dlpRespErrNotSupported
+//			dlpRespErrReadOnly
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpDeleteResourceReqType extends DlpRequest<DlpDeleteResourceRespType> {
   funcId = DlpFuncId.DeleteResource;
   responseType = DlpDeleteResourceRespType;
 
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  dbId = 0;
+
+  /** Deletion flags. 0 == delete by type and ID. */
+  @dlpArg(0, SUInt8)
+  private flags = 0;
+
+  /** Resource type to delete. */
+  @dlpArg(0, SUInt32BE)
+  type = 0;
+
+  /** Resource ID to delete. */
+  @dlpArg(0, SUInt16BE)
+  id = 0;
+}
+
+export class DlpDeleteAllResourcesReqType extends DlpRequest<DlpDeleteResourceRespType> {
+  funcId = DlpFuncId.DeleteResource;
+  responseType = DlpDeleteResourceRespType;
+
+  /** Handle to opened database. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
+  /** Deletion flags. 0x80 == delete all resources in database. */
+  @dlpArg(0, SUInt8)
+  private flags = 0x80;
+
+  @dlpArg(0, SArray.ofLength(6, SUInt8))
+  private padding1 = [];
 }
 
 export class DlpDeleteResourceRespType extends DlpResponse {
   funcId = DlpFuncId.DeleteResource;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
