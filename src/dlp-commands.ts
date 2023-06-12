@@ -823,7 +823,7 @@ export class DlpReadAppBlockReqType extends DlpRequest<DlpReadAppBlockRespType> 
   funcId = DlpFuncId.ReadAppBlock;
   responseType = DlpReadAppBlockRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -864,7 +864,7 @@ export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType
   funcId = DlpFuncId.WriteAppBlock;
   responseType = DlpWriteAppBlockRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -896,7 +896,7 @@ export class DlpReadSortBlockReqType extends DlpRequest<DlpReadSortBlockRespType
   funcId = DlpFuncId.ReadSortBlock;
   responseType = DlpReadSortBlockRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -936,7 +936,7 @@ export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespTy
   funcId = DlpFuncId.WriteSortBlock;
   responseType = DlpWriteSortBlockRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -1021,7 +1021,7 @@ export class DlpReadRecordByIDReqType extends DlpRequest<DlpReadRecordRespType> 
   funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -1045,7 +1045,7 @@ export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespTyp
   funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(1, SUInt8)
   dbId = 0;
 
@@ -1084,7 +1084,7 @@ export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
   funcId = DlpFuncId.WriteRecord;
   responseType = DlpWriteRecordRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -1139,7 +1139,7 @@ export class DlpDeleteRecordByIDReqType extends DlpRequest<DlpDeleteRecordRespTy
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -1156,7 +1156,7 @@ export class DlpDeleteAllRecordsReqType extends DlpRequest<DlpDeleteRecordRespTy
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -1174,7 +1174,7 @@ export class DlpDeleteRecordByCategoryReqType extends DlpRequest<DlpDeleteRecord
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
 
-  /** Database ID. */
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -1250,39 +1250,52 @@ export class DlpDeleteResourceRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: CleanUpDatabase (0x26)
+// CleanUpDatabase (0x26)
+//		Deletes all records which are marked as archived or deleted in the
+//		record database
+//
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrReadOnly,
+//			dlpRespErrNotSupported
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpCleanUpDatabaseReqType extends DlpRequest<DlpCleanUpDatabaseRespType> {
   funcId = DlpFuncId.CleanUpDatabase;
   responseType = DlpCleanUpDatabaseRespType;
 
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  dbId = 0;
 }
 
 export class DlpCleanUpDatabaseRespType extends DlpResponse {
   funcId = DlpFuncId.CleanUpDatabase;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
-// TODO: ResetSyncFlags (0x27)
+// ResetSyncFlags (0x27)
+//		For record databases, reset all dirty flags.
+//		For both record and resource databases, set the last sync time to NOW
+//
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam
+//			dlpRespErrReadOnly,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpResetSyncFlagsReqType extends DlpRequest<DlpResetSyncFlagsRespType> {
   funcId = DlpFuncId.ResetSyncFlags;
   responseType = DlpResetSyncFlagsRespType;
 
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  dbId = 0;
 }
 
 export class DlpResetSyncFlagsRespType extends DlpResponse {
   funcId = DlpFuncId.ResetSyncFlags;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
