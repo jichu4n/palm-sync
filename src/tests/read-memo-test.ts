@@ -1,4 +1,4 @@
-import {MemoRecord} from 'palm-pdb';
+import {Category, MemoAppInfo, MemoRecord} from 'palm-pdb';
 import {
   DlpCloseDBReqType,
   DlpOpenConduitReqType,
@@ -8,6 +8,7 @@ import {
   DlpReadRecordByIDReqType,
   DlpReadRecordIDListReqType,
   NetSyncConnection,
+  DlpReadAppBlockReqType,
 } from '..';
 
 export async function run({dlpConnection}: NetSyncConnection) {
@@ -20,6 +21,15 @@ export async function run({dlpConnection}: NetSyncConnection) {
   );
   const {numRec: numRecords} = await dlpConnection.execute(
     DlpReadOpenDBInfoReqType.with({dbId})
+  );
+  const {data} = await dlpConnection.execute(
+    DlpReadAppBlockReqType.with({dbId})
+  );
+  const memoAppInfo = MemoAppInfo.from(data);
+  console.log(
+    'Categories: ' +
+      memoAppInfo.categories.map((category) => category.label).join(', ') +
+      '\n--------'
   );
   const {recordIds} = await dlpConnection.execute(
     DlpReadRecordIDListReqType.with({

@@ -810,75 +810,149 @@ export class DlpDeleteDBRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadAppBlock (0x1b)
+// ReadAppBlock (0x1b)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrNotFound
+//			dlpRespErrNoneOpen
+//			dlpRespErrParam
 // =============================================================================
 export class DlpReadAppBlockReqType extends DlpRequest<DlpReadAppBlockRespType> {
   funcId = DlpFuncId.ReadAppBlock;
   responseType = DlpReadAppBlockRespType;
 
+  /** Database ID. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** Offset into the AppInfo block to start reading from. */
+  @dlpArg(0, SUInt16BE)
+  offset = 0;
+
+  /** Number of bytes to read starting from offset (0xffff = to the end) */
+  @dlpArg(0, SUInt16BE)
+  numBytes = 0xffff;
 }
 
 export class DlpReadAppBlockRespType extends DlpResponse {
   funcId = DlpFuncId.ReadAppBlock;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Actual AppInfo block size -- may be greater than the amount of data returned. */
+  @dlpArg(0, SUInt16BE)
+  blockSize = 0;
+
+  /** AppInfo block data. */
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
 }
 
 // =============================================================================
-// TODO: WriteAppBlock (0x1c)
+// WriteAppBlock (0x1c)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrReadOnly
+//			dlpRespErrNotEnoughSpace
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType> {
   funcId = DlpFuncId.WriteAppBlock;
   responseType = DlpWriteAppBlockRespType;
 
+  /** Database ID. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** Total AppInfo block size. (0 == free existing block) */
+  @dlpArg(0, SUInt16BE)
+  blockSize = 0;
+
+  /** AppInfo block data. */
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
 }
 
 export class DlpWriteAppBlockRespType extends DlpResponse {
   funcId = DlpFuncId.WriteAppBlock;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
-// TODO: ReadSortBlock (0x1d)
+// ReadSortBlock (0x1d)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory
+//			dlpRespErrNotFound
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpReadSortBlockReqType extends DlpRequest<DlpReadSortBlockRespType> {
   funcId = DlpFuncId.ReadSortBlock;
   responseType = DlpReadSortBlockRespType;
 
+  /** Database ID. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** Offset into the SortInfo block to start reading from. */
+  @dlpArg(0, SUInt16BE)
+  offset = 0;
+
+  /** Number of bytes to read starting from offset (0xffff = to the end) */
+  @dlpArg(0, SUInt16BE)
+  numBytes = 0xffff;
 }
 
 export class DlpReadSortBlockRespType extends DlpResponse {
   funcId = DlpFuncId.ReadSortBlock;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Actual SortInfo block size -- may be greater than the amount of data returned. */
+  @dlpArg(0, SUInt16BE)
+  blockSize = 0;
+
+  /** SortInfo block data. */
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
 }
 
 // =============================================================================
-// TODO: WriteSortBlock (0x1e)
+// WriteSortBlock (0x1e)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespType> {
   funcId = DlpFuncId.WriteSortBlock;
   responseType = DlpWriteSortBlockRespType;
 
+  /** Database ID. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** Total SortInfo block size. (0 == free existing block) */
+  @dlpArg(0, SUInt16BE)
+  blockSize = 0;
+
+  /** SortInfo block data. */
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
 }
 
 export class DlpWriteSortBlockRespType extends DlpResponse {
   funcId = DlpFuncId.WriteSortBlock;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
@@ -1228,6 +1302,10 @@ export class DlpProcessRPCRespType extends DlpResponse {
 
 // =============================================================================
 // OpenConduit (0x2e)
+//		This command is sent before each conduit is opened by the desktop.
+//		If the viewer has a cancel pending, it will return dlpRespErrCancelSync
+//		in the response header's errorCode field.
+//
 //		Possible error codes
 //			dlpRespErrCancelSync
 // =============================================================================
