@@ -182,18 +182,14 @@ export enum DlpFuncId {
 
   /* DLP 1.4 (Palm OS 5.2 and above) */
   ExpSlotMediaType = 0x5d,
-  /** Write >64k records in Tapwave */
-  WriteRecordEx = 0x5e,
-  /** Write >64k resources in Tapwave */
-  WriteResourceEx = 0x5f,
-  /** Read >64k records by index in Tapwave */
-  ReadRecordEx = 0x60,
-  /** dlpFuncReadRecordStream (may be bogus definition in tapwave headers) */
-  Unknown1 = 0x61,
-  Unknown3 = 0x62,
-  Unknown4 = 0x63,
-  /** Read resources >64k by index in Tapwave */
-  ReadResourceEx = 0x64,
+  /** Write >64k resources. */
+  WriteResourceStream = 0x5e,
+  /** Write >64k records. */
+  WriteRecordStream = 0x5f,
+  /** Read resources >64k by index. */
+  ReadResourceStream = 0x60,
+  /** Read >64k records by index. */
+  ReadRecordStream = 0x61,
 }
 
 // =============================================================================
@@ -2524,72 +2520,72 @@ export class DlpExpSlotMediaTypeRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: WriteRecordEx (0x5e)
+// TODO: WriteResourceStream (0x5e)
 // =============================================================================
-export class DlpWriteRecordExReqType extends DlpRequest<DlpWriteRecordExRespType> {
-  funcId = DlpFuncId.WriteRecordEx;
-  responseType = DlpWriteRecordExRespType;
+export class DlpWriteResourceStreamReqType extends DlpRequest<DlpWriteResourceStreamRespType> {
+  funcId = DlpFuncId.WriteResourceStream;
+  responseType = DlpWriteResourceStreamRespType;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 }
 
-export class DlpWriteRecordExRespType extends DlpResponse {
-  funcId = DlpFuncId.WriteRecordEx;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
-}
-
-// =============================================================================
-// TODO: WriteResourceEx (0x5f)
-// =============================================================================
-export class DlpWriteResourceExReqType extends DlpRequest<DlpWriteResourceExRespType> {
-  funcId = DlpFuncId.WriteResourceEx;
-  responseType = DlpWriteResourceExRespType;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
-}
-
-export class DlpWriteResourceExRespType extends DlpResponse {
-  funcId = DlpFuncId.WriteResourceEx;
+export class DlpWriteResourceStreamRespType extends DlpResponse {
+  funcId = DlpFuncId.WriteResourceStream;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 }
 
 // =============================================================================
-// TODO: ReadRecordEx (0x60)
+// TODO: WriteRecordStream (0x5f)
 // =============================================================================
-export class DlpReadRecordExReqType extends DlpRequest<DlpReadRecordExRespType> {
-  funcId = DlpFuncId.ReadRecordEx;
-  responseType = DlpReadRecordExRespType;
+export class DlpWriteRecordStreamReqType extends DlpRequest<DlpWriteRecordStreamRespType> {
+  funcId = DlpFuncId.WriteRecordStream;
+  responseType = DlpWriteRecordStreamRespType;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 }
 
-export class DlpReadRecordExRespType extends DlpResponse {
-  funcId = DlpFuncId.ReadRecordEx;
+export class DlpWriteRecordStreamRespType extends DlpResponse {
+  funcId = DlpFuncId.WriteRecordStream;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 }
 
 // =============================================================================
-// TODO: ReadResourceEx (0x64)
+// TODO: ReadResourceStream (0x60)
 // =============================================================================
-export class DlpReadResourceExReqType extends DlpRequest<DlpReadResourceExRespType> {
-  funcId = DlpFuncId.ReadResourceEx;
-  responseType = DlpReadResourceExRespType;
+export class DlpReadResourceStreamReqType extends DlpRequest<DlpReadResourceStreamRespType> {
+  funcId = DlpFuncId.ReadResourceStream;
+  responseType = DlpReadResourceStreamRespType;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 }
 
-export class DlpReadResourceExRespType extends DlpResponse {
-  funcId = DlpFuncId.ReadResourceEx;
+export class DlpReadResourceStreamRespType extends DlpResponse {
+  funcId = DlpFuncId.ReadResourceStream;
+
+  @dlpArg(0, SUInt8)
+  private padding1 = 0;
+}
+
+// =============================================================================
+// TODO: ReadRecordStream (0x61)
+// =============================================================================
+export class DlpReadRecordStreamReqType extends DlpRequest<DlpReadRecordStreamRespType> {
+  funcId = DlpFuncId.ReadRecordStream;
+  responseType = DlpReadRecordStreamRespType;
+
+  @dlpArg(0, SUInt8)
+  private padding1 = 0;
+}
+
+export class DlpReadRecordStreamRespType extends DlpResponse {
+  funcId = DlpFuncId.ReadRecordStream;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
