@@ -19,6 +19,7 @@ import {
 } from 'palm-pdb';
 import {
   DeserializeOptions,
+  SArray,
   SBitmask,
   SBuffer,
   SDynamicBuffer,
@@ -956,21 +957,53 @@ export class DlpWriteSortBlockRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadNextModifiedRec (0x1f)
+// ReadNextModifiedRec (0x1f)
+//		Possible error codes
+//			dlpRespErrNotSupported,
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound,
+//			dlpRespErrRecordBusy,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpReadNextModifiedRecReqType extends DlpRequest<DlpReadNextModifiedRecRespType> {
   funcId = DlpFuncId.ReadNextModifiedRec;
   responseType = DlpReadNextModifiedRecRespType;
 
+  /** Handle to opened database. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  dbId = 0;
 }
 
-export class DlpReadNextModifiedRecRespType extends DlpResponse {
-  funcId = DlpFuncId.ReadNextModifiedRec;
+abstract class DlpBaseReadRecordRespType extends DlpResponse {
+  /** Record ID. */
+  @dlpArg(0, SUInt32BE)
+  recordId = 0;
 
+  /** Index of record in database. */
+  @dlpArg(0, SUInt16BE)
+  index = 0;
+
+  /** Size of record data. */
+  @dlpArg(0, SUInt16BE)
+  recSize = 0;
+
+  /** Record attributes. */
+  @dlpArg(0)
+  attributes = new RecordAttrs();
+
+  /** Record category index. */
   @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  category = 0;
+
+  /** Record data. */
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
+}
+
+export class DlpReadNextModifiedRecRespType extends DlpBaseReadRecordRespType {
+  funcId = DlpFuncId.ReadNextModifiedRec;
 }
 
 // =============================================================================
@@ -988,7 +1021,7 @@ export class DlpReadRecordByIDReqType extends DlpRequest<DlpReadRecordRespType> 
   funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
 
-  /** Handle to opened database. */
+  /** Database ID. */
   @dlpArg(0, SUInt8)
   dbId = 0;
 
@@ -1012,7 +1045,7 @@ export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespTyp
   funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
 
-  /** Handle to opened database. */
+  /** Database ID. */
   @dlpArg(1, SUInt8)
   dbId = 0;
 
@@ -1032,22 +1065,46 @@ export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespTyp
   numBytes = 0xffff;
 }
 
-export class DlpReadRecordRespType extends DlpResponse {
+export class DlpReadRecordRespType extends DlpBaseReadRecordRespType {
   funcId = DlpFuncId.ReadRecord;
+}
 
-  /** Record ID. */
+// =============================================================================
+// WriteRecord (0x21)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound
+//			dlpRespErrNotEnoughSpace
+//			dlpRespErrNotSupported
+//			dlpRespErrReadOnly
+//			dlpRespErrNoneOpen
+// =============================================================================
+export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
+  funcId = DlpFuncId.WriteRecord;
+  responseType = DlpWriteRecordRespType;
+
+  /** Database ID. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
+  /** Fixed constant indicating data is included in the request. */
+  @dlpArg(0, SUInt8)
+  private flags = 0x80;
+
+  /** Record ID to write. */
   @dlpArg(0, SUInt32BE)
   recordId = 0;
 
-  /** Index of record in database. */
-  @dlpArg(0, SUInt16BE)
-  index = 0;
-
-  /** Size of record data. */
-  @dlpArg(0, SUInt16BE)
-  recSize = 0;
-
-  /** Record attributes. */
+  /** Record attributes.
+   *
+   * Allowed values with v1.0:
+   *   - secret
+   * Additional allowed values with v1.1:
+   *   - deleted
+   *   - archived
+   *   - dirty
+   */
   @dlpArg(0)
   attributes = new RecordAttrs();
 
@@ -1055,44 +1112,87 @@ export class DlpReadRecordRespType extends DlpResponse {
   @dlpArg(0, SUInt8)
   category = 0;
 
+  /** Record data. */
   @dlpArg(0, SBuffer)
   data = Buffer.alloc(0);
-}
-
-// =============================================================================
-// TODO: WriteRecord (0x21)
-// =============================================================================
-export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
-  funcId = DlpFuncId.WriteRecord;
-  responseType = DlpWriteRecordRespType;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 export class DlpWriteRecordRespType extends DlpResponse {
   funcId = DlpFuncId.WriteRecord;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Record ID to write. */
+  @dlpArg(0, SUInt32BE)
+  recordId = 0;
 }
 
 // =============================================================================
-// TODO: DeleteRecord (0x22)
+// DeleteRecord (0x22)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound
+//			dlpRespErrNotSupported
+//			dlpRespErrReadOnly
+//			dlpRespErrNoneOpen
 // =============================================================================
-export class DlpDeleteRecordReqType extends DlpRequest<DlpDeleteRecordRespType> {
+export class DlpDeleteRecordByIDReqType extends DlpRequest<DlpDeleteRecordRespType> {
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
 
+  /** Database ID. */
   @dlpArg(0, SUInt8)
+  dbId = 0;
+
+  /** Deletion flags. 0 == delete by ID. */
+  @dlpArg(0, SUInt8)
+  private flags = 0x00;
+
+  /** Record ID to delete. */
+  @dlpArg(0, SUInt32BE)
+  recordId = 0;
+}
+
+export class DlpDeleteAllRecordsReqType extends DlpRequest<DlpDeleteRecordRespType> {
+  funcId = DlpFuncId.DeleteRecord;
+  responseType = DlpDeleteRecordRespType;
+
+  /** Database ID. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
+  /** Deletion flags. 0x80 == delete all records in database. */
+  @dlpArg(0, SUInt8)
+  private flags = 0x80;
+
+  /** Record ID to delete. */
+  @dlpArg(0, SUInt32BE)
   private padding1 = 0;
+}
+
+/** Palm OS 2.0 only. */
+export class DlpDeleteRecordByCategoryReqType extends DlpRequest<DlpDeleteRecordRespType> {
+  funcId = DlpFuncId.DeleteRecord;
+  responseType = DlpDeleteRecordRespType;
+
+  /** Database ID. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
+  /** Deletion flags. 0x40 == delete by category ID. */
+  @dlpArg(0, SUInt8)
+  private flags = 0x40;
+
+  /** Record ID to delete. */
+  @dlpArg(0, SArray.ofLength(3, SUInt8))
+  private padding1 = [0, 0, 0];
+
+  /** Category index to delete. */
+  @dlpArg(0, SUInt8)
+  category = 0;
 }
 
 export class DlpDeleteRecordRespType extends DlpResponse {
   funcId = DlpFuncId.DeleteRecord;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
