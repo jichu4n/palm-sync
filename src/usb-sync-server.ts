@@ -382,7 +382,7 @@ if (require.main === module) {
     await (async ({dlpConnection}: SyncConnection) => {
       const readDbListResp = await dlpConnection.execute(
         DlpReadDBListReqType.with({
-          srchFlags: DlpReadDBListFlags.RAM | DlpReadDBListFlags.MULTIPLE,
+          srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
         })
       );
       console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
@@ -391,7 +391,7 @@ if (require.main === module) {
       await dlpConnection.execute(new DlpOpenConduitReqType());
       const {dbId} = await dlpConnection.execute(
         DlpOpenDBReqType.with({
-          mode: DlpOpenMode.READ,
+          mode: DlpOpenDBMode.with({read: true}),
           name: 'MemoDB',
         })
       );

@@ -9,13 +9,13 @@ import {doCmpHandshake} from './cmp-protocol';
 import {
   DlpCloseDBReqType,
   DlpOpenConduitReqType,
+  DlpOpenDBMode,
   DlpOpenDBReqType,
-  DlpOpenMode,
   DlpReadDBListFlags,
   DlpReadDBListReqType,
   DlpReadOpenDBInfoReqType,
-  DlpReadRecordIDListReqType,
   DlpReadRecordByIDReqType,
+  DlpReadRecordIDListReqType,
 } from './dlp-commands';
 import {PadpStream} from './padp-protocol';
 import {NetworkSyncServer, SyncConnection} from './sync-server';
@@ -45,7 +45,7 @@ if (require.main === module) {
   const syncServer = new SerialNetworkSyncServer(async ({dlpConnection}) => {
     const readDbListResp = await dlpConnection.execute(
       DlpReadDBListReqType.with({
-        srchFlags: DlpReadDBListFlags.RAM | DlpReadDBListFlags.MULTIPLE,
+        srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
       })
     );
     console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
@@ -53,7 +53,7 @@ if (require.main === module) {
     await dlpConnection.execute(new DlpOpenConduitReqType());
     const {dbId} = await dlpConnection.execute(
       DlpOpenDBReqType.with({
-        mode: DlpOpenMode.READ,
+        mode: DlpOpenDBMode.with({read: true}),
         name: 'MemoDB',
       })
     );

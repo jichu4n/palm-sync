@@ -3,7 +3,7 @@ import {
   DlpCloseDBReqType,
   DlpOpenConduitReqType,
   DlpOpenDBReqType,
-  DlpOpenMode,
+  DlpOpenDBMode,
   DlpReadOpenDBInfoReqType,
   DlpReadRecordByIDReqType,
   DlpReadRecordIDListReqType,
@@ -14,7 +14,7 @@ export async function run({dlpConnection}: NetSyncConnection) {
   await dlpConnection.execute(new DlpOpenConduitReqType());
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
-      mode: DlpOpenMode.READ,
+      mode: DlpOpenDBMode.with({read: true}),
       name: 'MemoDB',
     })
   );

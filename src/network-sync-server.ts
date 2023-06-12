@@ -63,7 +63,7 @@ if (require.main === module) {
   const syncServer = new NetSyncServer(async ({dlpConnection}) => {
     const readDbListResp = await dlpConnection.execute(
       DlpReadDBListReqType.with({
-        srchFlags: DlpReadDBListFlags.RAM | DlpReadDBListFlags.MULTIPLE,
+        srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
       })
     );
     console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));

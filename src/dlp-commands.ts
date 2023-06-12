@@ -507,9 +507,9 @@ export class DlpReadDBListReqType extends DlpRequest<DlpReadDBListRespType> {
   funcId = DlpFuncId.ReadDBList;
   responseType = DlpReadDBListRespType;
 
-  /** Flags - see DlpReadDBListFlags. */
-  @dlpArg(0, SUInt8)
-  srchFlags: number = DlpReadDBListFlags.RAM;
+  /** Search flags. */
+  @dlpArg(0)
+  srchFlags = new DlpReadDBListFlags();
 
   /** Card number (typically 0). */
   @dlpArg(0, SUInt8)
@@ -521,13 +521,21 @@ export class DlpReadDBListReqType extends DlpRequest<DlpReadDBListRespType> {
 }
 
 /** Database search flags, used in DlpReadDBListReqType. */
-export enum DlpReadDBListFlags {
+export class DlpReadDBListFlags extends SBitmask.of(SUInt8) {
   /** List databases in RAM. */
-  RAM = 0x80,
+  @bitfield(1)
+  ram = false;
+
   /** List databases in ROM. */
-  ROM = 0x40,
+  @bitfield(1)
+  rom = false;
+
   /** Return as many databases as possible at once (DLP 1.2+). */
-  MULTIPLE = 0x20,
+  @bitfield(1)
+  multiple = false;
+
+  @bitfield(5)
+  private padding1 = 0;
 }
 
 /** Database info, used in DlpReadDBListRespType. */
@@ -536,9 +544,9 @@ export class DlpDBInfoType extends SObject {
   @field(SUInt8)
   private totalSize = 0;
 
-  /** Misc flags - see DlpDbInfoMiscFlags. */
-  @field(SUInt8)
-  miscFlags = 0;
+  /** Misc flags. */
+  @field()
+  miscFlags = new DlpDbInfoMiscFlags();
 
   /** Database attribute flags. */
   @field()
@@ -592,11 +600,17 @@ export class DlpDBInfoType extends SObject {
 }
 
 /** Misc flags in DlpDBInfoType. */
-export enum DlpDbInfoMiscFlags {
+export class DlpDbInfoMiscFlags extends SBitmask.of(SUInt8) {
   /** Exclude this database from sync (DLP 1.1+). */
-  EXCLUDE_FROM_SYNC = 0x80,
+  @bitfield(1)
+  excludeFromSync = false;
+
   /** This database is in RAM (DLP 1.2+). */
-  RAM_BASED = 0x40,
+  @bitfield(1)
+  ramBased = false;
+
+  @bitfield(6)
+  private padding1 = 0;
 }
 
 export class DlpReadDBListRespType extends DlpResponse {
@@ -606,9 +620,9 @@ export class DlpReadDBListRespType extends DlpResponse {
   @dlpArg(0, SUInt16BE)
   lastIndex = 0;
 
-  /** Flags - see DlpReadDBListRespFlags. */
-  @dlpArg(0, SUInt8)
-  private flags = 0;
+  /** Read response flags. */
+  @dlpArg(0)
+  flags = new DlpReadDBListFlags();
 
   /** Array of database metadata results. */
   @dlpArg(0, SDynamicArray.of(SUInt8, DlpDBInfoType))
@@ -616,9 +630,13 @@ export class DlpReadDBListRespType extends DlpResponse {
 }
 
 /** Flags in DlpReadDBListRespType. */
-export enum DlpReadDBListRespFlags {
+export class DlpReadDBListRespFlags extends SBitmask.of(SUInt8) {
   /** if set, indicates that there are more databases to list. */
-  MORE = 0x80,
+  @bitfield(1)
+  more = false;
+
+  @bitfield(7)
+  private padding1 = 0;
 }
 
 // =============================================================================
@@ -639,9 +657,9 @@ export class DlpOpenDBReqType extends DlpRequest<DlpOpenDBRespType> {
   @dlpArg(0, SUInt8)
   cardNo = 0;
 
-  /** Open mode (see DlpOpenMode). */
-  @dlpArg(0, SUInt8)
-  mode: number = DlpOpenMode.READ;
+  /** Open mode. */
+  @dlpArg(0)
+  mode = new DlpOpenDBMode();
 
   /** Database name. */
   @dlpArg(0, SStringNT)
@@ -657,17 +675,25 @@ export class DlpOpenDBRespType extends DlpResponse {
 }
 
 /** Database open modes, used in DlpOpenDBReqType. */
-export enum DlpOpenMode {
-  /** Show secret records */
-  SECRET = 0x10,
-  /** Open database with exclusive access */
-  EXCLUSIVE = 0x20,
-  /** Open database for writing */
-  WRITE = 0x40,
+export class DlpOpenDBMode extends SBitmask.of(SUInt8) {
   /** Open database for reading */
-  READ = 0x80,
-  /** Open database for both reading and writing (same as READ | WRITE) */
-  READ_WRITE = 0xc0,
+  @bitfield(1)
+  read = false;
+
+  /** Open database for writing */
+  @bitfield(1)
+  write = false;
+
+  /** Open database with exclusive access */
+  @bitfield(1)
+  exclusive = false;
+
+  /** Show secret records */
+  @bitfield(1)
+  secret = false;
+
+  @bitfield(4)
+  private padding1 = 0;
 }
 
 // =============================================================================
