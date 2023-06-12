@@ -1418,39 +1418,117 @@ export class DlpResetSyncFlagsRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: CallApplication (0x28)
+// CallApplication (0x28)
+//		Call an application entry point via an action code
+//
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound
 // =============================================================================
+/** For Palm OS v1.0. */
+export class DlpCallApplicationReqTypeV10 extends DlpRequest<DlpCallApplicationRespTypeV10> {
+  funcId = DlpFuncId.CallApplication;
+  responseType = DlpCallApplicationRespTypeV10;
+
+  /** App creator ID. */
+  @dlpArg(0, TypeId)
+  creator = 'AAAA';
+
+  /** Action code. */
+  @dlpArg(0, SUInt16BE)
+  action = 0;
+
+  /** Custom parameter size. */
+  @dlpArg(0, SUInt16BE)
+  paramSize = 0;
+
+  /** Custom parameter data. */
+  @dlpArg(0, SBuffer)
+  paramData = Buffer.alloc(0);
+}
+
+export class DlpCallApplicationRespTypeV10 extends DlpResponse {
+  funcId = DlpFuncId.CallApplication;
+
+  /** Action code that was called. */
+  @dlpArg(0, SUInt16BE)
+  action = 0;
+
+  /** Result error code returned by action. */
+  @dlpArg(0, SUInt16BE)
+  resultCode = 0;
+
+  /** Custom result data size. */
+  @dlpArg(0, SUInt16BE)
+  resultSize = 0;
+
+  /** Custom result data. */
+  @dlpArg(0, SBuffer)
+  resultData = Buffer.alloc(0);
+}
+
+/** For Palm OS v2.0+. */
 export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationRespType> {
   funcId = DlpFuncId.CallApplication;
   responseType = DlpCallApplicationRespType;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** App creator ID. */
+  @dlpArg(1, TypeId)
+  creator = 'AAAA';
+
+  /** App type ID. */
+  @dlpArg(1, TypeId)
+  type = 'AAAA';
+
+  /** Action code. */
+  @dlpArg(1, SUInt16BE)
+  action = 0;
+
+  /** Custom parameter size. */
+  @dlpArg(1, SUInt32BE)
+  dwParamSize = 0;
+
+  @dlpArg(1, SArray.ofLength(2, SUInt32BE))
+  private padding1 = [];
+
+  /** Custom parameter data. */
+  @dlpArg(1, SBuffer)
+  paramData = Buffer.alloc(0);
 }
 
 export class DlpCallApplicationRespType extends DlpResponse {
   funcId = DlpFuncId.CallApplication;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Result error code returned by action. */
+  @dlpArg(1, SUInt32BE)
+  dwResultCode = 0;
+
+  /** Custom result data size. */
+  @dlpArg(1, SUInt32BE)
+  dwResultSize = 0;
+
+  @dlpArg(1, SArray.ofLength(2, SUInt32BE))
+  private padding1 = [];
+
+  /** Custom result data. */
+  @dlpArg(1, SBuffer)
+  resultData = Buffer.alloc(0);
 }
 
 // =============================================================================
-// TODO: ResetSystem (0x29)
+// ResetSystem (0x29)
+//		Possible error codes
+//			dlpRespErrSystem
 // =============================================================================
 export class DlpResetSystemReqType extends DlpRequest<DlpResetSystemRespType> {
   funcId = DlpFuncId.ResetSystem;
   responseType = DlpResetSystemRespType;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 export class DlpResetSystemRespType extends DlpResponse {
   funcId = DlpFuncId.ResetSystem;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
