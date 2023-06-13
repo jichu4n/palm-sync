@@ -332,7 +332,7 @@ export class DlpWriteUserInfoReqType extends DlpRequest<DlpWriteUserInfoRespType
   }
 }
 
-/** Bitmask corresponding to the writable fields in DlpUserInfo. */
+/** Bitmask corresponding to the writable fields in DlpWriteUserInfoReqType. */
 export class DlpUserInfoModFlags extends SBitmask.of(SUInt8) {
   @bitfield(1)
   userId = false;
@@ -2041,39 +2041,236 @@ export class DlpWriteAppPreferenceRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadNetSyncInfo (0x36)
+// ReadNetSyncInfo (0x36)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory
 // =============================================================================
 export class DlpReadNetSyncInfoReqType extends DlpRequest<DlpReadNetSyncInfoRespType> {
   funcId = DlpFuncId.ReadNetSyncInfo;
   responseType = DlpReadNetSyncInfoRespType;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 export class DlpReadNetSyncInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadNetSyncInfo;
 
+  /** Non-zero if Lan Sync is enabled. */
+  @dlpArg(0, SUInt8)
+  lanSyncOn = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  @dlpArg(0, SArray.ofLength(4, SUInt32BE))
+  private padding2 = [];
+
+  /** Sync PC host name. */
+  syncPcName = '';
+
+  /** Sync PC IP address. */
+  syncPcAddr = '';
+
+  /** Sync PC subnet mask. */
+  syncPcMask = '';
+
+  /** Sync PC host name size, including terminating NUL. (0 == no host name) */
+  @dlpArg(0, SUInt16BE)
+  private syncPcNameSize = 0;
+
+  /** Sync PC IP address size, including terminating NUL. (0 == no IP address) */
+  @dlpArg(0, SUInt16BE)
+  private syncPcAddrSize = 0;
+
+  /** Sync PC subnet mask size, including terminating NUL. (0 == no subnet mask) */
+  @dlpArg(0, SUInt16BE)
+  private syncPcMaskSize = 0;
+
+  /** Sync PC host name, IP address and subnet mask, in that order. */
+  @dlpArg(0, SBuffer)
+  private syncAddr = Buffer.alloc(0);
+
+  serialize(opts?: SerializeOptions): Buffer {
+    const syncPcNameBuffer = this.syncPcName
+      ? SStringNT.of(this.syncPcName).serialize(opts)
+      : Buffer.alloc(0);
+    this.syncPcNameSize = syncPcNameBuffer.length;
+    const syncPcAddrBuffer = this.syncPcAddr
+      ? SStringNT.of(this.syncPcAddr).serialize(opts)
+      : Buffer.alloc(0);
+    this.syncPcAddrSize = syncPcAddrBuffer.length;
+    const syncPcMaskBuffer = this.syncPcMask
+      ? SStringNT.of(this.syncPcMask).serialize(opts)
+      : Buffer.alloc(0);
+    this.syncPcMaskSize = syncPcMaskBuffer.length;
+    this.syncAddr = Buffer.concat([
+      syncPcNameBuffer,
+      syncPcAddrBuffer,
+      syncPcMaskBuffer,
+    ]);
+    return super.serialize(opts);
+  }
+
+  deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
+    const offset = super.deserialize(buffer, opts);
+    this.syncPcName = this.syncPcNameSize
+      ? SStringNT.from(this.syncAddr.subarray(0, this.syncPcNameSize)).value
+      : '';
+    this.syncPcAddr = this.syncPcAddrSize
+      ? SStringNT.from(
+          this.syncAddr.subarray(
+            this.syncPcNameSize,
+            this.syncPcNameSize + this.syncPcAddrSize
+          )
+        ).value
+      : '';
+    this.syncPcMask = this.syncPcMaskSize
+      ? SStringNT.from(
+          this.syncAddr.subarray(this.syncPcNameSize + this.syncPcAddrSize)
+        ).value
+      : '';
+    return offset;
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return (
+      super.getSerializedLength(opts) -
+      this.syncAddr.length +
+      (this.syncPcName
+        ? SStringNT.of(this.syncPcName).getSerializedLength(opts)
+        : 0) +
+      (this.syncPcAddr
+        ? SStringNT.of(this.syncPcAddr).getSerializedLength(opts)
+        : 0) +
+      (this.syncPcMask
+        ? SStringNT.of(this.syncPcMask).getSerializedLength(opts)
+        : 0)
+    );
+  }
 }
 
 // =============================================================================
-// TODO: WriteNetSyncInfo (0x37)
+// WriteNetSyncInfo (0x37)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrNotEnoughSpace,
+//			dlpRespErrParam
 // =============================================================================
 export class DlpWriteNetSyncInfoReqType extends DlpRequest<DlpWriteNetSyncInfoRespType> {
   funcId = DlpFuncId.WriteNetSyncInfo;
   responseType = DlpWriteNetSyncInfoRespType;
 
+  /** Flags indicator which values to modify. */
+  @dlpArg(0)
+  modFlags = new DlpNetSyncInfoModFlags();
+
+  /** Non-zero if Lan Sync is enabled. */
   @dlpArg(0, SUInt8)
+  lanSyncOn = 0;
+
+  @dlpArg(0, SArray.ofLength(4, SUInt32BE))
+  private padding2 = [];
+
+  /** Sync PC host name. */
+  syncPcName = '';
+
+  /** Sync PC IP address. */
+  syncPcAddr = '';
+
+  /** Sync PC subnet mask. */
+  syncPcMask = '';
+
+  /** Sync PC host name size, including terminating NUL. (0 == no host name) */
+  @dlpArg(0, SUInt16BE)
+  private syncPcNameSize = 0;
+
+  /** Sync PC IP address size, including terminating NUL. (0 == no IP address) */
+  @dlpArg(0, SUInt16BE)
+  private syncPcAddrSize = 0;
+
+  /** Sync PC subnet mask size, including terminating NUL. (0 == no subnet mask) */
+  @dlpArg(0, SUInt16BE)
+  private syncPcMaskSize = 0;
+
+  /** Sync PC host name, IP address and subnet mask, in that order. */
+  @dlpArg(0, SBuffer)
+  private syncAddr = Buffer.alloc(0);
+
+  serialize(opts?: SerializeOptions): Buffer {
+    const syncPcNameBuffer = this.syncPcName
+      ? SStringNT.of(this.syncPcName).serialize(opts)
+      : Buffer.alloc(0);
+    this.syncPcNameSize = syncPcNameBuffer.length;
+    const syncPcAddrBuffer = this.syncPcAddr
+      ? SStringNT.of(this.syncPcAddr).serialize(opts)
+      : Buffer.alloc(0);
+    this.syncPcAddrSize = syncPcAddrBuffer.length;
+    const syncPcMaskBuffer = this.syncPcMask
+      ? SStringNT.of(this.syncPcMask).serialize(opts)
+      : Buffer.alloc(0);
+    this.syncPcMaskSize = syncPcMaskBuffer.length;
+    this.syncAddr = Buffer.concat([
+      syncPcNameBuffer,
+      syncPcAddrBuffer,
+      syncPcMaskBuffer,
+    ]);
+    return super.serialize(opts);
+  }
+
+  deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
+    const offset = super.deserialize(buffer, opts);
+    this.syncPcName = this.syncPcNameSize
+      ? SStringNT.from(this.syncAddr.subarray(0, this.syncPcNameSize)).value
+      : '';
+    this.syncPcAddr = this.syncPcAddrSize
+      ? SStringNT.from(
+          this.syncAddr.subarray(
+            this.syncPcNameSize,
+            this.syncPcNameSize + this.syncPcAddrSize
+          )
+        ).value
+      : '';
+    this.syncPcMask = this.syncPcMaskSize
+      ? SStringNT.from(
+          this.syncAddr.subarray(this.syncPcNameSize + this.syncPcAddrSize)
+        ).value
+      : '';
+    return offset;
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return (
+      super.getSerializedLength(opts) -
+      this.syncAddr.length +
+      (this.syncPcName
+        ? SStringNT.of(this.syncPcName).getSerializedLength(opts)
+        : 0) +
+      (this.syncPcAddr
+        ? SStringNT.of(this.syncPcAddr).getSerializedLength(opts)
+        : 0) +
+      (this.syncPcMask
+        ? SStringNT.of(this.syncPcMask).getSerializedLength(opts)
+        : 0)
+    );
+  }
+}
+
+/** Bitmask corresponding to the writable fields in DlpWriteNetSyncInfoReqType. */
+export class DlpNetSyncInfoModFlags extends SBitmask.of(SUInt8) {
+  @bitfield(1)
+  lanSyncOn = false;
+  @bitfield(1)
+  syncPcName = false;
+  @bitfield(1)
+  syncPcAddr = false;
+  @bitfield(1)
+  syncPcMask = false;
+
+  @bitfield(4)
   private padding1 = 0;
 }
 
 export class DlpWriteNetSyncInfoRespType extends DlpResponse {
   funcId = DlpFuncId.WriteNetSyncInfo;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================

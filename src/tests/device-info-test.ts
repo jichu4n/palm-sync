@@ -1,10 +1,13 @@
 import assert from 'assert';
 import {
   DlpGetSysDateTimeReqType,
+  DlpNetSyncInfoModFlags,
+  DlpReadNetSyncInfoReqType,
   DlpReadStorageInfoReqType,
   DlpReadUserInfoReqType,
   DlpSetSysDateTimeReqType,
   DlpUserInfoModFlags,
+  DlpWriteNetSyncInfoReqType,
   DlpWriteUserInfoReqType,
   SyncConnection,
 } from '..';
@@ -43,4 +46,22 @@ export async function run({dlpConnection}: SyncConnection) {
     new DlpReadStorageInfoReqType()
   );
   assert(readStorageInfoResp.cardInfo.length > 0);
+
+  const {syncPcAddr} = await dlpConnection.execute(
+    new DlpReadNetSyncInfoReqType()
+  );
+  await dlpConnection.execute(
+    DlpWriteNetSyncInfoReqType.with({
+      modFlags: DlpNetSyncInfoModFlags.with({
+        lanSyncOn: true,
+        syncPcName: true,
+        syncPcAddr: true,
+        syncPcMask: true,
+      }),
+      lanSyncOn: 1,
+      syncPcName: '',
+      syncPcAddr: syncPcAddr || '192.168.2.2',
+      syncPcMask: '',
+    })
+  );
 }
