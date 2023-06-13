@@ -18,7 +18,7 @@ export async function run({dlpConnection}: SyncConnection) {
   );
   const writeUserInfoReq = DlpWriteUserInfoReqType.with({
     userName: `Test ${Math.floor(readUserInfoResp.lastSyncDate.getSeconds())}`,
-    lastSyncDate: new Date('2023-06-13T00:00:00.000Z'),
+    lastSyncDate: new Date('2023-06-13T00:00:01.000Z'),
     modFlags: DlpUserInfoModFlags.with({
       userName: true,
       lastSyncDate: true,
