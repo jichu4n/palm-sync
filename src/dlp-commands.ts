@@ -867,12 +867,13 @@ export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 
-  /** Total AppInfo block size. (0 == free existing block) */
-  @dlpArg(0, SUInt16BE)
-  blockSize = 0;
-
   /** AppInfo block data. */
-  @dlpArg(0, SBuffer)
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt16BE> {
+      lengthType = SUInt16BE;
+    }
+  )
   data = Buffer.alloc(0);
 }
 
@@ -939,12 +940,13 @@ export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespTy
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 
-  /** Total SortInfo block size. (0 == free existing block) */
-  @dlpArg(0, SUInt16BE)
-  blockSize = 0;
-
   /** SortInfo block data. */
-  @dlpArg(0, SBuffer)
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt16BE> {
+      lengthType = SUInt16BE;
+    }
+  )
   data = Buffer.alloc(0);
 }
 
@@ -1814,39 +1816,115 @@ export class DlpReadNextModifiedRecInCategoryRespType extends DlpBaseReadRecordR
 }
 
 // =============================================================================
-// TODO: ReadAppPreference (0x34)
+// ReadAppPreference (0x34)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrMemory,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound,
 // =============================================================================
 export class DlpReadAppPreferenceReqType extends DlpRequest<DlpReadAppPreferenceRespType> {
   funcId = DlpFuncId.ReadAppPreference;
   responseType = DlpReadAppPreferenceRespType;
 
+  /** App creator ID. */
+  @dlpArg(0, TypeId)
+  creator = 'AAAA';
+
+  /** Preference ID. */
+  @dlpArg(0, SUInt16BE)
+  id = 0;
+
+  /** Maximum number of bytes to read (0xffff = to the end) */
+  @dlpArg(0, SUInt16BE)
+  reqBytes = 0xffff;
+
+  /** Flags. */
+  @dlpArg(0)
+  flags = new DlpReadAppPreferenceFlags();
+
   @dlpArg(0, SUInt8)
+  private padding1 = 0;
+}
+
+export class DlpReadAppPreferenceFlags extends SBitmask.of(SUInt8) {
+  /** If set, use backed up preferences database. */
+  @bitfield(1)
+  backedUp = false;
+
+  @bitfield(7)
   private padding1 = 0;
 }
 
 export class DlpReadAppPreferenceRespType extends DlpResponse {
   funcId = DlpFuncId.ReadAppPreference;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Version number of the application. */
+  @dlpArg(0, SUInt16BE)
+  version = 0;
+
+  /** Actual preference data size. */
+  @dlpArg(0, SUInt16BE)
+  actualSize = 0;
+
+  /** Custom result data. */
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt16BE> {
+      lengthType = SUInt16BE;
+    }
+  )
+  data = Buffer.alloc(0);
 }
 
 // =============================================================================
-// TODO: WriteAppPreference (0x35)
+// WriteAppPreference (0x35)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrNotEnoughSpace
 // =============================================================================
 export class DlpWriteAppPreferenceReqType extends DlpRequest<DlpWriteAppPreferenceRespType> {
   funcId = DlpFuncId.WriteAppPreference;
   responseType = DlpWriteAppPreferenceRespType;
 
+  /** App creator ID. */
+  @dlpArg(0, TypeId)
+  creator = 'AAAA';
+
+  /** Preference ID. */
+  @dlpArg(0, SUInt16BE)
+  id = 0;
+
+  /** Version number of the application. */
+  @dlpArg(0, SUInt16BE)
+  version = 0;
+
+  /** Preference data size. */
+  @dlpArg(0, SUInt16BE)
+  private prefSize = 0;
+
+  /** Flags. */
+  @dlpArg(0)
+  flags = new DlpWriteAppPreferenceFlags();
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** App preference data to write. */
+  @dlpArg(0, SBuffer)
+  data = Buffer.alloc(0);
+
+  serialize(opts?: SerializeOptions): Buffer {
+    this.prefSize = this.data.length;
+    return super.serialize(opts);
+  }
 }
+
+export class DlpWriteAppPreferenceFlags extends DlpReadAppPreferenceFlags {}
 
 export class DlpWriteAppPreferenceRespType extends DlpResponse {
   funcId = DlpFuncId.WriteAppPreference;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
