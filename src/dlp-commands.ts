@@ -24,6 +24,7 @@ import {
   SBuffer,
   SDynamicBuffer,
   SObject,
+  SString,
   SStringNT,
   SUInt16BE,
   SUInt32BE,
@@ -470,7 +471,7 @@ export class DlpSetSysDateTimeRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadStorageInfo (0x15)
+// ReadStorageInfo (0x15)
 //		Possible error codes
 //			dlpRespErrSystem,
 //			dlpRespErrMemory,
@@ -480,17 +481,129 @@ export class DlpReadStorageInfoReqType extends DlpRequest<DlpReadStorageInfoResp
   funcId = DlpFuncId.ReadStorageInfo;
   responseType = DlpReadStorageInfoRespType;
 
+  /** Card number to start at (0 == first). */
   @dlpArg(0, SUInt8)
-  cardNo = 0;
+  startCardNo = 0;
 
   @dlpArg(0, SUInt8)
   private padding1 = 0;
 }
 
+export class DlpCardInfoType extends SObject {
+  /** Total size of the structure, rounded up to even size. */
+  @field(SUInt8)
+  private totalSize = 0;
+
+  /** Card number. */
+  @field(SUInt8)
+  cardNo = 0;
+
+  /** Card version. */
+  @field(SUInt16BE)
+  cardVersion = 0;
+
+  /** Creation date time. */
+  @field()
+  crDate = new DlpDateTimeType();
+
+  /** ROM size. */
+  @field(SUInt32BE)
+  romSize = 0;
+
+  /** RAM size. */
+  @field(SUInt32BE)
+  ramSize = 0;
+
+  /** Total free data store RAM - Fixed in DLP v1.2 to exclude dynamic heap RAM. */
+  @field(SUInt32BE)
+  freeRam = 0;
+
+  /** Card name. */
+  cardName = '';
+
+  /** Manufacturer name. */
+  manufName = '';
+
+  /** Size of card name string. */
+  @field(SUInt8)
+  private cardNameSize = 0;
+
+  /** Size of manufacturer name string. */
+  @field(SUInt8)
+  private manufNameSize = 0;
+
+  /** Card name and manufacturer name. */
+  @field(SBuffer)
+  private cardNameAndManuf = Buffer.alloc(0);
+
+  serialize(opts?: SerializeOptions): Buffer {
+    this.totalSize =
+      super.getSerializedLength(opts) - this.cardNameAndManuf.length;
+    const cardNameBuffer = SString.of(this.cardName).serialize(opts);
+    this.cardNameSize = cardNameBuffer.length;
+    const manufNameBuffer = SString.of(this.manufName).serialize(opts);
+    this.manufNameSize = manufNameBuffer.length;
+    this.cardNameAndManuf = Buffer.concat([cardNameBuffer, manufNameBuffer]);
+    this.totalSize += this.cardNameAndManuf.length;
+    return super.serialize(opts);
+  }
+
+  deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
+    const offset = super.deserialize(buffer, opts);
+    this.cardName = SString.from(
+      this.cardNameAndManuf.subarray(0, this.cardNameSize),
+      opts
+    ).value;
+    this.manufName = SString.from(
+      this.cardNameAndManuf.subarray(
+        this.cardNameSize,
+        this.cardNameSize + this.manufNameSize
+      ),
+      opts
+    ).value;
+    return offset;
+  }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return (
+      super.getSerializedLength(opts) -
+      this.cardNameAndManuf.length +
+      SString.of(this.cardName).getSerializedLength(opts) +
+      SString.of(this.manufName).getSerializedLength(opts)
+    );
+  }
+}
+
 export class DlpReadStorageInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadStorageInfo;
 
-  // TODO
+  /** Card number of lats card retrieved. */
+  @dlpArg(0, SUInt8)
+  lastCardNo = 0;
+
+  /** Non-zero if there are more cards. */
+  @dlpArg(0, SUInt8)
+  more = 0;
+
+  @dlpArg(0, SUInt8)
+  private padding1 = 0;
+
+  @dlpArg(0, SDynamicArray.of(SUInt8, DlpCardInfoType))
+  cardInfo: Array<DlpCardInfoType> = [];
+
+  // Extended arguments in DLP v1.1:
+
+  /** ROM database count. */
+  @optDlpArg(1, SUInt16BE)
+  romDBCount = 0;
+
+  /** RAM database count. */
+  @optDlpArg(1, SUInt16BE)
+  ramDBCount = 0;
+
+  /** RAM database count. */
+  @optDlpArg(1, SArray.ofLength(4, SUInt32BE))
+  private padding2 = [];
 }
 
 // =============================================================================

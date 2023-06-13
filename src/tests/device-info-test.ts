@@ -1,6 +1,7 @@
 import assert from 'assert';
 import {
   DlpGetSysDateTimeReqType,
+  DlpReadStorageInfoReqType,
   DlpReadUserInfoReqType,
   DlpSetSysDateTimeReqType,
   DlpUserInfoModFlags,
@@ -14,15 +15,12 @@ export async function run({dlpConnection}: SyncConnection) {
   );
   const writeUserInfoReq = DlpWriteUserInfoReqType.with({
     userName: `Test ${Math.floor(readUserInfoResp.lastSyncDate.getSeconds())}`,
-    lastSyncDate: new Date(readUserInfoResp.lastSyncDate),
+    lastSyncDate: new Date('2023-06-13T00:00:00.000Z'),
     modFlags: DlpUserInfoModFlags.with({
       userName: true,
       lastSyncDate: true,
     }),
   });
-  writeUserInfoReq.lastSyncDate.setSeconds(
-    (writeUserInfoReq.lastSyncDate.getSeconds() + 7) % 60
-  );
   await dlpConnection.execute(writeUserInfoReq);
   const readUserInfoResp2 = await dlpConnection.execute(
     new DlpReadUserInfoReqType()
@@ -40,4 +38,9 @@ export async function run({dlpConnection}: SyncConnection) {
     dateTime: writeUserInfoReq.lastSyncDate,
   });
   await dlpConnection.execute(setSysDateTimeReq);
+
+  const readStorageInfoResp = await dlpConnection.execute(
+    new DlpReadStorageInfoReqType()
+  );
+  assert(readStorageInfoResp.cardInfo.length > 0);
 }
