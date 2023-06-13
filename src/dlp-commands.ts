@@ -2028,21 +2028,38 @@ export class DlpSetDBInfoRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: LoopBackTest (0x3b)
+// LoopBackTest (0x3b)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrNotEnoughSpace,
+//			dlpRespErrParam,
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpLoopBackTestReqType extends DlpRequest<DlpLoopBackTestRespType> {
   funcId = DlpFuncId.LoopBackTest;
   responseType = DlpLoopBackTestRespType;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Data to send. */
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt32BE> {
+      lengthType = SUInt32BE;
+    }
+  )
+  data = Buffer.alloc(0);
 }
 
 export class DlpLoopBackTestRespType extends DlpResponse {
   funcId = DlpFuncId.LoopBackTest;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Data received back. */
+  @dlpArg(
+    0,
+    class extends SDynamicBuffer<SUInt32BE> {
+      lengthType = SUInt32BE;
+    }
+  )
+  data = Buffer.alloc(0);
 }
 
 // =============================================================================
