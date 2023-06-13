@@ -503,8 +503,8 @@ export class DlpCardInfoType extends SObject {
   cardVersion = 0;
 
   /** Creation date time. */
-  @field()
-  crDate = new DlpDateTimeType();
+  @field(DlpDateTimeType)
+  crDate = new Date(PDB_EPOCH);
 
   /** ROM size. */
   @field(SUInt32BE)
@@ -1603,7 +1603,7 @@ export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationResp
 
   /** Custom parameter size. */
   @dlpArg(1, SUInt32BE)
-  private dwParamSize = 0;
+  private paramSize = 0;
 
   @dlpArg(1, SArray.ofLength(2, SUInt32BE))
   private padding1 = [];
@@ -1613,7 +1613,7 @@ export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationResp
   paramData = Buffer.alloc(0);
 
   serialize(opts?: SerializeOptions): Buffer {
-    this.dwParamSize = this.paramData.length;
+    this.paramSize = this.paramData.length;
     return super.serialize(opts);
   }
 }
@@ -1623,11 +1623,11 @@ export class DlpCallApplicationRespType extends DlpResponse {
 
   /** Result error code returned by action. */
   @dlpArg(1, SUInt32BE)
-  dwResultCode = 0;
+  resultCode = 0;
 
   /** Custom result data size. */
   @dlpArg(1, SUInt32BE)
-  private dwResultSize = 0;
+  private resultSize = 0;
 
   @dlpArg(1, SArray.ofLength(2, SUInt32BE))
   private padding1 = [];
@@ -1635,6 +1635,11 @@ export class DlpCallApplicationRespType extends DlpResponse {
   /** Custom result data. */
   @dlpArg(1, SBuffer)
   resultData = Buffer.alloc(0);
+
+  serialize(opts?: SerializeOptions): Buffer {
+    this.resultSize = this.resultData.length;
+    return super.serialize(opts);
+  }
 }
 
 // =============================================================================
@@ -2286,11 +2291,11 @@ export class DlpReadFeatureReqType extends DlpRequest<DlpReadFeatureRespType> {
 
   /** Feature creator ID. */
   @dlpArg(0, TypeId)
-  dwFtrCreator = 'AAAA';
+  ftrCreator = 'AAAA';
 
   /** Feature number. */
   @dlpArg(0, SUInt16BE)
-  wFtrNum = 0;
+  ftrNum = 0;
 }
 
 export class DlpReadFeatureRespType extends DlpResponse {
@@ -2298,7 +2303,7 @@ export class DlpReadFeatureRespType extends DlpResponse {
 
   /** Feature value. */
   @dlpArg(0, SUInt32BE)
-  dwFeature = 0;
+  feature = 0;
 }
 
 // =============================================================================
@@ -2320,21 +2325,88 @@ export class DlpFindDBRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: SetDBInfo (0x3a)
+// SetDBInfo (0x3a)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrParam,
+//			dlpRespErrNotFound
+//			dlpRespErrNotEnoughSpace
+//			dlpRespErrNotSupported
+//			dlpRespErrReadOnly
+//			dlpRespErrNoneOpen
 // =============================================================================
 export class DlpSetDBInfoReqType extends DlpRequest<DlpSetDBInfoRespType> {
   funcId = DlpFuncId.SetDBInfo;
   responseType = DlpSetDBInfoRespType;
 
+  /** Handle to opened database. */
+  @dlpArg(0, SUInt8)
+  dbId = 0;
+
   @dlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** Database attribute flags to clear.
+   *
+   * Any flags set to true here will be cleared, i.e. set to *false*, on the device.
+   *
+   * Allowed flags:
+   *   - appInfoDirty
+   *   - backup
+   *   - okToInstallNewer
+   *   - resetAfterInstall
+   *   - copyPrevention
+   */
+  @dlpArg(0)
+  clrDbFlags = new DatabaseAttrs();
+
+  /** Database attribute flags to set.
+   *
+   * Any flags set to true here will be set, i.e. set to *true*, on the device.
+   *
+   * Allowed flags:
+   *   - appInfoDirty
+   *   - backup
+   *   - okToInstallNewer
+   *   - resetAfterInstall
+   *   - copyPrevention
+   */
+  @dlpArg(0)
+  setDbFlags = new DatabaseAttrs();
+
+  /** Database version; DLP_SET_DB_INFO_NO_VERSION_CHANGE = don't change */
+  @dlpArg(0, SUInt16BE)
+  dbVersion = DLP_SET_DB_INFO_NO_VERSION_CHANGE;
+
+  /** Database creation timestamp. (zero year == don't change) */
+  @dlpArg(0, DlpDateTimeType)
+  crDate = new Date(PDB_EPOCH);
+
+  /** Database modification timestamp. (zero year == don't change) */
+  @dlpArg(0, DlpDateTimeType)
+  modDate = new Date(PDB_EPOCH);
+
+  /** Last backup timestamp. (zero year == don't change) */
+  @dlpArg(0, DlpDateTimeType)
+  bckUpDate = new Date(PDB_EPOCH);
+
+  /** Database type identifier. (zero === don't change) */
+  @dlpArg(0, TypeId)
+  type = '\0\0\0\0';
+
+  /** Database creator identifier. (zero === don't change) */
+  @dlpArg(0, TypeId)
+  creator = '\0\0\0\0';
+
+  /** Database name. */
+  @dlpArg(0, SStringNT)
+  name = '';
 }
+
+export const DLP_SET_DB_INFO_NO_VERSION_CHANGE = 0xffff;
 
 export class DlpSetDBInfoRespType extends DlpResponse {
   funcId = DlpFuncId.SetDBInfo;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 // =============================================================================
