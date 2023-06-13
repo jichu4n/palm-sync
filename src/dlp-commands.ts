@@ -1964,21 +1964,31 @@ export class DlpWriteNetSyncInfoRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ReadFeature (0x38)
+// ReadFeature (0x38)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrNotFound,
+//			dlpRespErrParam
 // =============================================================================
 export class DlpReadFeatureReqType extends DlpRequest<DlpReadFeatureRespType> {
   funcId = DlpFuncId.ReadFeature;
   responseType = DlpReadFeatureRespType;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Feature creator ID. */
+  @dlpArg(0, TypeId)
+  dwFtrCreator = 'AAAA';
+
+  /** Feature number. */
+  @dlpArg(0, SUInt16BE)
+  wFtrNum = 0;
 }
 
 export class DlpReadFeatureRespType extends DlpResponse {
   funcId = DlpFuncId.ReadFeature;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Feature value. */
+  @dlpArg(0, SUInt32BE)
+  dwFeature = 0;
 }
 
 // =============================================================================
