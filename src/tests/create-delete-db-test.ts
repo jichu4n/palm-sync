@@ -3,14 +3,17 @@ import {
   DlpCloseDBReqType,
   DlpCreateDBReqType,
   DlpDeleteDBReqType,
+  DlpFindDBByOpenHandleReqType,
+  DlpFindDBOptFlags,
   NetSyncConnection,
 } from '..';
+import assert from 'assert';
 
 export async function run({dlpConnection}: NetSyncConnection) {
   try {
     await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
   } catch (e) {}
-  const {dbId: dbId2} = await dlpConnection.execute(
+  const {dbId} = await dlpConnection.execute(
     DlpCreateDBReqType.with({
       creator: 'AAAA',
       type: 'DATA',
@@ -20,6 +23,20 @@ export async function run({dlpConnection}: NetSyncConnection) {
       name: 'foobar',
     })
   );
-  await dlpConnection.execute(DlpCloseDBReqType.with({dbId: dbId2}));
+
+  const findDbResp = await dlpConnection.execute(
+    DlpFindDBByOpenHandleReqType.with({
+      optFlags: DlpFindDBOptFlags.with({
+        getAttributes: true,
+        getSize: true,
+        getMaxRecSize: true,
+      }),
+      dbId,
+    })
+  );
+  assert.strictEqual(findDbResp.info.creator, 'AAAA');
+  assert.notStrictEqual(findDbResp.totalBytes, 0);
+
+  await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
   await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
 }

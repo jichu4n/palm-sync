@@ -12,6 +12,7 @@
 
 import {
   DatabaseAttrs,
+  LocalId,
   PDB_EPOCH,
   RecordAttrs,
   SDynamicArray,
@@ -2307,21 +2308,187 @@ export class DlpReadFeatureRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: FindDB (0x39)
+// FindDB (0x39)
+//		Possible error codes
+//			dlpRespErrSystem,
+//			dlpRespErrNotFound,
+//			dlpRespErrParam
 // =============================================================================
-export class DlpFindDBReqType extends DlpRequest<DlpFindDBRespType> {
+export class DlpFindDBByNameReqType extends DlpRequest<DlpFindDBRespType> {
   funcId = DlpFuncId.FindDB;
   responseType = DlpFindDBRespType;
 
+  /** Option flags. */
+  @dlpArg(0)
+  optFlags = new DlpFindDBOptFlags();
+
+  /** Card number to search. */
   @dlpArg(0, SUInt8)
+  cardNo = 0;
+
+  /** Database name. */
+  @dlpArg(0, SStringNT)
+  name = '';
+}
+
+export class DlpFindDBByOpenHandleReqType extends DlpRequest<DlpFindDBRespType> {
+  funcId = DlpFuncId.FindDB;
+  responseType = DlpFindDBRespType;
+
+  /** Option flags. */
+  @dlpArg(1)
+  optFlags = new DlpFindDBOptFlags();
+
+  /** Handle to opened database. */
+  @dlpArg(1, SUInt8)
+  dbId = 0;
+}
+
+export class DlpFindDBByTypeCreatorReqType extends DlpRequest<DlpFindDBRespType> {
+  funcId = DlpFuncId.FindDB;
+  responseType = DlpFindDBRespType;
+
+  /** Option flags. */
+  @dlpArg(2)
+  optFlags = new DlpFindDBOptFlags();
+
+  /** Search flags. */
+  @dlpArg(2)
+  srchFlags = new DlpFindDBSrchFlags();
+
+  /** Database type identifier. (zero === wildcard) */
+  @dlpArg(2, TypeId)
+  type = '\0\0\0\0';
+
+  /** Database creator identifier. (zero === wildcard) */
+  @dlpArg(2, TypeId)
+  creator = '\0\0\0\0';
+}
+
+/** Options used by DlpFindDBByNameReqType and its siblings. */
+export class DlpFindDBOptFlags extends SBitmask.of(SUInt8) {
+  /** Get database attributes.
+   *
+   * If this is set, the response will include database attributes. See
+   * DlpFindDBRespType for the set of relevant properties.
+   */
+  @bitfield(1)
+  getAttributes = false;
+
+  /** Get record count and data size.
+   *
+   * If this is set, the response will include record count and database size
+   * information. See DlpFindDBRespType for the set of relevant properties.
+   */
+  @bitfield(1)
+  getSize = false;
+
+  /** Get maximum record / resource size.
+   *
+   * Only valid for DlpFindDBByOpenHandleReqType. If this is set, the response
+   * will include maximum record size information. See DlpFindDBRespType for the
+   * set of relevant properties.
+   */
+  @bitfield(1)
+  getMaxRecSize = false;
+
+  @bitfield(5)
+  private padding1 = 0;
+}
+
+/** Search options used by DlpFindDBByTypeCreatorReqType. */
+export class DlpFindDBSrchFlags extends SBitmask.of(SUInt8) {
+  /** Set to true to begin a new search. */
+  @bitfield(1)
+  newSearch = false;
+
+  /** Set to true to search for the latest version only. */
+  @bitfield(1)
+  onlyLatest = false;
+
+  @bitfield(6)
   private padding1 = 0;
 }
 
 export class DlpFindDBRespType extends DlpResponse {
   funcId = DlpFuncId.FindDB;
 
-  @dlpArg(0, SUInt8)
+  /** Card number of database.
+   *
+   * Provided iff optFlags.getAttributes is set.
+   */
+  @optDlpArg(0, SUInt8)
+  cardNo = 0;
+
+  @optDlpArg(0, SUInt8)
   private padding1 = 0;
+
+  /** LocalId of the database (for internal use).
+   *
+   * Provided iff optFlags.getAttributes is set.
+   */
+  @optDlpArg(0, LocalId)
+  localId = 0;
+
+  /** Open ref of the database if it is currently opened by the caller; zero
+   * otherwise (for internal use). Can change after read record list.
+   *
+   * Provided iff optFlags.getAttributes is set.
+   */
+  @optDlpArg(0, SUInt32BE)
+  openRef = 0;
+
+  /** Database info.
+   *
+   * Provided iff optFlags.getAttributes is set.
+   */
+  @optDlpArg(0)
+  info = new DlpDBInfoType();
+
+  /** Record / resource count.
+   *
+   * Provided iff optFlags.getSize is set.
+   */
+  @optDlpArg(1, SUInt32BE)
+  numRecords = 0;
+
+  /** Total bytes used by database.
+   *
+   * Provided iff optFlags.getSize is set.
+   */
+  @optDlpArg(1, SUInt32BE)
+  totalBytes = 0;
+
+  /** Bytes used for data.
+   *
+   * Provided iff optFlags.getSize is set.
+   */
+  @optDlpArg(1, SUInt32BE)
+  dataBytes = 0;
+
+  /** Size of AppInfo block.
+   *
+   * Provided iff request type is DlpFindDBByOpenHandleReqType and
+   * optFlags.getSize is set.
+   */
+  @optDlpArg(1, SUInt32BE)
+  appBlkSize = 0;
+
+  /** Size of SortInfo block.
+   *
+   * Provided iff request type is DlpFindDBByOpenHandleReqType and
+   * optFlags.getSize is set.
+   */
+  @optDlpArg(1, SUInt32BE)
+  sortBlkSize = 0;
+
+  /** Size of largest record or resource in the database.
+   *
+   * Provided iff request type is DlpFindDBByOpenHandleReqType and
+   * optFlags.getMaxRecSize is set.
+   */
+  @optDlpArg(1, SUInt32BE)
+  maxRecSize = 0;
 }
 
 // =============================================================================
