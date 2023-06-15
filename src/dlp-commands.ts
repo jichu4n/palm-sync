@@ -37,6 +37,7 @@ import {
 import {
   DlpDateTimeType,
   DlpRequest,
+  DlpRespErrorCode,
   DlpResponse,
   dlpArg,
   optDlpArg,
@@ -2612,39 +2613,54 @@ export class DlpLoopBackTestRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ExpSlotEnumerate (0x3c)
+// ExpSlotEnumerate (0x3c)
+//		Possible error codes: none
 // =============================================================================
 export class DlpExpSlotEnumerateReqType extends DlpRequest<DlpExpSlotEnumerateRespType> {
   funcId = DlpFuncId.ExpSlotEnumerate;
   responseType = DlpExpSlotEnumerateRespType;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 export class DlpExpSlotEnumerateRespType extends DlpResponse {
   funcId = DlpFuncId.ExpSlotEnumerate;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** List of slot references. */
+  @dlpArg(0, SDynamicArray.of(SUInt16BE, SUInt16BE))
+  slots = [];
 }
 
 // =============================================================================
-// TODO: ExpCardPresent (0x3d)
+// ExpCardPresent (0x3d)
+//		Possible error codes
+//			non-zero if card is present
+//      zero if not
 // =============================================================================
 export class DlpExpCardPresentReqType extends DlpRequest<DlpExpCardPresentRespType> {
   funcId = DlpFuncId.ExpCardPresent;
   responseType = DlpExpCardPresentRespType;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Slot reference to query. */
+  @dlpArg(0, SUInt16BE)
+  slotRef = 0;
 }
 
 export class DlpExpCardPresentRespType extends DlpResponse {
   funcId = DlpFuncId.ExpCardPresent;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  // Strangely, the result is presented in the response status rather
+  // than the actual payload. So we customize the deserialization logic to not
+  // throw an error on status > 0.
+  deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
+    this.errorCode = DlpRespErrorCode.NONE;
+    try {
+      super.deserialize(buffer, opts);
+    } catch (e) {
+      if (this.errorCode !== DlpRespErrorCode.NONE) {
+        throw e;
+      }
+    }
+    return this.getSerializedLength(opts);
+  }
 }
 
 // =============================================================================
