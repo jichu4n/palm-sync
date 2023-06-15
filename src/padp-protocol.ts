@@ -16,10 +16,11 @@ import {Duplex, DuplexOptions} from 'stream';
 import {
   createSlpDatagramStream,
   SlpDatagram,
+  SlpDatagramHeader,
   SlpDatagramStream,
   SlpDatagramType,
-} from '.';
-import {SlpDatagramHeader, SlpSocketId} from './slp-protocol';
+  SlpSocketId,
+} from './slp-protocol';
 
 /** Type of PADP packets. */
 export enum PadpDatagramType {

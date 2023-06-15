@@ -18,8 +18,8 @@
     "build": "tsc",
     "build:docs": "rm -rf ./docs/ && typedoc",
     "lint": "prettier --check .",
-    "test": "jest",
-    "record-sync-session": "ts-node ./src/tests/record-sync-session.ts"
+    "test": "env TZ=UTC jest",
+    "record-sync-session": "env TZ=UTC ts-node ./src/tests/record-sync-session.ts"
   },
   "devDependencies": {
     "@types/debug": "^4.1.8",

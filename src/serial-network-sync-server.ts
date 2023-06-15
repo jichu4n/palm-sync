@@ -5,21 +5,20 @@
  */
 import {MemoRecord} from 'palm-pdb';
 import {Duplex} from 'stream';
+import {doCmpHandshake} from './cmp-protocol';
 import {
-  DlpCloseDBRequest,
-  DlpOpenConduitRequest,
-  DlpOpenDBRequest,
-  DlpOpenMode,
-  DlpReadDBListMode,
-  DlpReadDBListRequest,
-  DlpReadOpenDBInfoRequest,
-  DlpReadRecordByIDRequest,
-  DlpReadRecordIDListRequest,
-  doCmpHandshake,
-  NetworkSyncServer,
-  PadpStream,
-  SyncConnection,
-} from '.';
+  DlpCloseDBReqType,
+  DlpOpenConduitReqType,
+  DlpOpenDBMode,
+  DlpOpenDBReqType,
+  DlpReadDBListFlags,
+  DlpReadDBListReqType,
+  DlpReadOpenDBInfoReqType,
+  DlpReadRecordByIDReqType,
+  DlpReadRecordIDListReqType,
+} from './dlp-commands';
+import {PadpStream} from './padp-protocol';
+import {NetworkSyncServer, SyncConnection} from './sync-server';
 
 /** Serial-over-TCP port to listen on.
  *
@@ -45,37 +44,37 @@ export class SerialNetworkSyncConnection extends SyncConnection<PadpStream> {
 if (require.main === module) {
   const syncServer = new SerialNetworkSyncServer(async ({dlpConnection}) => {
     const readDbListResp = await dlpConnection.execute(
-      DlpReadDBListRequest.with({
-        mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+      DlpReadDBListReqType.with({
+        srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
       })
     );
-    console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
+    console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
 
-    await dlpConnection.execute(new DlpOpenConduitRequest());
-    const {dbHandle} = await dlpConnection.execute(
-      DlpOpenDBRequest.with({
-        mode: DlpOpenMode.READ,
+    await dlpConnection.execute(new DlpOpenConduitReqType());
+    const {dbId} = await dlpConnection.execute(
+      DlpOpenDBReqType.with({
+        mode: DlpOpenDBMode.with({read: true}),
         name: 'MemoDB',
       })
     );
-    const {numRecords} = await dlpConnection.execute(
-      DlpReadOpenDBInfoRequest.with({dbHandle})
+    const {numRec: numRecords} = await dlpConnection.execute(
+      DlpReadOpenDBInfoReqType.with({dbId})
     );
     const {recordIds} = await dlpConnection.execute(
-      DlpReadRecordIDListRequest.with({
-        dbHandle,
+      DlpReadRecordIDListReqType.with({
+        dbId,
         maxNumRecords: 500,
       })
     );
     const memoRecords: Array<MemoRecord> = [];
     for (const recordId of recordIds) {
       const resp = await dlpConnection.execute(
-        DlpReadRecordByIDRequest.with({
-          dbHandle,
+        DlpReadRecordByIDReqType.with({
+          dbId,
           recordId,
         })
       );
-      const record = MemoRecord.from(resp.data.value);
+      const record = MemoRecord.from(resp.data);
       memoRecords.push(record);
     }
     console.log(
@@ -85,7 +84,7 @@ if (require.main === module) {
         .join('\n----------\n')}\n----------\n`
     );
 
-    await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
+    await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
   });
   syncServer.start();
 }

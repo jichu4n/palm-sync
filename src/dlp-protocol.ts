@@ -9,17 +9,17 @@
 import debug from 'debug';
 import _ from 'lodash';
 import pEvent from 'p-event';
-import {EPOCH_TIMESTAMP} from 'palm-pdb';
+import {PDB_EPOCH} from 'palm-pdb';
 import {
   DeserializeOptions,
-  field,
   SArray,
-  Serializable,
-  SerializableWrapper,
-  SerializeOptions,
   SObject,
   SUInt16BE,
   SUInt8,
+  Serializable,
+  SerializableWrapper,
+  SerializeOptions,
+  field,
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
 import {Duplex} from 'stream';
@@ -74,8 +74,8 @@ export class DlpConnection {
 export abstract class DlpRequest<
   DlpResponseT extends DlpResponse
 > extends SObject {
-  /** DLP command ID. */
-  abstract commandId: number;
+  /** DLP function ID. */
+  abstract funcId: number;
 
   /** The response class corresponding to this request. */
   abstract responseType: new () => DlpResponseT;
@@ -83,12 +83,12 @@ export abstract class DlpRequest<
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
 
-    const actualCommandId = reader.readUInt8();
-    if (actualCommandId !== this.commandId) {
+    const actualFuncId = reader.readUInt8();
+    if (actualFuncId !== this.funcId) {
       throw new Error(
-        'Command ID mismatch: ' +
-          `expected 0x${this.commandId.toString(16)}, ` +
-          `got ${actualCommandId.toString(16)}`
+        'Function ID mismatch: ' +
+          `expected 0x${this.funcId.toString(16)}, ` +
+          `got ${actualFuncId.toString(16)}`
       );
     }
 
@@ -108,7 +108,7 @@ export abstract class DlpRequest<
   serialize(opts?: SerializeOptions): Buffer {
     const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
     const writer = new SmartBuffer();
-    writer.writeUInt8(this.commandId);
+    writer.writeUInt8(this.funcId);
     writer.writeUInt8(serializedArgs.length);
     for (const serializedArg of serializedArgs) {
       writer.writeBuffer(serializedArg);
@@ -124,7 +124,7 @@ export abstract class DlpRequest<
 
   toJSON(): Object {
     return {
-      commandId: this.commandId,
+      funcId: this.funcId,
       args: getDlpArgsAsJson(this),
     };
   }
@@ -135,91 +135,126 @@ export type DlpResponseType<T> = T extends DlpRequest<infer DlpResponseT>
   ? DlpResponseT
   : never;
 
-/** DLP response status codes. */
-export enum DlpResponseStatus {
-  /** No error */
-  OK = 0x00,
-  /** General system error on the Palm device */
-  ERROR_SYSTEM = 0x01,
-  /** Illegal command ID, not supported by this version of DLP */
-  ERROR_ILLEGAL_REQUEST = 0x02,
-  /** Not enough memory */
-  ERROR_OUT_OF_MEMORY = 0x03,
-  /** Invalid parameter */
-  ERROR_INVALID_ARG = 0x04,
-  /** File, database or record not found */
-  ERROR_NOT_FOUND = 0x05,
-  /** No databases opened */
-  ERROR_NONE_OPEN = 0x06,
-  /** Database already open */
-  ERROR_ALREADY_OPEN = 0x07,
-  /** Too many open databases */
-  ERROR_TOO_MANY_OPEN = 0x08,
-  /** Database already exists */
-  ERROR_ALREADY_EXISTS = 0x09,
-  /** Can't open database */
-  ERROR_OPEN = 0x0a,
-  /** Record is deleted */
-  ERROR_DELETED = 0x0b,
-  /** Record busy */
-  ERROR_BUSY = 0x0c,
-  /** Requested operation not supported on given database type */
-  ERROR_UNSUPPORTED = 0x0d,
-  /** Unused */
-  UNUSED1 = 0x0e,
-  /** No write access or database is read-only */
-  ERROR_READONLY = 0x0f,
-  /** Not enough space left on device */
-  ERROR_SPACE = 0x10,
-  /** Size limit exceeded */
-  ERROR_LIMIT = 0x11,
-  /** Cancelled by user */
-  ERROR_USER_CANCELLED = 0x12,
-  /** Bad DLC argument wrapper */
-  ERROR_INVALID_ARG_WRAPPER = 0x13,
-  /** Required argument not provided */
-  ERROR_MISSING_ARG = 0x14,
-  /** Invalid argument size */
-  ERROR_INVALID_ARG_SIZE = 0x15,
-  /** Unknown error (0x7F) */
-  ERROR_UNKNOWN = 0x7f,
+/** DLP response status codes.
+ *
+ * Reference:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L225
+ */
+export enum DlpRespErrorCode {
+  /** Reserve 0 for no error. */
+  NONE = 0,
+  /** General Pilot system error. */
+  SYSTEM,
+  /** Unknown function ID. */
+  ILLEGAL_REQ,
+  /** Insufficient dynamic heap memory. */
+  MEMORY,
+  /** Invalid parameter. */
+  PARAM,
+  /** Database, record, file, or resource not found. */
+  NOT_FOUND,
+  /** There are no open databases. */
+  NONE_OPEN,
+  /** Database is open by someone else. */
+  DATABASE_OPEN,
+  /** There are too many open databases. */
+  TOO_MANY_OPEN_DATABASES,
+  /** DB or File already exists. */
+  ALREADY_EXISTS,
+  /** Couldn't open DB. */
+  CANT_OPEN,
+  /** Record is deleted. */
+  RECORD_DELETED,
+  /** Record is in use by someone else. */
+  RECORD_BUSY,
+  /** The requested operation is not supported on the given database type (record or resource). */
+  NOT_SUPPORTED,
+  /** Unused. */
+  UNUSED1,
+  /** Caller does not have write access (or DB is in ROM). */
+  READ_ONLY,
+  /** Not enough space in data store for record/resource/etc.. */
+  NOT_ENOUGH_SPACE,
+  /** Size limit exceeded. */
+  LIMIT_EXCEEDED,
+  /** Cancel the sync. */
+  CANCEL_SYNC,
+  /** Bad arg wrapper. */
+  BAD_WRAPPER,
+  /** Required arg not found. */
+  ARG_MISSING,
+  /** Invalid argument size. */
+  ARG_SIZE,
 }
 
-/** Command ID bitmask for DLP responses. */
+/** User-facing error messages.
+ *
+ * Reference: https://github.com/jichu4n/pilot-link/blob/master/libpisock/dlp.c#L67
+ */
+const DLP_RESPONSE_ERROR_MESSAGES: {[key in DlpRespErrorCode]: string} = {
+  [DlpRespErrorCode.NONE]: 'No error',
+  [DlpRespErrorCode.SYSTEM]: 'General system error',
+  [DlpRespErrorCode.ILLEGAL_REQ]: 'Unknown function ID',
+  [DlpRespErrorCode.MEMORY]: 'Out of memory',
+  [DlpRespErrorCode.PARAM]: 'Invalid parameter',
+  [DlpRespErrorCode.NOT_FOUND]: 'Not found',
+  [DlpRespErrorCode.NONE_OPEN]: 'No open databases',
+  [DlpRespErrorCode.DATABASE_OPEN]: 'Database is opened by another application',
+  [DlpRespErrorCode.TOO_MANY_OPEN_DATABASES]: 'Too many open databases',
+  [DlpRespErrorCode.ALREADY_EXISTS]: 'Database or file already exists',
+  [DlpRespErrorCode.CANT_OPEN]: 'Could not open database',
+  [DlpRespErrorCode.RECORD_DELETED]: 'Record deleted',
+  [DlpRespErrorCode.RECORD_BUSY]: 'Record is in use by another application',
+  [DlpRespErrorCode.NOT_SUPPORTED]: 'Operation not supported',
+  [DlpRespErrorCode.UNUSED1]: '-Unused-',
+  [DlpRespErrorCode.READ_ONLY]: 'No write access or database is in ROM',
+  [DlpRespErrorCode.NOT_ENOUGH_SPACE]: 'Not enough space',
+  [DlpRespErrorCode.LIMIT_EXCEEDED]: 'Size limit exceeded',
+  [DlpRespErrorCode.CANCEL_SYNC]: 'Sync cancelled',
+  [DlpRespErrorCode.BAD_WRAPPER]: 'Bad argument wrapper',
+  [DlpRespErrorCode.ARG_MISSING]: 'Required argument missing',
+  [DlpRespErrorCode.ARG_SIZE]: 'Invalid argument size',
+};
+
+/** Function ID bitmask for DLP responses. */
 const DLP_RESPONSE_TYPE_BITMASK = 0x80; // 1000 0000
-/** Bitmask for extracting the raw command ID from a DLP response command ID. */
-const DLP_RESPONSE_COMMAND_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
+/** Bitmask for extracting the raw function ID from a DLP response function ID. */
+const DLP_RESPONSE_FUNC_ID_BITMASK = 0xff & ~DLP_RESPONSE_TYPE_BITMASK; // 0111 1111
 
 /** Base class for DLP responses. */
 export abstract class DlpResponse extends SObject {
-  /** Expected DLP command ID. */
-  abstract commandId: number;
+  /** Expected DLP function ID. */
+  abstract funcId: number;
 
   /** Error code. */
-  status = DlpResponseStatus.OK;
+  errorCode = DlpRespErrorCode.NONE;
+  /** Human-readable error message corresponding to status. */
+  get errorMessage() {
+    return DLP_RESPONSE_ERROR_MESSAGES[this.errorCode] ?? 'Unknown error';
+  }
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
-    let actualCommandId = reader.readUInt8();
-    if (!(actualCommandId & DLP_RESPONSE_TYPE_BITMASK)) {
+    let actualFuncId = reader.readUInt8();
+    if (!(actualFuncId & DLP_RESPONSE_TYPE_BITMASK)) {
       throw new Error(
-        `Invalid response command ID: 0x${actualCommandId.toString(16)}`
+        `Invalid response function ID: 0x${actualFuncId.toString(16)}`
       );
     }
-    actualCommandId &= DLP_RESPONSE_COMMAND_ID_BITMASK;
-    if (actualCommandId !== this.commandId) {
+    actualFuncId &= DLP_RESPONSE_FUNC_ID_BITMASK;
+    if (actualFuncId !== this.funcId) {
       throw new Error(
-        `Command ID mismatch in ${this.constructor.name}: ` +
-          `expected 0x${this.commandId.toString(16)}, ` +
-          `got ${actualCommandId.toString(16)}`
+        `Function ID mismatch in ${this.constructor.name}: ` +
+          `expected 0x${this.funcId.toString(16)}, ` +
+          `got ${actualFuncId.toString(16)}`
       );
     }
 
     const numDlpArgs = reader.readUInt8();
-    this.status = reader.readUInt16BE();
+    this.errorCode = reader.readUInt16BE();
 
     let {readOffset} = reader;
-    if (this.status === DlpResponseStatus.OK) {
+    if (this.errorCode === DlpRespErrorCode.NONE) {
       readOffset += parseDlpArgs(
         this,
         numDlpArgs,
@@ -234,9 +269,8 @@ export abstract class DlpResponse extends SObject {
         );
       }
       throw new Error(
-        'DLP response status ' +
-          `0x${this.status.toString(16)} (${DlpResponseStatus[this.status]}) ` +
-          `in ${this.constructor.name}`
+        `Error 0x${this.errorCode.toString(16).padStart(2, '0')} ` +
+          `in ${this.constructor.name}: ${this.errorMessage}`
       );
     }
 
@@ -246,9 +280,9 @@ export abstract class DlpResponse extends SObject {
   serialize(opts?: SerializeOptions): Buffer {
     const serializedArgs = getDlpArgs(this).map((arg) => arg.serialize(opts));
     const writer = new SmartBuffer();
-    writer.writeUInt8(this.commandId | DLP_RESPONSE_TYPE_BITMASK);
+    writer.writeUInt8(this.funcId | DLP_RESPONSE_TYPE_BITMASK);
     writer.writeUInt8(serializedArgs.length);
-    writer.writeUInt16BE(this.status);
+    writer.writeUInt16BE(this.errorCode);
     for (const serializedArg of serializedArgs) {
       writer.writeBuffer(serializedArg);
     }
@@ -263,8 +297,7 @@ export abstract class DlpResponse extends SObject {
 
   toJSON(): Object {
     return {
-      commandId: this.commandId,
-      status: this.status,
+      ..._.pick(this, 'funcId', 'errorCode', 'errorMessage'),
       args: getDlpArgsAsJson(this),
     };
   }
@@ -425,7 +458,7 @@ export function getDlpArgs(targetInstance: SObject) {
 
 /** DLP argument type, as determined by the payload size. */
 export enum DlpArgType {
-  TINY = 'tiny',
+  SMALL = 'small',
   SHORT = 'short',
   LONG = 'long',
 }
@@ -444,9 +477,15 @@ export interface DlpArgTypeSpec {
   parseFromHeader: (header: Buffer) => {argId: number; dataLength: number};
 }
 
-/** Definition of DLP argument types. */
+/** Definition of DLP argument types.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L403
+ *   - https://github.com/jichu4n/pilot-link/blob/master/libpisock/dlp.c#L562
+ *   - https://github.com/dwery/coldsync/blob/master/libpconn/dlp.c#L89
+ */
 export const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
-  [DlpArgType.TINY]: {
+  [DlpArgType.SMALL]: {
     maxLength: 0xff,
     bitmask: 0x00, // 0000 0000
     headerLength: 2,
@@ -484,9 +523,6 @@ export const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
       };
     },
   },
-  // WARNING: The logic for LONG type arguments differs between pilot-link and
-  // ColdSync. Not sure which one is correct - going with the (simpler)
-  // pilot-link logic here.
   [DlpArgType.LONG]: {
     maxLength: 0xffffffff,
     bitmask: 0x40, // 0100 0000
@@ -597,60 +633,69 @@ export class DlpArg extends SObject {
  * Unlike normal database timestamps found in database files and Palm OS APIs,
  * timestamps in the DLP layer are actual date and time values without timezone
  * info.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L301
  */
-export class DlpTimestamp extends SObject {
+export class DlpDateTimeType extends SerializableWrapper<Date> {
   /** JavaScript Date value corresponding to the time. */
-  value: Date = new Date();
-
-  @field(SUInt16BE)
-  private year = 0;
-
-  @field(SUInt8)
-  private month = 0;
-
-  @field(SUInt8)
-  private day = 0;
-
-  @field(SUInt8)
-  private hour = 0;
-
-  @field(SUInt8)
-  private minute = 0;
-
-  @field(SUInt8)
-  private second = 0;
-
-  @field(SUInt8)
-  private padding1 = 0;
+  value = new Date(PDB_EPOCH);
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
-    const readOffset = super.deserialize(buffer, opts);
-    if (this.year === 0) {
-      this.value = EPOCH_TIMESTAMP.value;
+    const obj = new DlpDateTimeObject();
+    const readOffset = obj.deserialize(buffer, opts);
+    if (obj.year === 0) {
+      this.value.setTime(PDB_EPOCH.getTime());
     } else {
-      this.value.setFullYear(this.year, this.month - 1, this.day);
-      this.value.setHours(this.hour, this.minute, this.second);
+      this.value.setFullYear(obj.year, obj.month - 1, obj.day);
+      this.value.setHours(obj.hour, obj.minute, obj.second);
       this.value.setMilliseconds(0);
     }
     return readOffset;
   }
 
   serialize(opts?: SerializeOptions): Buffer {
-    if (this.value === EPOCH_TIMESTAMP.value) {
-      this.year = 0;
-      this.month = 0;
-      this.day = 0;
-      this.hour = 0;
-      this.minute = 0;
-      this.second = 0;
-    } else {
-      this.year = this.value.getFullYear();
-      this.month = this.value.getMonth() + 1;
-      this.day = this.value.getDay();
-      this.hour = this.value.getHours();
-      this.minute = this.value.getMinutes();
-      this.second = this.value.getSeconds();
+    const obj = new DlpDateTimeObject();
+    if (this.value !== PDB_EPOCH) {
+      obj.year = this.value.getFullYear();
+      obj.month = this.value.getMonth() + 1;
+      obj.day = this.value.getDate();
+      obj.hour = this.value.getHours();
+      obj.minute = this.value.getMinutes();
+      obj.second = this.value.getSeconds();
     }
-    return super.serialize();
+    return obj.serialize(opts);
   }
+
+  getSerializedLength(opts?: SerializeOptions): number {
+    return new DlpDateTimeObject().getSerializedLength(opts);
+  }
+}
+
+/** SObject used internally by DlpDateTimeType.
+ *
+ * References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L301
+ */
+class DlpDateTimeObject extends SObject {
+  @field(SUInt16BE)
+  year = 0;
+  /** 1-12 */
+  @field(SUInt8)
+  month = 0;
+  /** 1-31 */
+  @field(SUInt8)
+  day = 0;
+  /** 0-23 */
+  @field(SUInt8)
+  hour = 0;
+  /** 0-59 */
+  @field(SUInt8)
+  minute = 0;
+  /** 0-59 */
+  @field(SUInt8)
+  second = 0;
+
+  @field(SUInt8)
+  private padding1 = 0;
 }

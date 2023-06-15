@@ -12,16 +12,15 @@ import {
 } from 'serio';
 import {Duplex, DuplexOptions} from 'stream';
 import {WebUSB} from 'usb';
-import {
-  DlpReadDBListMode,
-  DlpReadDBListRequest,
-  toUsbId,
-  UsbDeviceConfig,
-  UsbInitType,
-  USB_DEVICE_CONFIGS_BY_ID,
-} from '.';
+import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
 import {NetSyncConnection} from './network-sync-server';
 import {SyncConnection} from './sync-server';
+import {
+  toUsbId,
+  USB_DEVICE_CONFIGS_BY_ID,
+  UsbDeviceConfig,
+  UsbInitType,
+} from './usb-device-configs';
 
 /** Vendor USB control requests supported by Palm OS devices. */
 export enum UsbControlRequestType {
@@ -382,38 +381,38 @@ if (require.main === module) {
 
     await (async ({dlpConnection}: SyncConnection) => {
       const readDbListResp = await dlpConnection.execute(
-        DlpReadDBListRequest.with({
-          mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+        DlpReadDBListReqType.with({
+          srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
         })
       );
-      console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
+      console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
 
       /*
-      await dlpConnection.execute(new DlpOpenConduitRequest());
-      const {dbHandle} = await dlpConnection.execute(
-        DlpOpenDBRequest.with({
-          mode: DlpOpenMode.READ,
+      await dlpConnection.execute(new DlpOpenConduitReqType());
+      const {dbId} = await dlpConnection.execute(
+        DlpOpenDBReqType.with({
+          mode: DlpOpenDBMode.with({read: true}),
           name: 'MemoDB',
         })
       );
       const {numRecords} = await dlpConnection.execute(
-        DlpReadOpenDBInfoRequest.with({dbHandle})
+        DlpReadOpenDBInfoReqType.with({dbId})
       );
       const {recordIds} = await dlpConnection.execute(
-        DlpReadRecordIDListRequest.with({
-          dbHandle,
+        DlpReadRecordIDListReqType.with({
+          dbId,
           maxNumRecords: 500,
         })
       );
       const memoRecords: Array<MemoRecord> = [];
       for (const recordId of recordIds) {
         const resp = await dlpConnection.execute(
-          DlpReadRecordByIDRequest.with({
-            dbHandle,
+          DlpReadRecordByIDReqType.with({
+            dbId,
             recordId,
           })
         );
-        const record = MemoRecord.from(resp.data.value);
+        const record = MemoRecord.from(resp.data);
         memoRecords.push(record);
       }
       console.log(
@@ -423,7 +422,7 @@ if (require.main === module) {
           .join('\n----------\n')}\n----------\n`
       );
 
-      await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle}));
+      await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
       */
     })(connection);
     await connection.end();

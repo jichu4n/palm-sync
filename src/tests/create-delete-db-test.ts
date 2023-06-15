@@ -1,25 +1,42 @@
 import {DatabaseAttrs} from 'palm-pdb';
 import {
-  DlpCloseDBRequest,
-  DlpCreateDBRequest,
-  DlpDeleteDBRequest,
+  DlpCloseDBReqType,
+  DlpCreateDBReqType,
+  DlpDeleteDBReqType,
+  DlpFindDBByOpenHandleReqType,
+  DlpFindDBOptFlags,
   NetSyncConnection,
 } from '..';
+import assert from 'assert';
 
 export async function run({dlpConnection}: NetSyncConnection) {
   try {
-    await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
+    await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
   } catch (e) {}
-  const {dbHandle: dbHandle2} = await dlpConnection.execute(
-    DlpCreateDBRequest.with({
+  const {dbId} = await dlpConnection.execute(
+    DlpCreateDBReqType.with({
       creator: 'AAAA',
       type: 'DATA',
-      attributes: DatabaseAttrs.with({
+      dbFlags: DatabaseAttrs.with({
         backup: true,
       }),
       name: 'foobar',
     })
   );
-  await dlpConnection.execute(DlpCloseDBRequest.with({dbHandle: dbHandle2}));
-  await dlpConnection.execute(DlpDeleteDBRequest.with({name: 'foobar'}));
+
+  const findDbResp = await dlpConnection.execute(
+    DlpFindDBByOpenHandleReqType.with({
+      optFlags: DlpFindDBOptFlags.with({
+        getAttributes: true,
+        getSize: true,
+        getMaxRecSize: true,
+      }),
+      dbId,
+    })
+  );
+  assert.strictEqual(findDbResp.info.creator, 'AAAA');
+  assert.notStrictEqual(findDbResp.totalBytes, 0);
+
+  await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
+  await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
 }

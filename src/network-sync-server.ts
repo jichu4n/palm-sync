@@ -1,12 +1,10 @@
 import {Duplex} from 'stream';
+import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
 import {
-  createNetSyncDatagramStream,
-  DlpReadDBListMode,
-  DlpReadDBListRequest,
   NetSyncDatagramStream,
-  NetworkSyncServer,
-  SyncConnection,
-} from '.';
+  createNetSyncDatagramStream,
+} from './network-sync-protocol';
+import {NetworkSyncServer, SyncConnection} from './sync-server';
 import {readStream} from './utils';
 
 /** HotSync port to listen on. */
@@ -64,11 +62,11 @@ export class NetSyncConnection extends SyncConnection<NetSyncDatagramStream> {
 if (require.main === module) {
   const syncServer = new NetSyncServer(async ({dlpConnection}) => {
     const readDbListResp = await dlpConnection.execute(
-      DlpReadDBListRequest.with({
-        mode: DlpReadDBListMode.LIST_RAM | DlpReadDBListMode.LIST_MULTIPLE,
+      DlpReadDBListReqType.with({
+        srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
       })
     );
-    console.log(readDbListResp.metadataList.map(({name}) => name).join('\n'));
+    console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
   });
   syncServer.start();
 }

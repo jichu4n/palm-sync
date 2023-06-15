@@ -3,25 +3,25 @@ import {
   DLP_ARG_ID_BASE,
   DlpRequest,
   DlpResponse,
-  DlpResponseStatus,
+  DlpRespErrorCode,
   dlpArg,
   optDlpArg,
 } from '../dlp-protocol';
 
-const COMMAND_ID = 42;
+const FUNC_ID = 42;
 
 // Request and response without args.
 class EmptyDlpRequest extends DlpRequest<EmptyDlpResponse> {
-  commandId = COMMAND_ID;
+  funcId = FUNC_ID;
   responseType = EmptyDlpResponse;
 }
 class EmptyDlpResponse extends DlpResponse {
-  commandId = COMMAND_ID;
+  funcId = FUNC_ID;
 }
 
 // Request and response with args.
 class TestDlpRequest extends DlpRequest<TestDlpResponse> {
-  commandId = COMMAND_ID;
+  funcId = FUNC_ID;
   responseType = TestDlpResponse;
 
   @dlpArg(0, SUInt8)
@@ -32,7 +32,7 @@ class TestDlpRequest extends DlpRequest<TestDlpResponse> {
   str1 = '';
 }
 class TestDlpResponse extends DlpResponse {
-  commandId = COMMAND_ID;
+  funcId = FUNC_ID;
   @dlpArg(0, SUInt8)
   num1 = 0;
   @optDlpArg(1, SStringNT)
@@ -46,13 +46,13 @@ describe('dlp-protocol', function () {
     const request = new EmptyDlpRequest();
     expect(request.serialize()).toStrictEqual(
       Buffer.of(
-        COMMAND_ID,
+        FUNC_ID,
         0 // argc
       )
     );
     const response = new EmptyDlpResponse();
     const responseBuffer = Buffer.of(
-      COMMAND_ID | (1 << 7),
+      FUNC_ID | (1 << 7),
       0, // argc
       0, // status
       0 // status
@@ -61,18 +61,16 @@ describe('dlp-protocol', function () {
       response.deserialize(Buffer.concat([responseBuffer, Buffer.alloc(100)]))
     ).toStrictEqual(4);
 
-    // Change command ID.
+    // Change function ID.
     responseBuffer[0] += 1;
     expect(() => response.deserialize(responseBuffer)).toThrow(
-      /^Command ID mismatch/
+      /^Function ID mismatch/
     );
     responseBuffer[0] -= 1;
 
     // Set error status.
-    responseBuffer[3] = DlpResponseStatus.ERROR_SYSTEM;
-    expect(() => response.deserialize(responseBuffer)).toThrow(
-      /^DLP response status/
-    );
+    responseBuffer[3] = DlpRespErrorCode.SYSTEM;
+    expect(() => response.deserialize(responseBuffer)).toThrow(/^Error 0x01/);
     responseBuffer[3] = 0;
   });
 
@@ -80,10 +78,10 @@ describe('dlp-protocol', function () {
     const request = TestDlpRequest.with({
       num1: 50,
       num2: 100,
-      str1: 'a'.repeat(300), // Longer than tiny arg max length (256)
+      str1: 'a'.repeat(300), // Longer than small arg max length (256)
     });
     const expectedRequestBuffer = Buffer.of(
-      COMMAND_ID,
+      FUNC_ID,
       2, // argc
       DLP_ARG_ID_BASE, // arg 1 ID
       3, // arg 1 size
@@ -111,7 +109,7 @@ describe('dlp-protocol', function () {
   test('response deserialization', function () {
     // Empty response, missing required arg.
     const responseBuffer1 = Buffer.of(
-      COMMAND_ID | (1 << 7),
+      FUNC_ID | (1 << 7),
       0, // argc
       0, // status
       0 // status
@@ -122,7 +120,7 @@ describe('dlp-protocol', function () {
 
     // Response with required arg but no optional arg.
     const responseBuffer2 = Buffer.of(
-      COMMAND_ID | (1 << 7),
+      FUNC_ID | (1 << 7),
       1, // argc
       0, // status
       0, // status,
@@ -137,7 +135,7 @@ describe('dlp-protocol', function () {
 
     // Response with required arg and optional arg.
     const responseBuffer3 = Buffer.of(
-      COMMAND_ID | (1 << 7),
+      FUNC_ID | (1 << 7),
       2, // argc
       0, // status
       0, // status,
