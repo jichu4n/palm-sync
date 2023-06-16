@@ -2655,7 +2655,7 @@ export class DlpExpCardPresentRespType extends DlpResponse {
     try {
       super.deserialize(buffer, opts);
     } catch (e) {
-      if (this.errorCode !== DlpRespErrorCode.NONE) {
+      if (this.errorCode === DlpRespErrorCode.NONE) {
         throw e;
       }
     }
@@ -2664,21 +2664,71 @@ export class DlpExpCardPresentRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: ExpCardInfo (0x3e)
+// ExpCardInfo (0x3e)
 // =============================================================================
 export class DlpExpCardInfoReqType extends DlpRequest<DlpExpCardInfoRespType> {
   funcId = DlpFuncId.ExpCardInfo;
   responseType = DlpExpCardInfoRespType;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Slot reference to query. */
+  @dlpArg(0, SUInt16BE)
+  slotRefNum = 0;
 }
 
+/* References:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h#L2706
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Extensions/ExpansionMgr/ExpansionMgr.h#L107
+ **/
 export class DlpExpCardInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ExpCardInfo;
 
-  @dlpArg(0, SUInt8)
+  @dlpArg(0)
+  capabilityFlags = new DlpExpCardInfoCapabilityFlags();
+
+  @dlpArg(0, SDynamicArray.of(SUInt16BE, SStringNT))
+  private strings: Array<string> = [];
+
+  /** Manufacturer, e.g., "Palm", "Motorola", etc. */
+  get manufacturerStr() {
+    return this.strings.length > 0 ? this.strings[0] : null;
+  }
+
+  /** Name of product, e.g., "SafeBackup 32MB". */
+  get productStr() {
+    return this.strings.length > 1 ? this.strings[1] : null;
+  }
+
+  /** Type of product, e.g., "Backup", "Ethernet", etc. */
+  get deviceClassStr() {
+    return this.strings.length > 2 ? this.strings[2] : null;
+  }
+
+  /** Unique identifier for product, e.g., a serial number. */
+  get deviceUniqueIDStr() {
+    return this.strings.length > 3 ? this.strings[3] : null;
+  }
+}
+
+/** Capability flags used in DlpExpCardInfoRespType.
+ *
+ * Reference:
+ *   - https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-4/include/Extensions/ExpansionMgr/ExpansionMgr.h#L102
+ */
+export class DlpExpCardInfoCapabilityFlags extends SBitmask.of(SUInt32BE) {
+  @bitfield(29)
   private padding1 = 0;
+
+  /** Card supports dumb serial interface. */
+  @bitfield(1)
+  serial = false;
+
+  /** Card is read only. */
+  @bitfield(1)
+  readOnly = false;
+
+  /** Card supports reading (& maybe writing) sectors. */
+  @bitfield(1)
+  hasStorage = false;
 }
 
 // =============================================================================
