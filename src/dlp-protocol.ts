@@ -87,8 +87,8 @@ export abstract class DlpRequest<
     if (actualFuncId !== this.funcId) {
       throw new Error(
         'Function ID mismatch: ' +
-          `expected 0x${this.funcId.toString(16)}, ` +
-          `got ${actualFuncId.toString(16)}`
+          `expected 0x${this.funcId.toString(16).padStart(2, '0')}, ` +
+          `got 0x${actualFuncId.toString(16).padStart(2, '0')}`
       );
     }
 
@@ -245,8 +245,8 @@ export abstract class DlpResponse extends SObject {
     if (actualFuncId !== this.funcId) {
       throw new Error(
         `Function ID mismatch in ${this.constructor.name}: ` +
-          `expected 0x${this.funcId.toString(16)}, ` +
-          `got ${actualFuncId.toString(16)}`
+          `expected 0x${this.funcId.toString(16).padStart(2, '0')}, ` +
+          `got 0x${actualFuncId.toString(16).padStart(2, '0')}`
       );
     }
 

@@ -3128,57 +3128,174 @@ export class DlpVFSVolumeFormatRespType extends DlpResponse {
 }
 
 // =============================================================================
-// TODO: VFSVolumeEnumerate (0x55)
+// VFSVolumeEnumerate (0x55)
 // =============================================================================
 export class DlpVFSVolumeEnumerateReqType extends DlpRequest<DlpVFSVolumeEnumerateRespType> {
   funcId = DlpFuncId.VFSVolumeEnumerate;
   responseType = DlpVFSVolumeEnumerateRespType;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
 }
 
 export class DlpVFSVolumeEnumerateRespType extends DlpResponse {
   funcId = DlpFuncId.VFSVolumeEnumerate;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Volume references. */
+  @dlpArg(0, SDynamicArray.of(SUInt16BE, SUInt16BE))
+  volumes = [];
 }
 
 // =============================================================================
-// TODO: VFSVolumeInfo (0x56)
+// VFSVolumeInfo (0x56)
+//		Get the used and total size of a volume
 // =============================================================================
 export class DlpVFSVolumeInfoReqType extends DlpRequest<DlpVFSVolumeInfoRespType> {
   funcId = DlpFuncId.VFSVolumeInfo;
   responseType = DlpVFSVolumeInfoRespType;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Volume reference number. */
+  @dlpArg(0, SUInt16BE)
+  volRefNum = 0;
 }
 
 export class DlpVFSVolumeInfoRespType extends DlpResponse {
   funcId = DlpFuncId.VFSVolumeInfo;
 
-  @dlpArg(0, SUInt8)
+  @dlpArg(0)
+  attributes = new VFSVolumeAttrs();
+
+  /** Filesystem type for this volume. */
+  @dlpArg(0, TypeId)
+  fsType = VFSFilesystemType;
+
+  /** Creator code of filesystem driver for this volume, for use with
+   * VFSCustomControl().
+   */
+  @dlpArg(0, TypeId)
+  fsCreator = 0;
+
+  /** Mount class that mounted this volume. */
+  @dlpArg(0, TypeId)
+  mountClass = VFSMountClass.SLOT_DRIVER;
+
+  // For slot based filesystems (mountClass = VFSMountClass.SLOT_DRIVER):
+
+  /** Library on which the volume is mounted.
+   *
+   * Only available if mountClass == VFSMountClass.SLOT_DRIVER.
+   */
+  @dlpArg(0, SUInt16BE)
+  slotLibRefNum = 0;
+
+  /** ExpMgr slot number of card containing volume.
+   *
+   * Only available if mountClass == VFSMountClass.SLOT_DRIVER.
+   */
+  @dlpArg(0, SUInt16BE)
+  slotRefNum = 0;
+
+  /** Type of card media (mediaMemoryStick, mediaCompactFlash, etc.)
+   *
+   * Only available if mountClass == VFSMountClass.SLOT_DRIVER.
+   */
+  @dlpArg(0, TypeId)
+  mediaType = ExpMediaType.ANY;
+
+  @dlpArg(0, SUInt32BE)
   private padding1 = 0;
 }
 
+/** VFS volume attributes. */
+export class VFSVolumeAttrs extends SBitmask.of(SUInt32BE) {
+  @bitfield(29)
+  private padding1 = 0;
+
+  /** Volume should not be user-visible. */
+  @bitfield(1)
+  hidden = false;
+
+  /** Volume is read only. */
+  @bitfield(1)
+  readOnly = false;
+
+  /** Volume is inserted is an expansion slot. */
+  @bitfield(1)
+  slotBased = false;
+}
+
+/** VFS mount class constants. */
+export enum VFSMountClass {
+  SLOT_DRIVER = 'libs',
+  SIMULATOR = '????',
+  POSE = 'pose',
+}
+
+/** File system types. */
+export enum VFSFilesystemType {
+  /**  FAT12 and FAT16 extended to handle long file names. */
+  VFAT = 'vfat',
+  /** FAT12 and FAT16 which only handles 8.3 file names. */
+  FAT = 'fats',
+  /** Windows NT filesystem. */
+  NTFS = 'ntfs',
+  /** The Macintosh extended hierarchical filesystem. */
+  HFSPlus = 'hfse',
+  /** The Macintosh standard hierarchical filesystem. */
+  HFS = 'hfss',
+  /** The Macintosh original filesystem. */
+  MFS = 'mfso',
+  /** Linux filesystem. */
+  EXT2 = 'ext2',
+  /** Unix Berkeley block based filesystem. */
+  FFS = 'ffsb',
+  /** Unix Networked filesystem. */
+  NFS = 'nfsu',
+  /** Unix Andrew filesystem. */
+  AFS = 'afsu',
+  /** Novell filesystem. */
+  Novell = 'novl',
+  /** OS2 High Performance filesystem. */
+  HPFS = 'hpfs',
+}
+
+/** Media type. */
+export enum ExpMediaType {
+  /** matches all media types when looking up a default directory. */
+  ANY = 'wild',
+  /** */
+  MEMORY_STICK = 'mstk',
+  /** */
+  COMPACT_FLASH = 'cfsh',
+  /** */
+  SECURE_DIGITAL = 'sdig',
+  /** */
+  MULTI_MEDIA_CARD = 'mmcd',
+  /** */
+  SMART_MEDIA = 'smed',
+  /** a RAM disk based media. */
+  RAM_DISK = 'ramd',
+  /** Host filesystem emulated by Poser. */
+  POSER_HOST = 'pose',
+  /** Host filesystem emulated by Poser. */
+  MAC_SIM = 'PSim',
+}
+
 // =============================================================================
-// TODO: VFSVolumeGetLabel (0x57)
+// VFSVolumeGetLabel (0x57)
 // =============================================================================
 export class DlpVFSVolumeGetLabelReqType extends DlpRequest<DlpVFSVolumeGetLabelRespType> {
   funcId = DlpFuncId.VFSVolumeGetLabel;
   responseType = DlpVFSVolumeGetLabelRespType;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Volume reference number. */
+  @dlpArg(0, SUInt16BE)
+  volRefNum = 0;
 }
 
 export class DlpVFSVolumeGetLabelRespType extends DlpResponse {
   funcId = DlpFuncId.VFSVolumeGetLabel;
 
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
+  /** Label text. */
+  @dlpArg(0, SStringNT)
+  label = '';
 }
 
 // =============================================================================
