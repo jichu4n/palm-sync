@@ -17,6 +17,7 @@
   "scripts": {
     "build": "tsc",
     "build:docs": "rm -rf ./docs/ && typedoc",
+    "build:udev-rules": "ts-node ./src/bin/generate-udev-rules.ts",
     "lint": "prettier --check .",
     "test": "env TZ=UTC jest",
     "record-sync-session": "env TZ=UTC ts-node ./src/tests/record-sync-session.ts"
