@@ -11,7 +11,7 @@ import {
   SUInt8,
 } from 'serio';
 import {Duplex, DuplexOptions} from 'stream';
-import {WebUSB} from 'usb';
+import {WebUSB, findByIds, findBySerialNumber} from 'usb';
 import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
 import {NetSyncConnection} from './network-sync-server';
 import {SyncConnection} from './sync-server';
@@ -21,6 +21,7 @@ import {
   UsbDeviceConfig,
   UsbInitType,
 } from './usb-device-configs';
+import {TypeId} from 'palm-pdb';
 
 /** Vendor USB control requests supported by Palm OS devices. */
 export enum UsbControlRequestType {
@@ -43,6 +44,32 @@ export enum UsbControlRequestType {
   GET_EXT_CONNECTION_INFO = 0x04,
 }
 
+/** Information abount a port in a GetExtConnectionInfoResponse. */
+export class ExtConnectionPortInfo extends SObject {
+  /** Creator ID of the application that opened	this connection.
+   *
+   * For HotSync port, this should be equal to HOT_SYNC_PORT_TYPE.
+   */
+  @field(SString.ofLength(4))
+  type = 'AAAA';
+
+  /** Specifies the in and out endpoint number if `hasDifferentEndpoints`
+   * is 0, otherwise 0.  */
+  @field(SUInt8)
+  portNumber = 0;
+
+  /** Specifies the in and out endpoint numbers if `hasDifferentEndpoints`
+   * is 1, otherwise set to 0. */
+  @field()
+  endpoints = new ExtConnectionEndpoints();
+
+  @field(SUInt16LE)
+  private padding1 = 0;
+}
+
+/** The type of the HotSync port in ExtConnectionPortInfo. */
+const HOT_SYNC_PORT_TYPE = 'cnys';
+
 /** Response type for GET_EXT_CONNECTION_INFO control requests. */
 export class GetExtConnectionInfoResponse extends SObject {
   /** Number of ports in use (max 2).*/
@@ -63,28 +90,8 @@ export class GetExtConnectionInfoResponse extends SObject {
   private padding1 = 0;
 
   /** Port information. */
-  @field(SArray)
-  ports = Array(2)
-    .fill(null)
-    .map(() => new ExtConnectionPortInfo());
-}
-
-/** Information abount a port in a GetExtConnectionInfoResponse. */
-export class ExtConnectionPortInfo extends SObject {
-  /** Creator ID of the application that opened	this connection. */
-  @field(SString.ofLength(4))
-  type = 'AAAA';
-  /** Specifies the in and out endpoint number if `hasDifferentEndpoints`
-   * is 0, otherwise 0.  */
-  @field(SUInt8)
-  portNumber = 0;
-  /** Specifies the in and out endpoint numbers if `hasDifferentEndpoints`
-   * is 1, otherwise set to 0. */
-  @field()
-  endpoints = new ExtConnectionEndpoints();
-
-  @field(SUInt16LE)
-  private padding1 = 0;
+  @field(SArray.ofLength(2, ExtConnectionPortInfo))
+  ports = [];
 }
 
 /** A pair of 4-bit endpoint numbers. */
@@ -221,7 +228,6 @@ export const USB_INIT_FNS: {
       outEndpoint: 0,
     };
 
-    console.log(`GetConnectionInfo`);
     const getConnectionInfoResponse = await sendUsbControlRequest(
       device,
       {
@@ -250,6 +256,10 @@ export const USB_INIT_FNS: {
 
     /*
     const getExtConnectionInfoResponse = new GetExtConnectionInfoResponse();
+    console.log(
+      // should be 20
+      `expected size = ${getExtConnectionInfoResponse.getSerializedLength()}`
+    );
     const result2 = await device.controlTransferIn(
       {
         requestType: 'vendor',
@@ -270,12 +280,13 @@ export const USB_INIT_FNS: {
     }
     getExtConnectionInfoResponse.deserialize(Buffer.from(result2.data.buffer));
     console.log(JSON.stringify(getExtConnectionInfoResponse, null, 2));
+
+    // TODO: Parse connection info. See USB_configure_generic
     */
 
     // Query the number of bytes available. We ignore the response because 1) it
     // is broken and 2) we don't actually need it, but devices may expect this
     // call before sending data.
-    console.log('GetNumBytesAvailable');
     const result3 = await sendUsbControlRequest(
       device,
       {
@@ -287,7 +298,6 @@ export const USB_INIT_FNS: {
       },
       SUInt16LE
     );
-    console.log(result3.value);
 
     return config;
   },
@@ -364,15 +374,71 @@ export class UsbConnectionStream extends Duplex {
 
 if (require.main === module) {
   (async () => {
-    console.log('Start');
+    console.log('Waiting for device...');
     const {deviceConfig, device} = await waitForDevice();
-    console.log(`Found config: ${JSON.stringify(deviceConfig, null, 2)}`);
     await device.open();
-    // await device.selectConfiguration(1);
-    // await device.claimInterface(0);
     const initFn = USB_INIT_FNS[deviceConfig.initType];
     const config = await initFn(device);
     console.log(JSON.stringify({...config, device: undefined}, null, 2));
+
+    // Three ways to obtain USB endpoint info:
+    // 1. If supports GetExtConnectionInfo, use that.
+    // 2. If supports GetConnectionInfo, use that.
+    // 3. If neither, can get info by directly iterating through endpoints in
+    //    device.configuration.interface[0].alternate.endpoints.
+    // To sync, must claim interface first
+    //    This can fail if interface is attached to kernal driver, so need to
+    //    detach first.
+
+    if (!device.configuration) {
+      throw new Error('No configuration for device');
+    }
+    log(
+      `Configurations: ${device.configurations.length}, selected ${device.configuration.configurationName}`
+    );
+    if (device.configuration.interfaces.length < 1) {
+      throw new Error('No interfaces');
+    }
+    log(
+      `Interfaces: ${device.configuration.interfaces.length}, selected ${device.configuration.interfaces[0].interfaceNumber}, ${device.configuration.interfaces[0].claimed}`
+    );
+    const {alternate} = device.configuration.interfaces[0];
+    log(
+      `Alternates: ${device.configuration.interfaces[0].alternates.length}, selected ${alternate.interfaceName}, ${alternate.interfaceProtocol}, ${alternate.interfaceClass}`
+    );
+    log(
+      `Endpoints: ${alternate.endpoints
+        .map(
+          (e) =>
+            `${e.endpointNumber}, ${e.type}, ${e.direction}, ${e.packetSize}`
+        )
+        .join('\n')}`
+    );
+    const inEndpoint = alternate.endpoints.find(
+      (endpoint) =>
+        endpoint.type === 'bulk' &&
+        endpoint.packetSize === 0x40 &&
+        endpoint.direction === 'in'
+    )?.endpointNumber;
+    const outEndpoint = alternate.endpoints.find(
+      (endpoint) =>
+        endpoint.type === 'bulk' &&
+        endpoint.packetSize === 0x40 &&
+        endpoint.direction === 'out'
+    )?.endpointNumber;
+    const interfaceNumber = device.configuration.interfaces[0].interfaceNumber;
+    log(
+      `Endpoints: ${inEndpoint}, ${outEndpoint}; interface: ${interfaceNumber}`
+    );
+    config.inEndpoint = inEndpoint!;
+    config.outEndpoint = outEndpoint!;
+
+    const legacyDevice = findByIds(device.vendorId, device.productId)!;
+    if (legacyDevice.interface(interfaceNumber).isKernelDriverActive()) {
+      log('Detaching kernal driver');
+      legacyDevice.interface(interfaceNumber).detachKernelDriver();
+    }
+    await device.claimInterface(interfaceNumber);
 
     const usbConnectionStream = new UsbConnectionStream(config);
     const connection = new NetSyncConnection(usbConnectionStream);
@@ -426,7 +492,5 @@ if (require.main === module) {
       */
     })(connection);
     await connection.end();
-
-    console.log('End');
   })();
 }
