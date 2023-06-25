@@ -1,30 +1,30 @@
-import debug from 'debug';
+import debug, {Debugger} from 'debug';
+import {TypeId} from 'palm-pdb';
 import {
-  bitfield,
-  field,
   SArray,
   SBitmask,
-  Serializable,
   SObject,
-  SString,
+  SUInt16BE,
   SUInt16LE,
   SUInt8,
+  Serializable,
+  bitfield,
+  field,
 } from 'serio';
-import {Duplex, DuplexOptions} from 'stream';
-import {WebUSB, findByIds, findBySerialNumber} from 'usb';
+import {Duplex, DuplexOptions, EventEmitter} from 'stream';
+import {Device, WebUSBDevice, usb} from 'usb';
 import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
 import {NetSyncConnection} from './network-sync-server';
-import {SyncConnection} from './sync-server';
+import {SyncConnection, SyncFn} from './sync-server';
 import {
-  toUsbId,
   USB_DEVICE_CONFIGS_BY_ID,
   UsbDeviceConfig,
   UsbInitType,
+  toUsbId,
 } from './usb-device-configs';
-import {TypeId} from 'palm-pdb';
 
 /** Vendor USB control requests supported by Palm OS devices. */
-export enum UsbControlRequestType {
+enum UsbControlRequestType {
   /** Query for the number of bytes that are available to be transferred to the
    * host for the specified endpoint. Currently not used, and always returns
    * 0x0001. */
@@ -44,13 +44,59 @@ export enum UsbControlRequestType {
   GET_EXT_CONNECTION_INFO = 0x04,
 }
 
+class GetNumBytesAvailableResponse extends SObject {
+  @field(SUInt16BE)
+  numBytes = 0;
+}
+
+/** Port function types in GetConnectionInfoResponse. */
+enum ConnectionPortFunctionType {
+  GENERIC = 0x00,
+  DEBUGGER = 0x01,
+  HOTSYNC = 0x02,
+  CONSOLE = 0x03,
+  REMOTE_FS = 0x04,
+}
+
+/** Information about a port in GetConnectionInfoResponse. */
+class ConnectionPortInfo extends SObject {
+  @field(SUInt8.enum(ConnectionPortFunctionType))
+  functionType = ConnectionPortFunctionType.GENERIC;
+  @field(SUInt8)
+  portNumber = 0;
+}
+
+/** Response type for GET_CONNECTION_INFO control requests. */
+class GetConnectionInfoResponse extends SObject {
+  /** Number of ports in use (max 2). */
+  @field(SUInt8)
+  numPorts = 0;
+
+  @field(SUInt8)
+  private padding1 = 0;
+
+  /** Port information. */
+  @field(SArray.ofLength(2, ConnectionPortInfo))
+  ports: Array<ConnectionPortInfo> = [];
+}
+
+/** A pair of 4-bit endpoint numbers. */
+class ExtConnectionEndpoints extends SBitmask.of(SUInt8) {
+  /** In endpoint number. */
+  @bitfield(4)
+  inEndpoint = 0;
+  /** Out endpoint number. */
+  @bitfield(4)
+  outEndpoint = 0;
+}
+
 /** Information abount a port in a GetExtConnectionInfoResponse. */
-export class ExtConnectionPortInfo extends SObject {
+class ExtConnectionPortInfo extends SObject {
   /** Creator ID of the application that opened	this connection.
    *
    * For HotSync port, this should be equal to HOT_SYNC_PORT_TYPE.
    */
-  @field(SString.ofLength(4))
+  @field(TypeId)
   type = 'AAAA';
 
   /** Specifies the in and out endpoint number if `hasDifferentEndpoints`
@@ -71,7 +117,7 @@ export class ExtConnectionPortInfo extends SObject {
 const HOT_SYNC_PORT_TYPE = 'cnys';
 
 /** Response type for GET_EXT_CONNECTION_INFO control requests. */
-export class GetExtConnectionInfoResponse extends SObject {
+class GetExtConnectionInfoResponse extends SObject {
   /** Number of ports in use (max 2).*/
   @field(SUInt8)
   numPorts = 0;
@@ -91,247 +137,27 @@ export class GetExtConnectionInfoResponse extends SObject {
 
   /** Port information. */
   @field(SArray.ofLength(2, ExtConnectionPortInfo))
-  ports = [];
-}
-
-/** A pair of 4-bit endpoint numbers. */
-export class ExtConnectionEndpoints extends SBitmask.of(SUInt8) {
-  /** In endpoint number. */
-  @bitfield(4)
-  inEndpoint = 0;
-  /** Out endpoint number. */
-  @bitfield(4)
-  outEndpoint = 0;
-}
-
-/** Response type for GET_CONNECTION_INFO control requests. */
-export class GetConnectionInfoResponse extends SObject {
-  /** Number of ports in use (max 2).*/
-  @field(SUInt16LE)
-  numPorts = 0;
-  /** Port information. */
-  @field(SArray)
-  ports = Array(2)
-    .fill(null)
-    .map(() => new ConnectionPortInfo());
-}
-
-/** Port function types in GetConnectionInfoResponse. */
-export enum ConnectionPortFunctionType {
-  GENERIC = 0x00,
-  DEBUGGER = 0x01,
-  HOTSYNC = 0x02,
-  CONSOLE = 0x03,
-  REMOTE_FS = 0x04,
-}
-
-/** Information about a port in GetConnectionInfoResponse. */
-export class ConnectionPortInfo extends SObject {
-  @field(SUInt8.enum(ConnectionPortFunctionType))
-  functionType = ConnectionPortFunctionType.GENERIC;
-  @field(SUInt8)
-  portNumber = 0;
-}
-
-const log = debug('palm-dlp').extend('usb');
-
-/** Wait for a supported USB device. */
-export async function waitForDevice() {
-  const webusb = new WebUSB({allowAllDevices: true});
-  for (;;) {
-    const devices = await webusb.getDevices();
-    let matchedDevice: USBDevice | null = null;
-    let matchedDeviceConfig: UsbDeviceConfig | null = null;
-    for (const device of devices) {
-      const usbId = toUsbId(device);
-      if (usbId in USB_DEVICE_CONFIGS_BY_ID) {
-        matchedDevice = device;
-        matchedDeviceConfig = USB_DEVICE_CONFIGS_BY_ID[usbId];
-        break;
-      }
-    }
-    if (matchedDevice && matchedDeviceConfig) {
-      return {device: matchedDevice, deviceConfig: matchedDeviceConfig};
-    } else {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
-}
-
-/** Send a USB control read request and parse the result. */
-export async function sendUsbControlRequest<ResponseT extends Serializable>(
-  device: USBDevice,
-  setup: USBControlTransferParameters,
-  responseT: new () => ResponseT
-): Promise<ResponseT> {
-  const response = new responseT();
-  const requestName = response.constructor.name.replace(/Response$/, '');
-  log(`>>> ${requestName}`);
-
-  const result = await device.controlTransferIn(
-    setup,
-    response.getSerializedLength()
-  );
-  if (result.status !== 'ok') {
-    const message = `${requestName} failed with status ${result.status}`;
-    log(`--- ${message}`);
-    throw new Error(message);
-  }
-  if (!result.data) {
-    const message = `${requestName} returned no data`;
-    log(`--- ${message}`);
-    throw new Error(message);
-  }
-  const responseData = Buffer.from(result.data.buffer);
-  log(`<<< ${responseData.toString('hex')}`);
-  try {
-    response.deserialize(Buffer.from(result.data.buffer));
-  } catch (e: any) {
-    const message = `Failed to parse ${requestName} response: ${e.message}`;
-    log(`--- ${message}`);
-    throw new Error(message);
-  }
-  log(`<<< ${JSON.stringify(response)}`);
-  return response;
+  ports: Array<ExtConnectionPortInfo> = [];
 }
 
 /** Configuration for a USB connection, returned from USB device initialization
  * routines. */
-export interface UsbConnectionConfig {
-  /** The associated device. */
-  device: USBDevice;
-  /** Interrupt endpoint number. */
-  interruptEndpoint: number;
+interface UsbConnectionConfig {
   /** In endpoint number. */
   inEndpoint: number;
   /** Out endpoint number. */
   outEndpoint: number;
 }
 
-/** USB device initialization routines. */
-export const USB_INIT_FNS: {
-  [key in UsbInitType]: (device: USBDevice) => Promise<UsbConnectionConfig>;
-} = {
-  [UsbInitType.NONE]: async (device: USBDevice) => {
-    return {
-      device,
-      interruptEndpoint: 0,
-      inEndpoint: 0,
-      outEndpoint: 0,
-    };
-  },
-  [UsbInitType.PALM_OS_4]: async (device: USBDevice) => {
-    const config = {
-      device,
-      interruptEndpoint: 0,
-      inEndpoint: 0,
-      outEndpoint: 0,
-    };
-
-    const getConnectionInfoResponse = await sendUsbControlRequest(
-      device,
-      {
-        requestType: 'vendor',
-        recipient: 'endpoint',
-        request: UsbControlRequestType.GET_CONNECTION_INFO,
-        index: 0,
-        value: 0,
-      },
-      GetConnectionInfoResponse
-    );
-    const portInfo = getConnectionInfoResponse.ports
-      .slice(0, getConnectionInfoResponse.numPorts)
-      .find(
-        ({functionType}) => functionType === ConnectionPortFunctionType.HOTSYNC
-      );
-    if (!portInfo) {
-      throw new Error(
-        `Could not identify HotSync port in GetConnectionInfo response: ` +
-          JSON.stringify(getConnectionInfoResponse)
-      );
-    }
-    config.interruptEndpoint = 0;
-    config.inEndpoint = portInfo.portNumber;
-    config.outEndpoint = portInfo.portNumber;
-
-    /*
-    const getExtConnectionInfoResponse = new GetExtConnectionInfoResponse();
-    console.log(
-      // should be 20
-      `expected size = ${getExtConnectionInfoResponse.getSerializedLength()}`
-    );
-    const result2 = await device.controlTransferIn(
-      {
-        requestType: 'vendor',
-        recipient: 'endpoint',
-        request: UsbControlRequestType.GET_EXT_CONNECTION_INFO,
-        index: 0,
-        value: 0,
-      },
-      getExtConnectionInfoResponse.getSerializedLength()
-    );
-    if (result2.status !== 'ok') {
-      throw new Error(
-        `GetExtConnectionInfo failed with status ${result2.status}`
-      );
-    }
-    if (!result2.data) {
-      throw new Error(`GetExtConnectionInfo returned no data`);
-    }
-    getExtConnectionInfoResponse.deserialize(Buffer.from(result2.data.buffer));
-    console.log(JSON.stringify(getExtConnectionInfoResponse, null, 2));
-
-    // TODO: Parse connection info. See USB_configure_generic
-    */
-
-    // Query the number of bytes available. We ignore the response because 1) it
-    // is broken and 2) we don't actually need it, but devices may expect this
-    // call before sending data.
-    const result3 = await sendUsbControlRequest(
-      device,
-      {
-        requestType: 'vendor',
-        recipient: 'endpoint',
-        request: UsbControlRequestType.GET_NUM_BYTES_AVAILABLE,
-        index: 0,
-        value: 0,
-      },
-      SUInt16LE
-    );
-
-    return config;
-  },
-  [UsbInitType.PALM_OS_3]: async (device: USBDevice) => {
-    return {
-      device,
-      interruptEndpoint: 0,
-      inEndpoint: 0,
-      outEndpoint: 0,
-    };
-  },
-  [UsbInitType.SONY_CLIE]: async (device: USBDevice) => {
-    return {
-      device,
-      interruptEndpoint: 0,
-      inEndpoint: 0,
-      outEndpoint: 0,
-    };
-  },
-  [UsbInitType.TAPWAVE]: async (device: USBDevice) => {
-    return {
-      device,
-      interruptEndpoint: 0,
-      inEndpoint: 0,
-      outEndpoint: 0,
-    };
-  },
-};
-
 /** Duplex stream for HotSync with an initialized USB device. */
 export class UsbConnectionStream extends Duplex {
   constructor(
+    /** Device handle. */
+    private readonly device: WebUSBDevice,
     /** Connection configuration. */
     private readonly config: UsbConnectionConfig,
+    /** Logger. */
+    private readonly log: Debugger,
     opts?: DuplexOptions
   ) {
     super(opts);
@@ -346,7 +172,7 @@ export class UsbConnectionStream extends Duplex {
       callback(new Error(`Unsupported encoding ${encoding}`));
       return;
     }
-    const result = await this.config.device.transferOut(
+    const result = await this.device.transferOut(
       this.config.outEndpoint,
       chunk
     );
@@ -358,10 +184,14 @@ export class UsbConnectionStream extends Duplex {
   }
 
   async _read(size: number) {
-    const result = await this.config.device.transferIn(
-      this.config.inEndpoint,
-      size
-    );
+    let result: USBInTransferResult;
+    try {
+      result = await this.device.transferIn(this.config.inEndpoint, size);
+    } catch (e) {
+      this.log(`USB read failed with error: ${e}`);
+      this.destroy(new Error(`USB read failed with error: ${e}`));
+      return;
+    }
     if (result.status === 'ok') {
       this.push(
         result.data ? Buffer.from(result.data.buffer) : Buffer.alloc(0)
@@ -372,125 +202,433 @@ export class UsbConnectionStream extends Duplex {
   }
 }
 
+/** USB device polling interval used in waitForDevice(). */
+const USB_DEVICE_POLLING_INTERVAL_MS = 200;
+
+export class UsbSyncServer extends EventEmitter {
+  constructor(syncFn: SyncFn) {
+    super();
+    this.syncFn = syncFn;
+  }
+
+  start() {
+    if (this.runPromise) {
+      throw new Error('Server already started');
+    }
+    this.runPromise = this.run();
+  }
+
+  async stop() {
+    if (!this.runPromise || this.shouldStop) {
+      return;
+    }
+    this.shouldStop = true;
+    try {
+      await this.runPromise;
+    } catch (e) {}
+    this.runPromise = null;
+    this.shouldStop = false;
+  }
+
+  private async run() {
+    while (!this.shouldStop) {
+      this.log('Waiting for device...');
+      const deviceResult = await this.waitForDevice();
+      if (!deviceResult) {
+        break;
+      }
+
+      const {usbId, rawDevice, deviceConfig} = deviceResult;
+      this.log(`Found device ${usbId} - ${deviceConfig.label}`);
+
+      const {device, stream} = await this.openDevice(deviceResult);
+
+      if (stream) {
+        const connection = new NetSyncConnection(stream);
+        this.emit('connect', connection);
+
+        this.log('Starting handshake');
+        await connection.doHandshake();
+        this.log('Handshake complete');
+
+        await connection.start();
+
+        // TODO: Don't make this crash the server
+        await this.syncFn(connection);
+
+        await connection.end();
+        this.emit('disconnect', connection);
+      }
+
+      if (device) {
+        await this.closeDevice(device);
+      }
+
+      await this.waitForDeviceToDisconnect(rawDevice);
+    }
+  }
+
+  /** Wait for a supported USB device.
+   *
+   * Returns device and matching config if found, or null if stop() was called.
+   *
+   * We use the usb package's legacy API because
+   *
+   *   1. The WebUSB API (with allowAllDevices = true) only returns devices the
+   *      current user has permission to access, whereas the legacy API returns
+   *      all connected devices regardless of permissions. If a compatible Palm
+   *      OS device is connected but the user doesn't have permission to access
+   *      it (e.g. they haven't installed the udev rules), we'd rather throw an
+   *      explicit error than not know about it.
+   *   2. We may need to detach the kernal driver on the device, which is only
+   *      supported by the legacy API, so we need the legacy device object
+   *      anyway.
+   */
+  private async waitForDevice() {
+    while (!this.shouldStop) {
+      const rawDevices = usb.getDeviceList();
+      for (const rawDevice of rawDevices) {
+        const usbId = toUsbId(rawDevice.deviceDescriptor);
+        if (usbId in USB_DEVICE_CONFIGS_BY_ID) {
+          return {
+            usbId,
+            rawDevice,
+            deviceConfig: USB_DEVICE_CONFIGS_BY_ID[usbId],
+          };
+        }
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, USB_DEVICE_POLLING_INTERVAL_MS)
+      );
+    }
+    return null;
+  }
+
+  /** Initialize device and return a UsbConnectionStream. */
+  private async openDevice({
+    rawDevice,
+    deviceConfig,
+  }: {
+    rawDevice: Device;
+    deviceConfig: UsbDeviceConfig;
+  }): Promise<{
+    device: WebUSBDevice | null;
+    stream: UsbConnectionStream | null;
+  }> {
+    // 1. Open device.
+    let device: WebUSBDevice | null;
+    try {
+      device = await WebUSBDevice.createInstance(rawDevice);
+      await device.open();
+    } catch (e) {
+      this.log(`Could not open device: ${e}`);
+      return {device: null, stream: null};
+    }
+    // 2. Claim device interface.
+    if (!device.configuration) {
+      this.log('No configurations available for USB device');
+      return {device, stream: null};
+    }
+    if (device.configuration.interfaces.length < 1) {
+      this.log(
+        `No interfaces available in configuration ${device.configuration.configurationValue}`
+      );
+      return {device, stream: null};
+    }
+    const {interfaceNumber} = device.configuration.interfaces[0];
+    const rawInterface = rawDevice.interface(interfaceNumber);
+    if (rawInterface.isKernelDriverActive()) {
+      this.log(`Detaching kernel driver for interface ${interfaceNumber}`);
+      rawInterface.detachKernelDriver();
+    }
+    try {
+      await device.claimInterface(interfaceNumber);
+    } catch (e) {
+      this.log(`Could not claim interface ${interfaceNumber}: ${e}`);
+      return {device, stream: null};
+    }
+
+    // 2. Get device config.
+    let connectionConfig: UsbConnectionConfig | null = null;
+    try {
+      connectionConfig =
+        (await this.USB_INIT_FNS[deviceConfig.initType](device)) ||
+        (await this.getConnectionConfigFromUsbDeviceInfo(device));
+    } catch (e) {
+      this.log(`Could not identify connection configuration: ${e}`);
+      return {device, stream: null};
+    }
+    if (!connectionConfig) {
+      this.log('Could not identify connection configuration');
+      return {device, stream: null};
+    }
+    this.log(`Connection configuration: ${JSON.stringify(connectionConfig)}`);
+
+    // 3. Create stream.
+    return {
+      device,
+      stream: new UsbConnectionStream(device, connectionConfig, this.log),
+    };
+  }
+
+  /** Clean up a device opened by openDevice(). */
+  private async closeDevice(device: WebUSBDevice) {
+    // Release interface.
+    if (device.configuration?.interfaces[0]?.claimed) {
+      try {
+        await device.releaseInterface(
+          device.configuration.interfaces[0].interfaceNumber
+        );
+      } catch (e) {
+        this.log(`Could not release interface: ${e}`);
+      }
+    }
+    // Close device. This currently always fails with a an error "Can't close
+    // device with a pending request", so we don't really need it but keeping it
+    // here for now.
+    // https://github.com/node-usb/node-usb/issues/254
+    try {
+      await device.close();
+    } catch (e) {
+      this.log(`Could not close device: ${e}`);
+    }
+  }
+
+  private async waitForDeviceToDisconnect(rawDeviceToWait: Device) {
+    this.log('Waiting for device to disconnect');
+    const {idVendor, idProduct} = rawDeviceToWait.deviceDescriptor;
+    while (!this.shouldStop) {
+      const rawDevices = usb.getDeviceList();
+      if (
+        !rawDevices.find(
+          ({deviceDescriptor: d}) =>
+            d.idVendor === idVendor && d.idProduct === idProduct
+        )
+      ) {
+        return;
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, USB_DEVICE_POLLING_INTERVAL_MS)
+      );
+    }
+  }
+
+  /** Send a USB control read request and parse the result. */
+  private async sendUsbControlRequest<ResponseT extends Serializable>(
+    device: USBDevice,
+    setup: USBControlTransferParameters,
+    responseT: new () => ResponseT
+  ): Promise<ResponseT> {
+    const response = new responseT();
+    const requestName = response.constructor.name.replace(/Response$/, '');
+    this.log(`>>> ${requestName}`);
+
+    const result = await device.controlTransferIn(
+      setup,
+      response.getSerializedLength()
+    );
+    if (result.status !== 'ok') {
+      const message = `${requestName} failed with status ${result.status}`;
+      this.log(`--- ${message}`);
+      throw new Error(message);
+    }
+    if (!result.data) {
+      const message = `${requestName} returned no data`;
+      this.log(`--- ${message}`);
+      throw new Error(message);
+    }
+    const responseData = Buffer.from(result.data.buffer);
+    this.log(`<<< ${responseData.toString('hex')}`);
+    try {
+      response.deserialize(Buffer.from(result.data.buffer));
+    } catch (e: any) {
+      const message = `Failed to parse ${requestName} response: ${e.message}`;
+      this.log(`--- ${message}`);
+      throw new Error(message);
+    }
+    this.log(`<<< ${JSON.stringify(response)}`);
+    return response;
+  }
+
+  private async getConnectionConfigUsingGetConnectionInfo(
+    device: WebUSBDevice
+  ): Promise<UsbConnectionConfig | null> {
+    let response: GetConnectionInfoResponse;
+    try {
+      response = await this.sendUsbControlRequest(
+        device,
+        {
+          requestType: 'vendor',
+          recipient: 'endpoint',
+          request: UsbControlRequestType.GET_CONNECTION_INFO,
+          index: 0,
+          value: 0,
+        },
+        GetConnectionInfoResponse
+      );
+    } catch (e) {
+      return null;
+    }
+    const portInfo = response.ports
+      .slice(0, response.numPorts)
+      .find(
+        ({functionType}) => functionType === ConnectionPortFunctionType.HOTSYNC
+      );
+    if (!portInfo) {
+      this.log('Could not identify HotSync port in GetConnectionInfo response');
+      return null;
+    }
+    return {inEndpoint: portInfo.portNumber, outEndpoint: portInfo.portNumber};
+  }
+
+  private async getConnectionConfigUsingExtGetConnectionInfo(
+    device: WebUSBDevice
+  ): Promise<UsbConnectionConfig | null> {
+    let response: GetExtConnectionInfoResponse;
+    try {
+      response = await this.sendUsbControlRequest(
+        device,
+        {
+          requestType: 'vendor',
+          recipient: 'endpoint',
+          request: UsbControlRequestType.GET_EXT_CONNECTION_INFO,
+          index: 0,
+          value: 0,
+        },
+        GetExtConnectionInfoResponse
+      );
+    } catch (e) {
+      return null;
+    }
+    const portInfo = response.ports
+      .slice(0, response.numPorts)
+      .find(({type}) => type === HOT_SYNC_PORT_TYPE);
+    if (!portInfo) {
+      this.log(
+        'Could not identify HotSync port in GetExtConnectionInfo response'
+      );
+      return null;
+    }
+    if (response.hasDifferentEndpoints) {
+      return {
+        inEndpoint: portInfo.endpoints.inEndpoint,
+        outEndpoint: portInfo.endpoints.outEndpoint,
+      };
+    } else {
+      return {
+        inEndpoint: portInfo.portNumber,
+        outEndpoint: portInfo.portNumber,
+      };
+    }
+  }
+
+  private async getConnectionConfigFromUsbDeviceInfo(
+    device: WebUSBDevice
+  ): Promise<UsbConnectionConfig | null> {
+    if (!device.configuration) {
+      this.log('No configurations available for USB device');
+      return null;
+    }
+    if (device.configuration.interfaces.length < 1) {
+      this.log(
+        `No interfaces available in configuration ${device.configuration.configurationValue}`
+      );
+      return null;
+    }
+    const {alternate} = device.configuration.interfaces[0];
+    const validEndpoints = alternate.endpoints.filter(
+      ({type, packetSize}) => type === 'bulk' && packetSize === 0x40
+    );
+    const inEndpoint = validEndpoints.find(
+      (endpoint) => endpoint.direction === 'in'
+    );
+    const outEndpoint = validEndpoints.find(
+      (endpoint) => endpoint.direction === 'out'
+    );
+    if (!inEndpoint || !outEndpoint) {
+      this.log(
+        'Could not find HotSync endpoints in USB device interface: ' +
+          JSON.stringify(alternate.endpoints)
+      );
+      return null;
+    }
+    this.log('Obtained connection configuration from USB device info');
+    return {
+      inEndpoint: inEndpoint.endpointNumber,
+      outEndpoint: outEndpoint.endpointNumber,
+    };
+  }
+
+  /** USB device initialization routines. */
+  USB_INIT_FNS: {
+    [key in UsbInitType]: (
+      device: WebUSBDevice
+    ) => Promise<UsbConnectionConfig | null>;
+  } = {
+    [UsbInitType.NONE]: async () => {
+      return null;
+    },
+    [UsbInitType.PALM_OS_4]: async (device) => {
+      const config =
+        (await this.getConnectionConfigUsingExtGetConnectionInfo(device)) ||
+        (await this.getConnectionConfigUsingGetConnectionInfo(device));
+      if (!config) {
+        return null;
+      }
+
+      // Query the number of bytes available. We ignore the response because we
+      // don't actually need it, but devices may expect this call before sending
+      // data.
+      /*
+      await this.sendUsbControlRequest(
+        device,
+        {
+          requestType: 'vendor',
+          recipient: 'endpoint',
+          request: UsbControlRequestType.GET_NUM_BYTES_AVAILABLE,
+          index: 0,
+          value: 0,
+        },
+        GetNumBytesAvailableResponse
+      );
+      */
+
+      return config;
+    },
+    [UsbInitType.PALM_OS_3]: async () => {
+      // TODO
+      return null;
+    },
+    [UsbInitType.EARLY_SONY_CLIE]: async () => {
+      // TODO
+      return null;
+    },
+    [UsbInitType.TAPWAVE]: async () => {
+      // TODO
+      return null;
+    },
+  };
+
+  private log = debug('palm-dlp').extend('usb');
+  /** HotSync logic to run when a connection is made. */
+  syncFn: SyncFn;
+  /**  */
+  private runPromise: Promise<void> | null = null;
+  private shouldStop = false;
+}
+
 if (require.main === module) {
   (async () => {
-    console.log('Waiting for device...');
-    const {deviceConfig, device} = await waitForDevice();
-    await device.open();
-    const initFn = USB_INIT_FNS[deviceConfig.initType];
-    const config = await initFn(device);
-    console.log(JSON.stringify({...config, device: undefined}, null, 2));
-
-    // Three ways to obtain USB endpoint info:
-    // 1. If supports GetExtConnectionInfo, use that.
-    // 2. If supports GetConnectionInfo, use that.
-    // 3. If neither, can get info by directly iterating through endpoints in
-    //    device.configuration.interface[0].alternate.endpoints.
-    // To sync, must claim interface first
-    //    This can fail if interface is attached to kernal driver, so need to
-    //    detach first.
-
-    if (!device.configuration) {
-      throw new Error('No configuration for device');
-    }
-    log(
-      `Configurations: ${device.configurations.length}, selected ${device.configuration.configurationName}`
-    );
-    if (device.configuration.interfaces.length < 1) {
-      throw new Error('No interfaces');
-    }
-    log(
-      `Interfaces: ${device.configuration.interfaces.length}, selected ${device.configuration.interfaces[0].interfaceNumber}, ${device.configuration.interfaces[0].claimed}`
-    );
-    const {alternate} = device.configuration.interfaces[0];
-    log(
-      `Alternates: ${device.configuration.interfaces[0].alternates.length}, selected ${alternate.interfaceName}, ${alternate.interfaceProtocol}, ${alternate.interfaceClass}`
-    );
-    log(
-      `Endpoints: ${alternate.endpoints
-        .map(
-          (e) =>
-            `${e.endpointNumber}, ${e.type}, ${e.direction}, ${e.packetSize}`
-        )
-        .join('\n')}`
-    );
-    const inEndpoint = alternate.endpoints.find(
-      (endpoint) =>
-        endpoint.type === 'bulk' &&
-        endpoint.packetSize === 0x40 &&
-        endpoint.direction === 'in'
-    )?.endpointNumber;
-    const outEndpoint = alternate.endpoints.find(
-      (endpoint) =>
-        endpoint.type === 'bulk' &&
-        endpoint.packetSize === 0x40 &&
-        endpoint.direction === 'out'
-    )?.endpointNumber;
-    const interfaceNumber = device.configuration.interfaces[0].interfaceNumber;
-    log(
-      `Endpoints: ${inEndpoint}, ${outEndpoint}; interface: ${interfaceNumber}`
-    );
-    config.inEndpoint = inEndpoint!;
-    config.outEndpoint = outEndpoint!;
-
-    const legacyDevice = findByIds(device.vendorId, device.productId)!;
-    if (legacyDevice.interface(interfaceNumber).isKernelDriverActive()) {
-      log('Detaching kernal driver');
-      legacyDevice.interface(interfaceNumber).detachKernelDriver();
-    }
-    await device.claimInterface(interfaceNumber);
-
-    const usbConnectionStream = new UsbConnectionStream(config);
-    const connection = new NetSyncConnection(usbConnectionStream);
-    await connection.doHandshake();
-    await connection.start();
-
-    await (async ({dlpConnection}: SyncConnection) => {
-      const readDbListResp = await dlpConnection.execute(
-        DlpReadDBListReqType.with({
-          srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
-        })
-      );
-      console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
-
-      /*
-      await dlpConnection.execute(new DlpOpenConduitReqType());
-      const {dbId} = await dlpConnection.execute(
-        DlpOpenDBReqType.with({
-          mode: DlpOpenDBMode.with({read: true}),
-          name: 'MemoDB',
-        })
-      );
-      const {numRecords} = await dlpConnection.execute(
-        DlpReadOpenDBInfoReqType.with({dbId})
-      );
-      const {recordIds} = await dlpConnection.execute(
-        DlpReadRecordIDListReqType.with({
-          dbId,
-          maxNumRecords: 500,
-        })
-      );
-      const memoRecords: Array<MemoRecord> = [];
-      for (const recordId of recordIds) {
-        const resp = await dlpConnection.execute(
-          DlpReadRecordByIDReqType.with({
-            dbId,
-            recordId,
+    const syncServer = new UsbSyncServer(
+      async ({dlpConnection}: SyncConnection) => {
+        const readDbListResp = await dlpConnection.execute(
+          DlpReadDBListReqType.with({
+            srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),
           })
         );
-        const record = MemoRecord.from(resp.data);
-        memoRecords.push(record);
+        console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
       }
-      console.log(
-        `Memos:\n----------\n${memoRecords
-          .map(({value}) => value)
-          .filter((value) => !!value.trim())
-          .join('\n----------\n')}\n----------\n`
-      );
-
-      await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
-      */
-    })(connection);
-    await connection.end();
+    );
+    syncServer.start();
   })();
 }

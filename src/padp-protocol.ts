@@ -133,7 +133,7 @@ export class PadpDatagram extends SerializableWrapper<Buffer> {
 }
 
 /** Number of times to retry sending a PADP datagram before assuming failure. */
-export const PADP_SEND_MAX_RETRIES = 10;
+const PADP_SEND_MAX_RETRIES = 10;
 
 /** PADP stream over a raw data stream.
  *

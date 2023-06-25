@@ -20,8 +20,8 @@ export enum UsbInitType {
   PALM_OS_4 = 'palmOs4',
   /** Palm OS 3.x and below. */
   PALM_OS_3 = 'palmOs3',
-  /** SONY CLIE specific. */
-  SONY_CLIE = 'sonyClie',
+  /** Early SONY CLIE devices. */
+  EARLY_SONY_CLIE = 'earlySonyClie',
   /** Tapwave Zodiac specific. */
   TAPWAVE = 'tapwave',
 }
@@ -38,7 +38,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x054c,
       productId: 0x0038,
       label: 'Sony S S320 and other Palm OS 3.5 devices',
-      initType: UsbInitType.SONY_CLIE,
+      initType: UsbInitType.EARLY_SONY_CLIE,
     },
 
     {
@@ -66,7 +66,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x054c,
       productId: 0x009a,
       label: 'Sony NR70V/U',
-      initType: UsbInitType.SONY_CLIE,
+      initType: UsbInitType.EARLY_SONY_CLIE,
     },
 
     {
@@ -94,7 +94,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x054c,
       productId: 0x0169,
       label: 'Sony TJ',
-      initType: UsbInitType.SONY_CLIE,
+      initType: UsbInitType.EARLY_SONY_CLIE,
     },
 
     /* AlphaSmart */
@@ -315,10 +315,18 @@ export const USB_DEVICE_CONFIGS_BY_ID = Object.fromEntries(
 );
 
 /** Convert a {vendorId, productId} tuple to string. */
-export function toUsbId(t: {vendorId: number; productId: number}) {
+export function toUsbId(
+  t:
+    | {vendorId: number; productId: number}
+    | {idVendor: number; idProduct: number}
+) {
+  const vendorId =
+    'vendorId' in t ? t.vendorId : 'idVendor' in t ? t.idVendor : 0;
+  const productId =
+    'productId' in t ? t.productId : 'idProduct' in t ? t.idProduct : 0;
   return (
-    t.vendorId.toString(16).padStart(4, '0') +
+    vendorId.toString(16).padStart(4, '0') +
     ':' +
-    t.productId.toString(16).padStart(4, '0')
+    productId.toString(16).padStart(4, '0')
   );
 }
