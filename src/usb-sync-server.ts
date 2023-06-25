@@ -374,14 +374,14 @@ export class UsbSyncServer extends EventEmitter {
   /** Clean up a device opened by openDevice(). */
   private async closeDevice(device: WebUSBDevice) {
     // Release interface.
-    if (device.configuration?.interfaces[0]?.claimed) {
-      try {
+    try {
+      if (device.configuration?.interfaces[0]?.claimed) {
         await device.releaseInterface(
           device.configuration.interfaces[0].interfaceNumber
         );
-      } catch (e) {
-        this.log(`Could not release interface: ${e}`);
       }
+    } catch (e) {
+      this.log(`Could not release interface: ${e}`);
     }
     // Close device. This currently always fails with a an error "Can't close
     // device with a pending request", so we don't really need it but keeping it
@@ -569,30 +569,30 @@ export class UsbSyncServer extends EventEmitter {
       return null;
     },
     [UsbInitType.PALM_OS_4]: async (device) => {
-      const config =
-        (await this.getConnectionConfigUsingExtGetConnectionInfo(device)) ||
-        (await this.getConnectionConfigUsingGetConnectionInfo(device));
-      if (!config) {
-        return null;
+      let config = await this.getConnectionConfigUsingExtGetConnectionInfo(
+        device
+      );
+      if (config) {
+        return config;
       }
 
-      // Query the number of bytes available. We ignore the response because we
-      // don't actually need it, but devices may expect this call before sending
-      // data.
-      /*
-      await this.sendUsbControlRequest(
-        device,
-        {
-          requestType: 'vendor',
-          recipient: 'endpoint',
-          request: UsbControlRequestType.GET_NUM_BYTES_AVAILABLE,
-          index: 0,
-          value: 0,
-        },
-        GetNumBytesAvailableResponse
-      );
-      */
-
+      config = await this.getConnectionConfigUsingGetConnectionInfo(device);
+      if (config) {
+        // Query the number of bytes available. We ignore the response because we
+        // don't actually need it, but devices may expect this call before sending
+        // data.
+        await this.sendUsbControlRequest(
+          device,
+          {
+            requestType: 'vendor',
+            recipient: 'endpoint',
+            request: UsbControlRequestType.GET_NUM_BYTES_AVAILABLE,
+            index: 0,
+            value: 0,
+          },
+          GetNumBytesAvailableResponse
+        );
+      }
       return config;
     },
     [UsbInitType.PALM_OS_3]: async () => {
