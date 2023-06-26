@@ -37,7 +37,6 @@ import {
 import {
   DlpDateTimeType,
   DlpRequest,
-  DlpRespErrorCode,
   DlpResponse,
   dlpArg,
   optDlpArg,
@@ -142,7 +141,7 @@ export enum DlpFuncId {
   /** Change database info */
   SetDBInfo = 0x3a,
 
-  /* DLP 1.3 (PalmOS v4.0 and above) */
+  // DLP 1.3 (PalmOS v4.0 and above)
   /** Perform a loopback test */
   LoopBackTest = 0x3b,
   /** Get the number of slots on the device */
@@ -197,15 +196,22 @@ export enum DlpFuncId {
 
 // =============================================================================
 // ReadUserInfo (0x10)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory
 // =============================================================================
+/** DLP request to get user info.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ */
 export class DlpReadUserInfoReqType extends DlpRequest<DlpReadUserInfoRespType> {
   funcId = DlpFuncId.ReadUserInfo;
   responseType = DlpReadUserInfoRespType;
 }
 
+/** DLP response for {@link DlpReadUserInfoReqType}. */
 export class DlpReadUserInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadUserInfo;
 
@@ -282,11 +288,16 @@ export class DlpReadUserInfoRespType extends DlpResponse {
 
 // =============================================================================
 // WriteUserInfo (0x11)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrNotEnoughSpace,
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to set user info.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_ENOUGH_SPACE
+ *   - PARAM
+ */
 export class DlpWriteUserInfoReqType extends DlpRequest<DlpWriteUserInfoRespType> {
   funcId = DlpFuncId.WriteUserInfo;
   responseType = DlpWriteUserInfoRespType;
@@ -350,6 +361,7 @@ export class DlpUserInfoModFlags extends SBitmask.of(SUInt8) {
   private padding1 = 0;
 }
 
+/** DLP response for {@link DlpWriteUserInfoReqType}. */
 export class DlpWriteUserInfoRespType extends DlpResponse {
   funcId = DlpFuncId.WriteUserInfo;
 }
@@ -363,9 +375,14 @@ const MAX_USER_NAME_LENGTH = 40;
 
 // =============================================================================
 // ReadSysInfo (0x12)
-//		Possible error codes
-//			dlpRespErrSystem
 // =============================================================================
+/** DLP request to get system info.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ */
 export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
   funcId = DlpFuncId.ReadSysInfo;
   responseType = DlpReadSysInfoRespType;
@@ -375,6 +392,7 @@ export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
   private hostDlpVersion = DlpVersionType.with({major: 1, minor: 4});
 }
 
+/** DLP response for {@link DlpReadSysInfoReqType}. */
 export class DlpReadSysInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadSysInfo;
 
@@ -439,13 +457,19 @@ export class DlpVersionType extends SObject {
 
 // =============================================================================
 // GetSysDateTime (0x13)
-//		Possible error codes: none
 // =============================================================================
+/** DLP request to get the time on the Palm.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes: none
+ */
 export class DlpGetSysDateTimeReqType extends DlpRequest<DlpGetSysDateTimeRespType> {
   funcId = DlpFuncId.GetSysDateTime;
   responseType = DlpGetSysDateTimeRespType;
 }
 
+/** DLP response for {@link DlpGetSysDateTimeReqType}. */
 export class DlpGetSysDateTimeRespType extends DlpResponse {
   funcId = DlpFuncId.GetSysDateTime;
 
@@ -456,9 +480,14 @@ export class DlpGetSysDateTimeRespType extends DlpResponse {
 
 // =============================================================================
 // SetSysDateTime (0x14)
-//		Possible error codes
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to set time on the Palm.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - PARAM
+ */
 export class DlpSetSysDateTimeReqType extends DlpRequest<DlpSetSysDateTimeRespType> {
   funcId = DlpFuncId.SetSysDateTime;
   responseType = DlpSetSysDateTimeRespType;
@@ -468,17 +497,23 @@ export class DlpSetSysDateTimeReqType extends DlpRequest<DlpSetSysDateTimeRespTy
   dateTime = new Date(PDB_EPOCH);
 }
 
+/** DLP response for {@link DlpSetSysDateTimeReqType}. */
 export class DlpSetSysDateTimeRespType extends DlpResponse {
   funcId = DlpFuncId.SetSysDateTime;
 }
 
 // =============================================================================
 // ReadStorageInfo (0x15)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrNotFound
 // =============================================================================
+/** DLP request to get memory info.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - NOT_FOUND
+ */
 export class DlpReadStorageInfoReqType extends DlpRequest<DlpReadStorageInfoRespType> {
   funcId = DlpFuncId.ReadStorageInfo;
   responseType = DlpReadStorageInfoRespType;
@@ -576,6 +611,7 @@ export class DlpCardInfoType extends SObject {
   }
 }
 
+/** DLP response for {@link DlpReadStorageInfoReqType}. */
 export class DlpReadStorageInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadStorageInfo;
 
@@ -610,11 +646,16 @@ export class DlpReadStorageInfoRespType extends DlpResponse {
 
 // =============================================================================
 // ReadDBList (0x16)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrNotFound
 // =============================================================================
+/** DLP request to read database list.
+ *
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - NOT_FOUND
+ * DLP 1.0 (PalmOS v1.0 and above)
+ */
 export class DlpReadDBListReqType extends DlpRequest<DlpReadDBListRespType> {
   funcId = DlpFuncId.ReadDBList;
   responseType = DlpReadDBListRespType;
@@ -725,6 +766,7 @@ export class DlpDbInfoMiscFlags extends SBitmask.of(SUInt8) {
   private padding1 = 0;
 }
 
+/** DLP response for {@link DlpReadDBListReqType}. */
 export class DlpReadDBListRespType extends DlpResponse {
   funcId = DlpFuncId.ReadDBList;
 
@@ -753,14 +795,19 @@ export class DlpReadDBListRespFlags extends SBitmask.of(SUInt8) {
 
 // =============================================================================
 // OpenDB (0x17)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound
-//			dlpRespErrTooManyOpenDatabases
-//			dlpRespErrCantOpen
 // =============================================================================
+/** DLP request to open a database.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - TOO_MANY_OPEN_DATABASES
+ *   - CANT_OPEN
+ */
 export class DlpOpenDBReqType extends DlpRequest<DlpOpenDBRespType> {
   funcId = DlpFuncId.OpenDB;
   responseType = DlpOpenDBRespType;
@@ -778,6 +825,7 @@ export class DlpOpenDBReqType extends DlpRequest<DlpOpenDBRespType> {
   name = '';
 }
 
+/** DLP response for {@link DlpOpenDBReqType}. */
 export class DlpOpenDBRespType extends DlpResponse {
   funcId = DlpFuncId.OpenDB;
 
@@ -810,15 +858,20 @@ export class DlpOpenDBMode extends SBitmask.of(SUInt8) {
 
 // =============================================================================
 // CreateDB (0x18)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrAlreadyExists,
-//			dlpRespErrCantOpen,
-//			dlpRespErrNotEnoughSpace,
-//			dlpRespErrTooManyOpenDatabases
 // =============================================================================
+/** DLP request to create a new database.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - ALREADY_EXISTS
+ *   - CANT_OPEN
+ *   - NOT_ENOUGH_SPACE
+ *   - TOO_MANY_OPEN_DATABASES
+ */
 export class DlpCreateDBReqType extends DlpRequest<DlpCreateDBRespType> {
   funcId = DlpFuncId.CreateDB;
   responseType = DlpCreateDBRespType;
@@ -854,6 +907,7 @@ export class DlpCreateDBReqType extends DlpRequest<DlpCreateDBRespType> {
   name = '';
 }
 
+/** DLP response for {@link DlpCreateDBReqType}. */
 export class DlpCreateDBRespType extends DlpResponse {
   funcId = DlpFuncId.CreateDB;
 
@@ -864,12 +918,17 @@ export class DlpCreateDBRespType extends DlpResponse {
 
 // =============================================================================
 // CloseDB (0x19)
-//		Possible error codes
-//			dlpRespErrParam,
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to close a database.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - PARAM
+ *   - SYSTEM
+ *   - MEMORY
+ *   - NONE_OPEN
+ */
 export class DlpCloseDBReqType extends DlpRequest<DlpCloseDBRespType> {
   funcId = DlpFuncId.CloseDB;
   responseType = DlpCloseDBRespType;
@@ -879,6 +938,16 @@ export class DlpCloseDBReqType extends DlpRequest<DlpCloseDBRespType> {
   dbId = 0;
 }
 
+/** DLP request to close all open databases.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - PARAM
+ *   - SYSTEM
+ *   - MEMORY
+ *   - NONE_OPEN
+ */
 export class DlpCloseAllDBsReqType extends DlpRequest<DlpCloseDBRespType> {
   funcId = DlpFuncId.CloseDB;
   responseType = DlpCloseDBRespType;
@@ -888,19 +957,25 @@ export class DlpCloseAllDBsReqType extends DlpRequest<DlpCloseDBRespType> {
   private dummy = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpCloseDBReqType} and {@link DlpCloseAllDBsReqType}. */
 export class DlpCloseDBRespType extends DlpResponse {
   funcId = DlpFuncId.CloseDB;
 }
 
 // =============================================================================
 // DeleteDB (0x1a)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound,
-//			dlpRespErrCantOpen,
-//			dlpRespErrDatabaseOpen{
 // =============================================================================
+/** DLP request to delete a database.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - CANT_OPEN
+ *   - DATABASE_OPEN
+ */
 export class DlpDeleteDBReqType extends DlpRequest<DlpDeleteDBRespType> {
   funcId = DlpFuncId.DeleteDB;
   responseType = DlpDeleteDBRespType;
@@ -917,19 +992,25 @@ export class DlpDeleteDBReqType extends DlpRequest<DlpDeleteDBRespType> {
   name = '';
 }
 
+/** DLP response for {@link DlpDeleteDBReqType}. */
 export class DlpDeleteDBRespType extends DlpResponse {
   funcId = DlpFuncId.DeleteDB;
 }
 
 // =============================================================================
 // ReadAppBlock (0x1b)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrNotFound
-//			dlpRespErrNoneOpen
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to read AppInfo block.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - NOT_FOUND
+ *   - NONE_OPEN
+ *   - PARAM
+ */
 export class DlpReadAppBlockReqType extends DlpRequest<DlpReadAppBlockRespType> {
   funcId = DlpFuncId.ReadAppBlock;
   responseType = DlpReadAppBlockRespType;
@@ -950,6 +1031,7 @@ export class DlpReadAppBlockReqType extends DlpRequest<DlpReadAppBlockRespType> 
   numBytes = 0xffff;
 }
 
+/** DLP response for {@link DlpReadAppBlockReqType}. */
 export class DlpReadAppBlockRespType extends DlpResponse {
   funcId = DlpFuncId.ReadAppBlock;
 
@@ -964,13 +1046,18 @@ export class DlpReadAppBlockRespType extends DlpResponse {
 
 // =============================================================================
 // WriteAppBlock (0x1c)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrReadOnly
-//			dlpRespErrNotEnoughSpace
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to write AppInfo block.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - READ_ONLY
+ *   - NOT_ENOUGH_SPACE
+ *   - NONE_OPEN
+ */
 export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType> {
   funcId = DlpFuncId.WriteAppBlock;
   responseType = DlpWriteAppBlockRespType;
@@ -992,18 +1079,24 @@ export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType
   data = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpWriteAppBlockReqType}. */
 export class DlpWriteAppBlockRespType extends DlpResponse {
   funcId = DlpFuncId.WriteAppBlock;
 }
 
 // =============================================================================
 // ReadSortBlock (0x1d)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory
-//			dlpRespErrNotFound
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to read app sort block.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - NOT_FOUND
+ *   - NONE_OPEN
+ */
 export class DlpReadSortBlockReqType extends DlpRequest<DlpReadSortBlockRespType> {
   funcId = DlpFuncId.ReadSortBlock;
   responseType = DlpReadSortBlockRespType;
@@ -1024,6 +1117,7 @@ export class DlpReadSortBlockReqType extends DlpRequest<DlpReadSortBlockRespType
   numBytes = 0xffff;
 }
 
+/** DLP response for {@link DlpReadSortBlockReqType}. */
 export class DlpReadSortBlockRespType extends DlpResponse {
   funcId = DlpFuncId.ReadSortBlock;
 
@@ -1038,12 +1132,17 @@ export class DlpReadSortBlockRespType extends DlpResponse {
 
 // =============================================================================
 // WriteSortBlock (0x1e)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to write app sort block.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NONE_OPEN
+ */
 export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespType> {
   funcId = DlpFuncId.WriteSortBlock;
   responseType = DlpWriteSortBlockRespType;
@@ -1065,21 +1164,27 @@ export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespTy
   data = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpWriteSortBlockReqType}. */
 export class DlpWriteSortBlockRespType extends DlpResponse {
   funcId = DlpFuncId.WriteSortBlock;
 }
 
 // =============================================================================
 // ReadNextModifiedRec (0x1f)
-//		Possible error codes
-//			dlpRespErrNotSupported,
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound,
-//			dlpRespErrRecordBusy,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to read next modified record.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - NOT_SUPPORTED
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - RECORD_BUSY
+ *   - NONE_OPEN
+ */
 export class DlpReadNextModifiedRecReqType extends DlpRequest<DlpReadNextModifiedRecRespType> {
   funcId = DlpFuncId.ReadNextModifiedRec;
   responseType = DlpReadNextModifiedRecRespType;
@@ -1115,21 +1220,27 @@ abstract class DlpBaseReadRecordRespType extends DlpResponse {
   data = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpReadNextModifiedRecReqType}. */
 export class DlpReadNextModifiedRecRespType extends DlpBaseReadRecordRespType {
   funcId = DlpFuncId.ReadNextModifiedRec;
 }
 
 // =============================================================================
 // ReadRecord (0x20)
-//		Possible error codes
-//			dlpRespErrNotSupported,
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound,
-//			dlpRespErrRecordBusy,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to read a record by record ID.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - NOT_SUPPORTED
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - RECORD_BUSY
+ *   - NONE_OPEN
+ */
 export class DlpReadRecordByIDReqType extends DlpRequest<DlpReadRecordRespType> {
   funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
@@ -1154,6 +1265,19 @@ export class DlpReadRecordByIDReqType extends DlpRequest<DlpReadRecordRespType> 
   numBytes = 0xffff;
 }
 
+/** DLP request to read a record by index.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - NOT_SUPPORTED
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - RECORD_BUSY
+ *   - NONE_OPEN
+ */
 export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespType> {
   funcId = DlpFuncId.ReadRecord;
   responseType = DlpReadRecordRespType;
@@ -1178,21 +1302,27 @@ export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespTyp
   numBytes = 0xffff;
 }
 
+/** DLP response for {@link DlpReadRecordByIDReqType} and {@link DlpReadRecordByIndexReqType}. */
 export class DlpReadRecordRespType extends DlpBaseReadRecordRespType {
   funcId = DlpFuncId.ReadRecord;
 }
 
 // =============================================================================
 // WriteRecord (0x21)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound
-//			dlpRespErrNotEnoughSpace
-//			dlpRespErrNotSupported
-//			dlpRespErrReadOnly
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to write a record.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NOT_ENOUGH_SPACE
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
 export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
   funcId = DlpFuncId.WriteRecord;
   responseType = DlpWriteRecordRespType;
@@ -1230,6 +1360,7 @@ export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
   data = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpWriteRecordReqType}. */
 export class DlpWriteRecordRespType extends DlpResponse {
   funcId = DlpFuncId.WriteRecord;
 
@@ -1240,15 +1371,20 @@ export class DlpWriteRecordRespType extends DlpResponse {
 
 // =============================================================================
 // DeleteRecord (0x22)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound
-//			dlpRespErrNotSupported
-//			dlpRespErrReadOnly
-//			dlpRespErrNoneOpen
 // =============================================================================
-export class DlpDeleteRecordByReqType extends DlpRequest<DlpDeleteRecordRespType> {
+/** DLP request to delete a record by ID.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
+export class DlpDeleteRecordReqType extends DlpRequest<DlpDeleteRecordRespType> {
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
 
@@ -1265,6 +1401,18 @@ export class DlpDeleteRecordByReqType extends DlpRequest<DlpDeleteRecordRespType
   recordId = 0;
 }
 
+/** DLP request to delete all records in a database.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
 export class DlpDeleteAllRecordsReqType extends DlpRequest<DlpDeleteRecordRespType> {
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
@@ -1281,7 +1429,18 @@ export class DlpDeleteAllRecordsReqType extends DlpRequest<DlpDeleteRecordRespTy
   private padding1 = 0;
 }
 
-/** Palm OS 2.0 only. */
+/** DLP request to delete records in a category.
+ *
+ * Palm OS 2.0 and above.
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
 export class DlpDeleteRecordByCategoryReqType extends DlpRequest<DlpDeleteRecordRespType> {
   funcId = DlpFuncId.DeleteRecord;
   responseType = DlpDeleteRecordRespType;
@@ -1302,18 +1461,25 @@ export class DlpDeleteRecordByCategoryReqType extends DlpRequest<DlpDeleteRecord
   category = 0;
 }
 
+/** DLP response for {@link DlpDeleteRecordReqType},
+ * {@link DlpDeleteAllRecordsReqType} and {@link DlpDeleteRecordByCategoryReqType}. */
 export class DlpDeleteRecordRespType extends DlpResponse {
   funcId = DlpFuncId.DeleteRecord;
 }
 
 // =============================================================================
 // ReadResource (0x23)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to read a resource by index.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NONE_OPEN
+ */
 export class DlpReadResourceByIndexReqType extends DlpRequest<DlpReadResourceRespType> {
   funcId = DlpFuncId.ReadResource;
   responseType = DlpReadResourceRespType;
@@ -1338,6 +1504,16 @@ export class DlpReadResourceByIndexReqType extends DlpRequest<DlpReadResourceRes
   numBytes = 0xffff;
 }
 
+/** DLP request to read a resource by its type and ID.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NONE_OPEN
+ */
 export class DlpReadResourceByTypeReqType extends DlpRequest<DlpReadResourceRespType> {
   funcId = DlpFuncId.ReadResource;
   responseType = DlpReadResourceRespType;
@@ -1366,6 +1542,7 @@ export class DlpReadResourceByTypeReqType extends DlpRequest<DlpReadResourceResp
   numBytes = 0xffff;
 }
 
+/** DLP response for {@link DlpReadResourceByIndexReqType} and {@link DlpReadResourceByTypeReqType}. */
 export class DlpReadResourceRespType extends DlpResponse {
   funcId = DlpFuncId.ReadResource;
 
@@ -1393,12 +1570,17 @@ export class DlpReadResourceRespType extends DlpResponse {
 
 // =============================================================================
 // WriteResource (0x24)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrNotEnoughSpace,
-//			dlpRespErrParam,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to write a resource.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_ENOUGH_SPACE
+ *   - PARAM
+ *   - NONE_OPEN
+ */
 export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType> {
   funcId = DlpFuncId.WriteResource;
   responseType = DlpWriteResourceRespType;
@@ -1428,20 +1610,26 @@ export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType
   data = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpWriteResourceReqType}. */
 export class DlpWriteResourceRespType extends DlpResponse {
   funcId = DlpFuncId.WriteResource;
 }
 
 // =============================================================================
 // DeleteResource (0x25)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound
-//			dlpRespErrNotSupported
-//			dlpRespErrReadOnly
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to delete a resource.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
 export class DlpDeleteResourceReqType extends DlpRequest<DlpDeleteResourceRespType> {
   funcId = DlpFuncId.DeleteResource;
   responseType = DlpDeleteResourceRespType;
@@ -1463,6 +1651,18 @@ export class DlpDeleteResourceReqType extends DlpRequest<DlpDeleteResourceRespTy
   id = 0;
 }
 
+/** DLP request to delete all resources in a database.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
 export class DlpDeleteAllResourcesReqType extends DlpRequest<DlpDeleteResourceRespType> {
   funcId = DlpFuncId.DeleteResource;
   responseType = DlpDeleteResourceRespType;
@@ -1479,6 +1679,7 @@ export class DlpDeleteAllResourcesReqType extends DlpRequest<DlpDeleteResourceRe
   private padding1 = [];
 }
 
+/** DLP response for {@link DlpDeleteResourceReqType} and {@link DlpDeleteAllResourcesReqType}. */
 export class DlpDeleteResourceRespType extends DlpResponse {
   funcId = DlpFuncId.DeleteResource;
 }
@@ -1488,13 +1689,18 @@ export class DlpDeleteResourceRespType extends DlpResponse {
 //		Deletes all records which are marked as archived or deleted in the
 //		record database
 //
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrReadOnly,
-//			dlpRespErrNotSupported
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to purge deleted records.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - READ_ONLY
+ *   - NOT_SUPPORTED
+ *   - NONE_OPEN
+ */
 export class DlpCleanUpDatabaseReqType extends DlpRequest<DlpCleanUpDatabaseRespType> {
   funcId = DlpFuncId.CleanUpDatabase;
   responseType = DlpCleanUpDatabaseRespType;
@@ -1504,6 +1710,7 @@ export class DlpCleanUpDatabaseReqType extends DlpRequest<DlpCleanUpDatabaseResp
   dbId = 0;
 }
 
+/** DLP response for {@link DlpCleanUpDatabaseReqType}. */
 export class DlpCleanUpDatabaseRespType extends DlpResponse {
   funcId = DlpFuncId.CleanUpDatabase;
 }
@@ -1513,12 +1720,17 @@ export class DlpCleanUpDatabaseRespType extends DlpResponse {
 //		For record databases, reset all dirty flags.
 //		For both record and resource databases, set the last sync time to NOW
 //
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam
-//			dlpRespErrReadOnly,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to reset dirty flags.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
 export class DlpResetSyncFlagsReqType extends DlpRequest<DlpResetSyncFlagsRespType> {
   funcId = DlpFuncId.ResetSyncFlags;
   responseType = DlpResetSyncFlagsRespType;
@@ -1528,6 +1740,7 @@ export class DlpResetSyncFlagsReqType extends DlpRequest<DlpResetSyncFlagsRespTy
   dbId = 0;
 }
 
+/** DLP response for {@link DlpResetSyncFlagsReqType}. */
 export class DlpResetSyncFlagsRespType extends DlpResponse {
   funcId = DlpFuncId.ResetSyncFlags;
 }
@@ -1536,13 +1749,17 @@ export class DlpResetSyncFlagsRespType extends DlpResponse {
 // CallApplication (0x28)
 //		Call an application entry point via an action code
 //
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound
 // =============================================================================
-/** For Palm OS v1.0. */
+/** DLP request to call an application.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ */
 export class DlpCallApplicationReqTypeV10 extends DlpRequest<DlpCallApplicationRespTypeV10> {
   funcId = DlpFuncId.CallApplication;
   responseType = DlpCallApplicationRespTypeV10;
@@ -1565,6 +1782,7 @@ export class DlpCallApplicationReqTypeV10 extends DlpRequest<DlpCallApplicationR
   paramData = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpCallApplicationReqTypeV10}. */
 export class DlpCallApplicationRespTypeV10 extends DlpResponse {
   funcId = DlpFuncId.CallApplication;
 
@@ -1586,7 +1804,16 @@ export class DlpCallApplicationRespTypeV10 extends DlpResponse {
   resultData = Buffer.alloc(0);
 }
 
-/** For Palm OS v2.0+. */
+/** DLP request to call an application.
+ *
+ * Palm OS 2.0 and above.
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ */
 export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationRespType> {
   funcId = DlpFuncId.CallApplication;
   responseType = DlpCallApplicationRespType;
@@ -1620,6 +1847,7 @@ export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationResp
   }
 }
 
+/** DLP response for {@link DlpCallApplicationReqType}. */
 export class DlpCallApplicationRespType extends DlpResponse {
   funcId = DlpFuncId.CallApplication;
 
@@ -1646,26 +1874,37 @@ export class DlpCallApplicationRespType extends DlpResponse {
 
 // =============================================================================
 // ResetSystem (0x29)
-//		Possible error codes
-//			dlpRespErrSystem
 // =============================================================================
+/** DLP request to reset at end of sync.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ */
 export class DlpResetSystemReqType extends DlpRequest<DlpResetSystemRespType> {
   funcId = DlpFuncId.ResetSystem;
   responseType = DlpResetSystemRespType;
 }
 
+/** DLP response for {@link DlpResetSystemReqType}. */
 export class DlpResetSystemRespType extends DlpResponse {
   funcId = DlpFuncId.ResetSystem;
 }
 
 // =============================================================================
 // AddSyncLogEntry (0x2a)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrNotEnoughSpace,
-//			dlpRespErrLimitExceeded,
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to write the sync log.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_ENOUGH_SPACE
+ *   - LIMIT_EXCEEDED
+ *   - PARAM
+ */
 export class DlpAddSyncLogEntryReqType extends DlpRequest<DlpAddSyncLogEntryRespType> {
   funcId = DlpFuncId.AddSyncLogEntry;
   responseType = DlpAddSyncLogEntryRespType;
@@ -1674,16 +1913,22 @@ export class DlpAddSyncLogEntryReqType extends DlpRequest<DlpAddSyncLogEntryResp
   text = '';
 }
 
+/** DLP response for {@link DlpAddSyncLogEntryReqType}. */
 export class DlpAddSyncLogEntryRespType extends DlpResponse {
   funcId = DlpFuncId.AddSyncLogEntry;
 }
 
 // =============================================================================
 // ReadOpenDBInfo (0x2b)
-//		Possible error codes
-//			dlpRespErrNoneOpen
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to get info about an open DB.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - NONE_OPEN
+ *   - PARAM
+ */
 export class DlpReadOpenDBInfoReqType extends DlpRequest<DlpReadOpenDBInfoRespType> {
   funcId = DlpFuncId.ReadOpenDBInfo;
   responseType = DlpReadOpenDBInfoRespType;
@@ -1693,6 +1938,7 @@ export class DlpReadOpenDBInfoReqType extends DlpRequest<DlpReadOpenDBInfoRespTy
   dbId = 0;
 }
 
+/** DLP response for {@link DlpReadOpenDBInfoReqType}. */
 export class DlpReadOpenDBInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadOpenDBInfo;
 
@@ -1703,12 +1949,17 @@ export class DlpReadOpenDBInfoRespType extends DlpResponse {
 
 // =============================================================================
 // MoveCategory (0x2c)
-//		Possible error codes
-//			dlpRespErrNoneOpen
-//			dlpRespErrParam
-//			dlpRespErrNotSupported
-//			dlpRespErrReadOnly
 // =============================================================================
+/** DLP request to move records in a category.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - NONE_OPEN
+ *   - PARAM
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ */
 export class DlpMoveCategoryReqType extends DlpRequest<DlpMoveCategoryRespType> {
   funcId = DlpFuncId.MoveCategory;
   responseType = DlpMoveCategoryRespType;
@@ -1729,44 +1980,31 @@ export class DlpMoveCategoryReqType extends DlpRequest<DlpMoveCategoryRespType> 
   private padding1 = 0;
 }
 
+/** DLP response for {@link DlpMoveCategoryReqType}. */
 export class DlpMoveCategoryRespType extends DlpResponse {
   funcId = DlpFuncId.MoveCategory;
 }
 
 // =============================================================================
-// TODO: ProcessRPC (0x2d)
-//		Remote Procedure Call interface
-// NOTE: this is a low-level system command which does not use arg wrappers.
-// =============================================================================
-export class DlpProcessRPCReqType extends DlpRequest<DlpProcessRPCRespType> {
-  funcId = DlpFuncId.ProcessRPC;
-  responseType = DlpProcessRPCRespType;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
-}
-
-export class DlpProcessRPCRespType extends DlpResponse {
-  funcId = DlpFuncId.ProcessRPC;
-
-  @dlpArg(0, SUInt8)
-  private padding1 = 0;
-}
-
-// =============================================================================
 // OpenConduit (0x2e)
 //		This command is sent before each conduit is opened by the desktop.
-//		If the viewer has a cancel pending, it will return dlpRespErrCancelSync
-//		in the response header's errorCode field.
+//		If the viewer has a cancel pending, it will return CANCEL_SYNC
+//		in the response's errorCode field.
 //
-//		Possible error codes
-//			dlpRespErrCancelSync
 // =============================================================================
+/** DLP request to say a conduit is open.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - CANCEL_SYNC
+ */
 export class DlpOpenConduitReqType extends DlpRequest<DlpOpenConduitRespType> {
   funcId = DlpFuncId.OpenConduit;
   responseType = DlpOpenConduitRespType;
 }
 
+/** DLP response for {@link DlpOpenConduitReqType}. */
 export class DlpOpenConduitRespType extends DlpResponse {
   funcId = DlpFuncId.OpenConduit;
 }
@@ -1775,8 +2013,13 @@ export class DlpOpenConduitRespType extends DlpResponse {
 // EndOfSync (0x2f)
 //		This command is sent by the desktop to end the sync.
 //
-//		Possible error codes: none
 // =============================================================================
+/** DLP request to terminate the sync.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes: none
+ */
 export class DlpEndOfSyncReqType extends DlpRequest<DlpEndOfSyncRespType> {
   funcId = DlpFuncId.EndOfSync;
   responseType = DlpEndOfSyncRespType;
@@ -1785,6 +2028,7 @@ export class DlpEndOfSyncReqType extends DlpRequest<DlpEndOfSyncRespType> {
   termCode = DlpSyncTermCode.NORMAL;
 }
 
+/** DLP response for {@link DlpEndOfSyncReqType}. */
 export class DlpEndOfSyncRespType extends DlpResponse {
   funcId = DlpFuncId.EndOfSync;
 }
@@ -1807,10 +2051,15 @@ export enum DlpSyncTermCode {
 // ResetRecordIndex (0x30)
 //	Resets the "next modified record" index to the beginning
 //
-//		Possible error codes
-//			dlpRespErrParam
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to reset "modified" index.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ *
+ * Error codes:
+ *   - PARAM
+ *   - NONE_OPEN
+ */
 export class DlpResetRecordIndexReqType extends DlpRequest<DlpResetRecordIndexRespType> {
   funcId = DlpFuncId.ResetRecordIndex;
   responseType = DlpResetRecordIndexRespType;
@@ -1820,6 +2069,7 @@ export class DlpResetRecordIndexReqType extends DlpRequest<DlpResetRecordIndexRe
   dbId = 0;
 }
 
+/** DLP response for {@link DlpResetRecordIndexReqType}. */
 export class DlpResetRecordIndexRespType extends DlpResponse {
   funcId = DlpFuncId.ResetRecordIndex;
 }
@@ -1827,6 +2077,10 @@ export class DlpResetRecordIndexRespType extends DlpResponse {
 // =============================================================================
 // ReadRecordIDList (0x31)
 // =============================================================================
+/** DLP request to get list of record IDs.
+ *
+ * DLP 1.0 (PalmOS v1.0 and above)
+ */
 export class DlpReadRecordIDListReqType extends DlpRequest<DlpReadRecordIDListRespType> {
   funcId = DlpFuncId.ReadRecordIDList;
   responseType = DlpReadRecordIDListRespType;
@@ -1863,6 +2117,7 @@ export class DlpReadRecordIDListReqType extends DlpRequest<DlpReadRecordIDListRe
   maxNumRecords = 0;
 }
 
+/** DLP response for {@link DlpReadRecordIDListReqType}. */
 export class DlpReadRecordIDListRespType extends DlpResponse {
   funcId = DlpFuncId.ReadRecordIDList;
 
@@ -1881,15 +2136,20 @@ export class DlpReadRecordIDListRespType extends DlpResponse {
 
 // =============================================================================
 // ReadNextRecInCategory (0x32)
-//		Possible error codes
-//			dlpRespErrNotSupported,
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound,
-//			dlpRespErrRecordBusy,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to next record in category.
+ *
+ * DLP 1.1 (PalmOS v2.0 and above)
+ *
+ * Error codes:
+ *   - NOT_SUPPORTED
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - RECORD_BUSY
+ *   - NONE_OPEN
+ */
 export class DlpReadNextRecInCategoryReqType extends DlpRequest<DlpReadNextRecInCategoryRespType> {
   funcId = DlpFuncId.ReadNextRecInCategory;
   responseType = DlpReadNextRecInCategoryRespType;
@@ -1903,21 +2163,27 @@ export class DlpReadNextRecInCategoryReqType extends DlpRequest<DlpReadNextRecIn
   category = 0;
 }
 
+/** DLP response for {@link DlpReadNextRecInCategoryReqType}. */
 export class DlpReadNextRecInCategoryRespType extends DlpBaseReadRecordRespType {
   funcId = DlpFuncId.ReadNextRecInCategory;
 }
 
 // =============================================================================
 // ReadNextModifiedRecInCategory (0x33)
-//		Possible error codes
-//			dlpRespErrNotSupported,
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound,
-//			dlpRespErrRecordBusy,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to next modified record in category.
+ *
+ * DLP 1.1 (PalmOS v2.0 and above)
+ *
+ * Error codes:
+ *   - NOT_SUPPORTED
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - RECORD_BUSY
+ *   - NONE_OPEN
+ */
 export class DlpReadNextModifiedRecInCategoryReqType extends DlpRequest<DlpReadNextModifiedRecInCategoryRespType> {
   funcId = DlpFuncId.ReadNextModifiedRecInCategory;
   responseType = DlpReadNextModifiedRecInCategoryRespType;
@@ -1931,18 +2197,24 @@ export class DlpReadNextModifiedRecInCategoryReqType extends DlpRequest<DlpReadN
   category = 0;
 }
 
+/** DLP response for {@link DlpReadNextModifiedRecInCategoryReqType}. */
 export class DlpReadNextModifiedRecInCategoryRespType extends DlpBaseReadRecordRespType {
   funcId = DlpFuncId.ReadNextModifiedRecInCategory;
 }
 
 // =============================================================================
 // ReadAppPreference (0x34)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound,
 // =============================================================================
+/** DLP request to read app preference.
+ *
+ * DLP 1.1 (PalmOS v2.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ *   - PARAM
+ *   - NOT_FOUND
+ */
 export class DlpReadAppPreferenceReqType extends DlpRequest<DlpReadAppPreferenceRespType> {
   funcId = DlpFuncId.ReadAppPreference;
   responseType = DlpReadAppPreferenceRespType;
@@ -1976,6 +2248,7 @@ export class DlpReadAppPreferenceFlags extends SBitmask.of(SUInt8) {
   private padding1 = 0;
 }
 
+/** DLP response for {@link DlpReadAppPreferenceReqType}. */
 export class DlpReadAppPreferenceRespType extends DlpResponse {
   funcId = DlpFuncId.ReadAppPreference;
 
@@ -1999,11 +2272,16 @@ export class DlpReadAppPreferenceRespType extends DlpResponse {
 
 // =============================================================================
 // WriteAppPreference (0x35)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrNotEnoughSpace
 // =============================================================================
+/** DLP request to write app preference.
+ *
+ * DLP 1.1 (PalmOS v2.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_ENOUGH_SPACE
+ */
 export class DlpWriteAppPreferenceReqType extends DlpRequest<DlpWriteAppPreferenceRespType> {
   funcId = DlpFuncId.WriteAppPreference;
   responseType = DlpWriteAppPreferenceRespType;
@@ -2043,21 +2321,28 @@ export class DlpWriteAppPreferenceReqType extends DlpRequest<DlpWriteAppPreferen
 
 export class DlpWriteAppPreferenceFlags extends DlpReadAppPreferenceFlags {}
 
+/** DLP response for {@link DlpWriteAppPreferenceReqType}. */
 export class DlpWriteAppPreferenceRespType extends DlpResponse {
   funcId = DlpFuncId.WriteAppPreference;
 }
 
 // =============================================================================
 // ReadNetSyncInfo (0x36)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrMemory
 // =============================================================================
+/** DLP request to read NetSync info.
+ *
+ * DLP 1.1 (PalmOS v2.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - MEMORY
+ */
 export class DlpReadNetSyncInfoReqType extends DlpRequest<DlpReadNetSyncInfoRespType> {
   funcId = DlpFuncId.ReadNetSyncInfo;
   responseType = DlpReadNetSyncInfoRespType;
 }
 
+/** DLP response for {@link DlpReadNetSyncInfoReqType}. */
 export class DlpReadNetSyncInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadNetSyncInfo;
 
@@ -2157,11 +2442,16 @@ export class DlpReadNetSyncInfoRespType extends DlpResponse {
 
 // =============================================================================
 // WriteNetSyncInfo (0x37)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrNotEnoughSpace,
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to write NetSync info.
+ *
+ * DLP 1.1 (PalmOS v2.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_ENOUGH_SPACE
+ *   - PARAM
+ */
 export class DlpWriteNetSyncInfoReqType extends DlpRequest<DlpWriteNetSyncInfoRespType> {
   funcId = DlpFuncId.WriteNetSyncInfo;
   responseType = DlpWriteNetSyncInfoRespType;
@@ -2276,17 +2566,23 @@ export class DlpNetSyncInfoModFlags extends SBitmask.of(SUInt8) {
   private padding1 = 0;
 }
 
+/** DLP response for {@link DlpWriteNetSyncInfoReqType}. */
 export class DlpWriteNetSyncInfoRespType extends DlpResponse {
   funcId = DlpFuncId.WriteNetSyncInfo;
 }
 
 // =============================================================================
 // ReadFeature (0x38)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrNotFound,
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to read a feature.
+ *
+ * DLP 1.1 (PalmOS v2.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_FOUND
+ *   - PARAM
+ */
 export class DlpReadFeatureReqType extends DlpRequest<DlpReadFeatureRespType> {
   funcId = DlpFuncId.ReadFeature;
   responseType = DlpReadFeatureRespType;
@@ -2300,6 +2596,7 @@ export class DlpReadFeatureReqType extends DlpRequest<DlpReadFeatureRespType> {
   ftrNum = 0;
 }
 
+/** DLP response for {@link DlpReadFeatureReqType}. */
 export class DlpReadFeatureRespType extends DlpResponse {
   funcId = DlpFuncId.ReadFeature;
 
@@ -2310,11 +2607,16 @@ export class DlpReadFeatureRespType extends DlpResponse {
 
 // =============================================================================
 // FindDB (0x39)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrNotFound,
-//			dlpRespErrParam
 // =============================================================================
+/** DLP request to find a database by name.
+ *
+ * DLP 1.2 (PalmOS v3.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_FOUND
+ *   - PARAM
+ */
 export class DlpFindDBByNameReqType extends DlpRequest<DlpFindDBRespType> {
   funcId = DlpFuncId.FindDB;
   responseType = DlpFindDBRespType;
@@ -2332,6 +2634,15 @@ export class DlpFindDBByNameReqType extends DlpRequest<DlpFindDBRespType> {
   name = '';
 }
 
+/** DLP request to find a currently open database by handle (dbId).
+ *
+ * DLP 1.2 (PalmOS v3.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_FOUND
+ *   - PARAM
+ */
 export class DlpFindDBByOpenHandleReqType extends DlpRequest<DlpFindDBRespType> {
   funcId = DlpFuncId.FindDB;
   responseType = DlpFindDBRespType;
@@ -2345,6 +2656,15 @@ export class DlpFindDBByOpenHandleReqType extends DlpRequest<DlpFindDBRespType> 
   dbId = 0;
 }
 
+/** DLP request to find a database given by type and creator IDs.
+ *
+ * DLP 1.2 (PalmOS v3.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_FOUND
+ *   - PARAM
+ */
 export class DlpFindDBByTypeCreatorReqType extends DlpRequest<DlpFindDBRespType> {
   funcId = DlpFuncId.FindDB;
   responseType = DlpFindDBRespType;
@@ -2411,6 +2731,8 @@ export class DlpFindDBSrchFlags extends SBitmask.of(SUInt8) {
   private padding1 = 0;
 }
 
+/** DLP response for {@link DlpFindDBByNameReqType},
+ * {@link DlpFindDBByOpenHandleReqType} and {@link DlpFindDBByTypeCreatorReqType}. */
 export class DlpFindDBRespType extends DlpResponse {
   funcId = DlpFuncId.FindDB;
 
@@ -2494,15 +2816,20 @@ export class DlpFindDBRespType extends DlpResponse {
 
 // =============================================================================
 // SetDBInfo (0x3a)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrParam,
-//			dlpRespErrNotFound
-//			dlpRespErrNotEnoughSpace
-//			dlpRespErrNotSupported
-//			dlpRespErrReadOnly
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to change database info.
+ *
+ * DLP 1.2 (PalmOS v3.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - PARAM
+ *   - NOT_FOUND
+ *   - NOT_ENOUGH_SPACE
+ *   - NOT_SUPPORTED
+ *   - READ_ONLY
+ *   - NONE_OPEN
+ */
 export class DlpSetDBInfoReqType extends DlpRequest<DlpSetDBInfoRespType> {
   funcId = DlpFuncId.SetDBInfo;
   responseType = DlpSetDBInfoRespType;
@@ -2573,18 +2900,24 @@ export class DlpSetDBInfoReqType extends DlpRequest<DlpSetDBInfoRespType> {
 
 export const DLP_SET_DB_INFO_NO_VERSION_CHANGE = 0xffff;
 
+/** DLP response for {@link DlpSetDBInfoReqType}. */
 export class DlpSetDBInfoRespType extends DlpResponse {
   funcId = DlpFuncId.SetDBInfo;
 }
 
 // =============================================================================
 // LoopBackTest (0x3b)
-//		Possible error codes
-//			dlpRespErrSystem,
-//			dlpRespErrNotEnoughSpace,
-//			dlpRespErrParam,
-//			dlpRespErrNoneOpen
 // =============================================================================
+/** DLP request to perform a loopback test.
+ *
+ * DLP 1.3 (PalmOS v4.0 and above)
+ *
+ * Error codes:
+ *   - SYSTEM
+ *   - NOT_ENOUGH_SPACE
+ *   - PARAM
+ *   - NONE_OPEN
+ */
 export class DlpLoopBackTestReqType extends DlpRequest<DlpLoopBackTestRespType> {
   funcId = DlpFuncId.LoopBackTest;
   responseType = DlpLoopBackTestRespType;
@@ -2599,6 +2932,7 @@ export class DlpLoopBackTestReqType extends DlpRequest<DlpLoopBackTestRespType> 
   data = Buffer.alloc(0);
 }
 
+/** DLP response for {@link DlpLoopBackTestReqType}. */
 export class DlpLoopBackTestRespType extends DlpResponse {
   funcId = DlpFuncId.LoopBackTest;
 
