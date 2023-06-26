@@ -17,7 +17,9 @@ export class StreamRecorder {
     const writeStream = new RecordingStream(this, DataEventType.WRITE);
     writeStream.pipe(rawStream);
     const recordedStream = duplexify(writeStream, readStream);
-    rawStream.on('error', (e) => recordedStream.emit('error', new Error(e.message, {cause: e})));
+    rawStream.on('error', (e) =>
+      recordedStream.emit('error', new Error(e.message, {cause: e}))
+    );
     return recordedStream;
   }
 
