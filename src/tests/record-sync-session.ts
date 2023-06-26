@@ -3,16 +3,14 @@ import {Argument, program} from 'commander';
 import debug from 'debug';
 import pEvent from 'p-event';
 import path from 'path';
-import {
-  NetSyncConnection,
-  NetSyncServer,
-  SerialNetworkSyncServer,
-  SerialSyncServer,
-  SyncFn,
-} from '..';
+import {NetSyncConnection, SyncConnection} from '../protocols/sync-connections';
+import {NetworkSyncServer} from '../sync-servers/network-sync-server';
+import {SerialNetworkSyncServer} from '../sync-servers/serial-network-sync-server';
+import {SerialSyncServer} from '../sync-servers/serial-sync-server';
+import {SyncFn} from '../sync-servers/sync-server';
 
 export function getSyncFn(testModule: string) {
-  const syncFn: (connection: NetSyncConnection) => Promise<void> =
+  const syncFn: (connection: SyncConnection) => Promise<void> =
     require(`./${testModule}`).run;
   if (!syncFn) {
     throw new Error(`Could not find run function in module ${testModule}`);
@@ -40,7 +38,7 @@ export enum ConnectionType {
 export function getServerTypeForConnectionType(connectionType: ConnectionType) {
   switch (connectionType) {
     case ConnectionType.NETWORK:
-      return (syncFn: SyncFn) => new NetSyncServer(syncFn);
+      return (syncFn: SyncFn) => new NetworkSyncServer(syncFn);
     case ConnectionType.SERIAL_OVER_NETWORK:
       return (syncFn: SyncFn) => new SerialNetworkSyncServer(syncFn);
     case ConnectionType.SERIAL:

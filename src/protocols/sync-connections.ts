@@ -1,15 +1,25 @@
 import debug from 'debug';
-import {EventEmitter} from 'events';
-import {createServer, Server, Socket} from 'net';
+import {Socket} from 'net';
 import pEvent from 'p-event';
-import {Duplex} from 'stream';
+import {Duplex, Readable} from 'stream';
+import {StreamRecorder} from './stream-recorder';
+import {doCmpHandshake} from './cmp-protocol';
 import {
   DlpEndOfSyncReqType,
   DlpReadSysInfoReqType,
   DlpReadUserInfoReqType,
 } from './dlp-commands';
 import {DlpConnection} from './dlp-protocol';
-import {StreamRecorder} from './stream-recorder';
+import {
+  NET_SYNC_HANDSHAKE_REQUEST_1,
+  NET_SYNC_HANDSHAKE_REQUEST_2,
+  NET_SYNC_HANDSHAKE_REQUEST_3,
+  NET_SYNC_HANDSHAKE_RESPONSE_1,
+  NET_SYNC_HANDSHAKE_RESPONSE_2,
+  NetSyncDatagramStream,
+  createNetSyncDatagramStream,
+} from './net-sync-protocol';
+import {PadpStream} from './padp-protocol';
 
 /** Base class for HotSync connections.
  *
@@ -54,7 +64,7 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
   }
 
   /** Create a stream yielding DLP datagrams based on a raw data stream. */
-  abstract createDlpStream(rawStream: Duplex): DlpStreamT;
+  protected abstract createDlpStream(rawStream: Duplex): DlpStreamT;
 
   /** Perform initial handshake with the Palm device to00000 establish connection. */
   abstract doHandshake(): Promise<void>;
@@ -77,72 +87,52 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
   }
 
   /** DLP connection for communicating with the device. */
-  dlpConnection: DlpConnection;
+  readonly dlpConnection: DlpConnection;
   /** Recorder for the raw stream. */
-  recorder = new StreamRecorder();
+  readonly recorder = new StreamRecorder();
   /** Logger. */
-  protected log: debug.Debugger;
+  protected readonly log: debug.Debugger;
   /** Stream for reading / writing DLP datagrams. */
-  protected dlpStream: DlpStreamT;
+  protected readonly dlpStream: DlpStreamT;
   /** Raw data stream underlying the DLP stream. */
-  protected rawStream: Duplex;
+  protected readonly rawStream: Duplex;
 }
 
-/** A function that implements HotSync business logic. */
-export type SyncFn = (connection: SyncConnection) => Promise<void>;
-
-/** Base class for network-based sync servers. */
-export abstract class NetworkSyncServer<
-  SyncConnectionT extends SyncConnection
-> extends EventEmitter {
-  /** Constructor for the corresponding connection type. */
-  abstract connectionType: new (rawStream: Duplex) => SyncConnectionT;
-  /** Port to listen on. */
-  abstract port: number;
-
-  constructor(syncFn: SyncFn) {
-    super();
-    this.syncFn = syncFn;
+/** Serial protocol stack - SLP, PADP, CMP. */
+export class SerialSyncConnection extends SyncConnection<PadpStream> {
+  protected override createDlpStream(rawStream: Duplex): PadpStream {
+    return new PadpStream(rawStream);
   }
+  public override async doHandshake(): Promise<void> {
+    await doCmpHandshake(this.dlpStream, 115200);
+  }
+}
 
-  start() {
-    if (this.server) {
-      throw new Error('Server already started');
+/** NetSync protocol stack - NetSync. */
+export class NetSyncConnection extends SyncConnection<NetSyncDatagramStream> {
+  protected override createDlpStream(rawStream: Duplex): NetSyncDatagramStream {
+    return createNetSyncDatagramStream(rawStream);
+  }
+  public override async doHandshake() {
+    await this.readStream(this.dlpStream, NET_SYNC_HANDSHAKE_REQUEST_1.length);
+    this.dlpStream.write(NET_SYNC_HANDSHAKE_RESPONSE_1);
+    await this.readStream(this.dlpStream, NET_SYNC_HANDSHAKE_REQUEST_2.length);
+    this.dlpStream.write(NET_SYNC_HANDSHAKE_RESPONSE_2);
+    await this.readStream(this.dlpStream, NET_SYNC_HANDSHAKE_REQUEST_3.length);
+  }
+  /** Utility method for reading a datagram with an optional expected size. */
+  private async readStream(stream: Readable, expectedLength?: number) {
+    const data: Buffer = await pEvent(stream, 'data');
+    if (
+      expectedLength &&
+      (!data || !data.length || data.length !== expectedLength)
+    ) {
+      throw new Error(
+        `Error reading data: expected ${expectedLength} bytes, got ${
+          data.length || 'none'
+        }`
+      );
     }
-    this.server = createServer(this.onConnection.bind(this));
-    this.server.listen(this.port, () => {
-      this.log(`Server started on port ${this.port}`);
-    });
+    return data;
   }
-
-  async stop() {
-    if (!this.server) {
-      return;
-    }
-    this.server.close();
-    await pEvent(this.server, 'close');
-  }
-
-  async onConnection(rawStream: Duplex) {
-    const connection = new this.connectionType(rawStream);
-    this.emit('connect', connection);
-
-    this.log('Starting handshake');
-    await connection.doHandshake();
-    this.log('Handshake complete');
-
-    await connection.start();
-
-    await this.syncFn(connection);
-
-    await connection.end();
-    this.emit('disconnect', connection);
-  }
-
-  /** HotSync logic to run when a connection is made. */
-  syncFn: SyncFn;
-  /** The underlying net.Server. */
-  protected server: Server | null = null;
-  /** Debugger. */
-  private log = debug('palm-sync').extend('sync');
 }

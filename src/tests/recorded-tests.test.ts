@@ -1,5 +1,5 @@
-import {StreamRecorder} from '../stream-recorder';
 import fs from 'fs-extra';
+import {StreamRecorder} from '../protocols/stream-recorder';
 import {
   ConnectionType,
   getRecordedSessionFilePath,

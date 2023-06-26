@@ -12,7 +12,25 @@ import {
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
 import {Duplex, Transform, TransformCallback} from 'stream';
-import {crc16} from './utils';
+
+/** CRC-16 implementation.
+ *
+ * Stolen from pilot-link.
+ */
+function crc16(data: Buffer) {
+  let crc = 0;
+  for (const byte of data) {
+    crc = crc ^ (byte << 8);
+    for (let i = 0; i < 8; ++i) {
+      if (crc & 0x8000) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc = crc << 1;
+      }
+    }
+  }
+  return crc & 0xffff;
+}
 
 /** 3-byte signature that marks the beginning of every SLP datagram.  */
 export const SLP_SIGNATURE = Object.freeze([0xbe, 0xef, 0xed]);

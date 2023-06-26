@@ -6,7 +6,7 @@ import {
   DlpRespErrorCode,
   dlpArg,
   optDlpArg,
-} from '../dlp-protocol';
+} from '../protocols/dlp-protocol';
 
 const FUNC_ID = 42;
 

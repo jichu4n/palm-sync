@@ -1,5 +1,5 @@
-import isEqual from 'lodash/isEqual';
 import debug, {Debugger} from 'debug';
+import isEqual from 'lodash/isEqual';
 import {TypeId} from 'palm-pdb';
 import {
   SArray,
@@ -12,11 +12,18 @@ import {
   bitfield,
   field,
 } from 'serio';
-import {Duplex, DuplexOptions, EventEmitter, Stream} from 'stream';
+import {Duplex, DuplexOptions} from 'stream';
 import {Device, WebUSBDevice, usb} from 'usb';
-import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
-import {NetSyncConnection} from './network-sync-server';
-import {SyncConnection, SyncFn} from './sync-server';
+import {
+  DlpReadDBListFlags,
+  DlpReadDBListReqType,
+} from '../protocols/dlp-commands';
+import {
+  NetSyncConnection,
+  SerialSyncConnection,
+  SyncConnection,
+} from '../protocols/sync-connections';
+import {SyncServer} from './sync-server';
 import {
   USB_DEVICE_CONFIGS_BY_ID,
   UsbDeviceConfig,
@@ -24,7 +31,6 @@ import {
   UsbProtocolStackType,
   toUsbId,
 } from './usb-device-configs';
-import {SerialSyncConnection} from './serial-sync-server';
 
 /** Vendor USB control requests supported by Palm OS devices. */
 enum UsbControlRequestType {
@@ -211,20 +217,15 @@ export class UsbConnectionStream extends Duplex {
 /** USB device polling interval used in waitForDevice(). */
 const USB_DEVICE_POLLING_INTERVAL_MS = 200;
 
-export class UsbSyncServer extends EventEmitter {
-  constructor(syncFn: SyncFn) {
-    super();
-    this.syncFn = syncFn;
-  }
-
-  start() {
+export class UsbSyncServer extends SyncServer {
+  public override start() {
     if (this.runPromise) {
       throw new Error('Server already started');
     }
     this.runPromise = this.run();
   }
 
-  async stop() {
+  public override async stop() {
     if (!this.runPromise || this.shouldStop) {
       return;
     }
@@ -244,8 +245,8 @@ export class UsbSyncServer extends EventEmitter {
         break;
       }
 
-      const {usbId, rawDevice, deviceConfig} = deviceResult;
-      this.log(`Found device ${usbId} - ${deviceConfig.label}`);
+      const {rawDevice, deviceConfig} = deviceResult;
+      this.log(`Found device ${deviceConfig.usbId} - ${deviceConfig.label}`);
 
       try {
         const {device, stream} = await this.openDevice(deviceResult);
@@ -262,7 +263,14 @@ export class UsbSyncServer extends EventEmitter {
 
           await connection.start();
 
-          await this.syncFn(connection);
+          try {
+            await this.syncFn(connection);
+          } catch (e) {
+            this.log(
+              'Sync error: ' +
+                (e instanceof Error ? e.stack || e.message : `${e}`)
+            );
+          }
 
           await connection.end();
           this.emit('disconnect', connection);
@@ -306,7 +314,6 @@ export class UsbSyncServer extends EventEmitter {
         const usbId = toUsbId(rawDevice.deviceDescriptor);
         if (usbId in USB_DEVICE_CONFIGS_BY_ID) {
           return {
-            usbId,
             rawDevice,
             deviceConfig: USB_DEVICE_CONFIGS_BY_ID[usbId],
           };
@@ -668,8 +675,6 @@ export class UsbSyncServer extends EventEmitter {
   };
 
   private log = debug('palm-sync').extend('usb');
-  /** HotSync logic to run when a connection is made. */
-  syncFn: SyncFn;
   /** Promise returned by the currently running run() function. */
   private runPromise: Promise<void> | null = null;
   /** Flag indicating that stop() has been invoked. */

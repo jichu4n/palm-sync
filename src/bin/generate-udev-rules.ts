@@ -1,7 +1,10 @@
 /** Script to generate udev rules for supported devices. */
 
 import {program} from 'commander';
-import {USB_DEVICE_CONFIGS, UsbDeviceConfig} from '../usb-device-configs';
+import {
+  USB_DEVICE_CONFIGS,
+  UsbDeviceConfig,
+} from '../sync-servers/usb-device-configs';
 import path from 'path';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
