@@ -16,7 +16,18 @@
 <li><a href="DlpReadRecordByIndexReqType.html">DlpReadRecordByIndexReqType</a></li></ul>
 <h1>Class DlpReadRecordByIndexReqType</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>Base class for DLP requests.</p>
+<div class="tsd-comment tsd-typography"><p>DLP request to read a record by index.</p>
+<p>DLP 1.0 (PalmOS v1.0 and above)</p>
+<p>Error codes:</p>
+<ul>
+<li>NOT_SUPPORTED</li>
+<li>SYSTEM</li>
+<li>MEMORY</li>
+<li>PARAM</li>
+<li>NOT_FOUND</li>
+<li>RECORD_BUSY</li>
+<li>NONE_OPEN</li>
+</ul>
 </div>
 <div class="tsd-comment tsd-typography"></div></section>
 <section class="tsd-panel tsd-hierarchy">
@@ -26,7 +37,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">DlpReadRecordByIndexReqType</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-commands.ts#L1157">src/protocols/dlp-commands.ts:1157</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-commands.ts#L1281">src/protocols/dlp-commands.ts:1281</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -74,7 +85,7 @@
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-commands.ts#L1163">src/protocols/dlp-commands.ts:1163</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-commands.ts#L1287">src/protocols/dlp-commands.ts:1287</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="funcId" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>func<wbr/>Id</span><a href="#funcId" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">func<wbr/>Id</span><span class="tsd-signature-symbol">:</span> <a href="../enums/DlpFuncId.html" class="tsd-signature-type tsd-kind-enum">DlpFuncId</a><span class="tsd-signature-symbol"> = DlpFuncId.ReadRecord</span></div>
@@ -83,7 +94,7 @@
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <p>Overrides <a href="DlpRequest.html">DlpRequest</a>.<a href="DlpRequest.html#funcId">funcId</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-commands.ts#L1158">src/protocols/dlp-commands.ts:1158</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-commands.ts#L1282">src/protocols/dlp-commands.ts:1282</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="index" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>index</span><a href="#index" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">index</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
@@ -91,7 +102,7 @@
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-commands.ts#L1170">src/protocols/dlp-commands.ts:1170</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-commands.ts#L1294">src/protocols/dlp-commands.ts:1294</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="numBytes" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>num<wbr/>Bytes</span><a href="#numBytes" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">num<wbr/>Bytes</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0xffff</span></div>
@@ -99,7 +110,7 @@
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-commands.ts#L1178">src/protocols/dlp-commands.ts:1178</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-commands.ts#L1302">src/protocols/dlp-commands.ts:1302</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="offset" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>offset</span><a href="#offset" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">offset</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
@@ -107,13 +118,13 @@
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-commands.ts#L1174">src/protocols/dlp-commands.ts:1174</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-commands.ts#L1298">src/protocols/dlp-commands.ts:1298</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="responseType" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>response<wbr/>Type</span><a href="#responseType" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">response<wbr/>Type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">typeof </span><a href="DlpReadRecordRespType.html" class="tsd-signature-type tsd-kind-class">DlpReadRecordRespType</a><span class="tsd-signature-symbol"> = DlpReadRecordRespType</span></div><aside class="tsd-sources">
 <p>Overrides <a href="DlpRequest.html">DlpRequest</a>.<a href="DlpRequest.html#responseType">responseType</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-commands.ts#L1159">src/protocols/dlp-commands.ts:1159</a></li></ul></aside></section></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-commands.ts#L1283">src/protocols/dlp-commands.ts:1283</a></li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="assignFromSerializable" class="tsd-anchor"></a>
@@ -155,7 +166,7 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
 <p>Inherited from <a href="DlpRequest.html">DlpRequest</a>.<a href="DlpRequest.html#deserialize">deserialize</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-protocol.ts#L102">src/protocols/dlp-protocol.ts:102</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-protocol.ts#L102">src/protocols/dlp-protocol.ts:102</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited"><a id="getSerializedLength" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get<wbr/>Serialized<wbr/>Length</span><a href="#getSerializedLength" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited">
@@ -169,7 +180,7 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
 <p>Inherited from <a href="DlpRequest.html">DlpRequest</a>.<a href="DlpRequest.html#getSerializedLength">getSerializedLength</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-protocol.ts#L138">src/protocols/dlp-protocol.ts:138</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-protocol.ts#L138">src/protocols/dlp-protocol.ts:138</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="mapValuesToSerializable" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>map<wbr/>Values<wbr/>To<wbr/>Serializable</span><a href="#mapValuesToSerializable" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited tsd-is-external">
@@ -200,7 +211,7 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type ">Buffer</span></h4><aside class="tsd-sources">
 <p>Inherited from <a href="DlpRequest.html">DlpRequest</a>.<a href="DlpRequest.html#serialize">serialize</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-protocol.ts#L127">src/protocols/dlp-protocol.ts:127</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-protocol.ts#L127">src/protocols/dlp-protocol.ts:127</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited"><a id="toJSON" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>toJSON</span><a href="#toJSON" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited">
@@ -209,7 +220,7 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type ">Object</span></h4><aside class="tsd-sources">
 <p>Inherited from <a href="DlpRequest.html">DlpRequest</a>.<a href="DlpRequest.html#toJSON">toJSON</a></p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/3126c8a/src/protocols/dlp-protocol.ts#L144">src/protocols/dlp-protocol.ts:144</a></li></ul></aside></li></ul></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/862017e/src/protocols/dlp-protocol.ts#L144">src/protocols/dlp-protocol.ts:144</a></li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="from" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <span>from</span><a href="#from" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited tsd-is-external">
@@ -345,7 +356,7 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <li><a href="DlpDeleteDBReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>DeleteDBReq<wbr/>Type</span></a></li>
 <li><a href="DlpDeleteDBRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>DeleteDBResp<wbr/>Type</span></a></li>
 <li><a href="DlpDeleteRecordByCategoryReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Delete<wbr/>Record<wbr/>By<wbr/>Category<wbr/>Req<wbr/>Type</span></a></li>
-<li><a href="DlpDeleteRecordByReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Delete<wbr/>Record<wbr/>By<wbr/>Req<wbr/>Type</span></a></li>
+<li><a href="DlpDeleteRecordReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Delete<wbr/>Record<wbr/>Req<wbr/>Type</span></a></li>
 <li><a href="DlpDeleteRecordRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Delete<wbr/>Record<wbr/>Resp<wbr/>Type</span></a></li>
 <li><a href="DlpDeleteResourceReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Delete<wbr/>Resource<wbr/>Req<wbr/>Type</span></a></li>
 <li><a href="DlpDeleteResourceRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Delete<wbr/>Resource<wbr/>Resp<wbr/>Type</span></a></li>
@@ -369,8 +380,6 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <li><a href="DlpOpenDBMode.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>OpenDBMode</span></a></li>
 <li><a href="DlpOpenDBReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>OpenDBReq<wbr/>Type</span></a></li>
 <li><a href="DlpOpenDBRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>OpenDBResp<wbr/>Type</span></a></li>
-<li><a href="DlpProcessRPCReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>ProcessRPCReq<wbr/>Type</span></a></li>
-<li><a href="DlpProcessRPCRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>ProcessRPCResp<wbr/>Type</span></a></li>
 <li><a href="DlpReadAppBlockReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>App<wbr/>Block<wbr/>Req<wbr/>Type</span></a></li>
 <li><a href="DlpReadAppBlockRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>App<wbr/>Block<wbr/>Resp<wbr/>Type</span></a></li>
 <li><a href="DlpReadAppPreferenceFlags.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>App<wbr/>Preference<wbr/>Flags</span></a></li>
