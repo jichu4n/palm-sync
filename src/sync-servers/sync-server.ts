@@ -30,7 +30,7 @@ export abstract class SyncServer extends EventEmitter {
 }
 
 /** Events emitted by SyncServer. */
-interface SyncServerEvents {
+export interface SyncServerEvents {
   connect: (connection: SyncConnection) => void;
   disconnect: (connection: SyncConnection) => void;
 }

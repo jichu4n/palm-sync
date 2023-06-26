@@ -151,7 +151,7 @@ class GetExtConnectionInfoResponse extends SObject {
 
 /** Configuration for a USB connection, returned from USB device initialization
  * routines. */
-interface UsbConnectionConfig {
+export interface UsbConnectionConfig {
   /** In endpoint number. */
   inEndpoint: number;
   /** Out endpoint number. */
@@ -165,8 +165,6 @@ export class UsbConnectionStream extends Duplex {
     private readonly device: WebUSBDevice,
     /** Connection configuration. */
     private readonly config: UsbConnectionConfig,
-    /** Logger. */
-    private readonly log: Debugger,
     opts?: DuplexOptions
   ) {
     super(opts);
