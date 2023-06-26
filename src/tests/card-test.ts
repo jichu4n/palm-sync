@@ -1,4 +1,7 @@
+import assert from 'assert';
 import {
+  DlpExpCardInfoReqType,
+  DlpExpCardPresentReqType,
   DlpExpSlotEnumerateReqType,
   DlpVFSVolumeEnumerateReqType,
   DlpVFSVolumeGetLabelReqType,
@@ -8,8 +11,6 @@ import {
 
 export async function run({dlpConnection}: SyncConnection) {
   const {slots} = await dlpConnection.execute(new DlpExpSlotEnumerateReqType());
-  // POSE with HostFS.prc does not support expansion manager functions, so
-  // commented out.
   /*
   for (const slotRef of slots) {
     const cardPresentResp = await dlpConnection.execute(
@@ -26,7 +27,7 @@ export async function run({dlpConnection}: SyncConnection) {
     new DlpVFSVolumeEnumerateReqType()
   );
   for (const volRefNum of volRefNums) {
-    // await dlpConnection.execute(DlpVFSVolumeGetLabelReqType.with({volRefNum}));
-    // await dlpConnection.execute(DlpVFSVolumeInfoReqType.with({volRefNum}));
+    await dlpConnection.execute(DlpVFSVolumeGetLabelReqType.with({volRefNum}));
+    await dlpConnection.execute(DlpVFSVolumeInfoReqType.with({volRefNum}));
   }
 }

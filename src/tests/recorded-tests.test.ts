@@ -6,6 +6,7 @@ import {
   getServerTypeForConnectionType,
   getSyncFn,
 } from './record-sync-session';
+import debug from 'debug';
 
 /** Test modules to run. */
 const RECORDED_TEST_MODULES = [
@@ -20,7 +21,10 @@ const RECORDED_TEST_MODULES = [
 const CONNECTION_TYPES = [
   ConnectionType.SERIAL_OVER_NETWORK,
   ConnectionType.NETWORK,
+  ConnectionType.USB,
 ];
+
+const log = debug('palm-sync').extend('test');
 
 describe('recorded tests', function () {
   for (const connectionType of CONNECTION_TYPES) {
@@ -33,9 +37,7 @@ describe('recorded tests', function () {
             testModule
           );
           if (!(await fs.exists(recordedSessionFilePath))) {
-            console.log(
-              `No recorded session file found at ${recordedSessionFilePath}`
-            );
+            log(`No recorded session file found at ${recordedSessionFilePath}`);
             return;
           }
           const recorder = await StreamRecorder.loadFromFile(

@@ -1,4 +1,4 @@
-import debug, {Debugger} from 'debug';
+import debug from 'debug';
 import isEqual from 'lodash/isEqual';
 import {TypeId} from 'palm-pdb';
 import {
@@ -244,36 +244,14 @@ export class UsbSyncServer extends SyncServer {
       }
 
       const {rawDevice, deviceConfig} = deviceResult;
-      this.log(`Found device ${deviceConfig.usbId} - ${deviceConfig.label}`);
+      const {usbId, label, protocolStackType} = deviceConfig;
+      this.log(`Found device ${usbId} - ${label}`);
 
       try {
         const {device, stream} = await this.openDevice(deviceResult);
-
         if (stream) {
-          const connection = new this.USB_PROTOCOL_STACKS[
-            deviceConfig.protocolStackType
-          ](stream);
-          this.emit('connect', connection);
-
-          this.log('Starting handshake');
-          await connection.doHandshake();
-          this.log('Handshake complete');
-
-          await connection.start();
-
-          try {
-            await this.syncFn(connection);
-          } catch (e) {
-            this.log(
-              'Sync error: ' +
-                (e instanceof Error ? e.stack || e.message : `${e}`)
-            );
-          }
-
-          await connection.end();
-          this.emit('disconnect', connection);
+          await this.onConnection(stream, protocolStackType);
         }
-
         if (device) {
           this.log('Closing device');
           await this.closeDevice(device);
@@ -287,6 +265,39 @@ export class UsbSyncServer extends SyncServer {
         await this.waitForDeviceToDisconnect(rawDevice);
       } catch (e) {}
     }
+  }
+
+  /** Handle a new connection.
+   *
+   * This method is made public for testing, but otherwise should not be used.
+   *
+   * @ignore
+   */
+  public async onConnection(
+    rawStream: Duplex,
+    protocolStackType: UsbProtocolStackType = UsbProtocolStackType.NET_SYNC
+  ) {
+    const connection = new this.USB_PROTOCOL_STACKS[protocolStackType](
+      rawStream
+    );
+    this.emit('connect', connection);
+
+    this.log('Starting handshake');
+    await connection.doHandshake();
+    this.log('Handshake complete');
+
+    await connection.start();
+
+    try {
+      await this.syncFn(connection);
+    } catch (e) {
+      this.log(
+        'Sync error: ' + (e instanceof Error ? e.stack || e.message : `${e}`)
+      );
+    }
+
+    await connection.end();
+    this.emit('disconnect', connection);
   }
 
   /** Wait for a supported USB device.

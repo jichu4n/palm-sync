@@ -10,6 +10,9 @@ import {
   NetSyncConnection,
   DlpReadAppBlockReqType,
 } from '..';
+import debug from 'debug';
+
+const log = debug('palm-sync').extend('test');
 
 export async function run({dlpConnection}: NetSyncConnection) {
   await dlpConnection.execute(new DlpOpenConduitReqType());
@@ -26,7 +29,7 @@ export async function run({dlpConnection}: NetSyncConnection) {
     DlpReadAppBlockReqType.with({dbId})
   );
   const memoAppInfo = MemoAppInfo.from(data);
-  console.log(
+  log(
     'Categories: ' +
       memoAppInfo.categories.map((category) => category.label).join(', ') +
       '\n--------'
@@ -48,7 +51,7 @@ export async function run({dlpConnection}: NetSyncConnection) {
     memoRecords.push(MemoRecord.from(resp.data));
   }
 
-  console.log(memoRecords.map(({value}) => value).join('\n--------\n'));
+  log(memoRecords.map(({value}) => value).join('\n--------\n'));
 
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
 }

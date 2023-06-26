@@ -1,4 +1,7 @@
+import debug from 'debug';
 import {DlpReadDBListFlags, DlpReadDBListReqType, NetSyncConnection} from '..';
+
+const log = debug('palm-sync').extend('test');
 
 export async function run({dlpConnection}: NetSyncConnection) {
   const readDbListResp = await dlpConnection.execute(
@@ -7,5 +10,5 @@ export async function run({dlpConnection}: NetSyncConnection) {
     })
   );
   const dbNames = readDbListResp.dbInfo.map(({name}) => name);
-  console.log(dbNames.join('\n'));
+  log(dbNames.join('\n'));
 }

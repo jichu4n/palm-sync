@@ -8,6 +8,7 @@ import {NetworkSyncServer} from '../sync-servers/network-sync-server';
 import {SerialNetworkSyncServer} from '../sync-servers/serial-network-sync-server';
 import {SerialSyncServer} from '../sync-servers/serial-sync-server';
 import {SyncFn} from '../sync-servers/sync-server';
+import {UsbSyncServer} from '../sync-servers/usb-sync-server';
 
 export function getSyncFn(testModule: string) {
   const syncFn: (connection: SyncConnection) => Promise<void> =
@@ -33,6 +34,7 @@ export enum ConnectionType {
   NETWORK = 'network',
   SERIAL_OVER_NETWORK = 'serial-over-network',
   SERIAL = 'serial',
+  USB = 'usb',
 }
 
 export function getServerTypeForConnectionType(connectionType: ConnectionType) {
@@ -43,6 +45,8 @@ export function getServerTypeForConnectionType(connectionType: ConnectionType) {
       return (syncFn: SyncFn) => new SerialNetworkSyncServer(syncFn);
     case ConnectionType.SERIAL:
       return (syncFn: SyncFn) => new SerialSyncServer('/dev/ttyS0', syncFn);
+    case ConnectionType.USB:
+      return (syncFn: SyncFn) => new UsbSyncServer(syncFn);
     default:
       throw new Error(`Unknown connection type ${connectionType}`);
   }
