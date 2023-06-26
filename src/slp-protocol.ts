@@ -381,5 +381,8 @@ export function createSlpDatagramStream(rawStream: Duplex): SlpDatagramStream {
     rawStream,
     readStream
   ) as SlpDatagramStream;
+  rawStream.on('error', (e) =>
+    slpDatagramStream.emit('error', new Error(e.message, {cause: e}))
+  );
   return slpDatagramStream;
 }

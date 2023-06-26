@@ -51,10 +51,15 @@ export class NetSyncConnection extends SyncConnection<NetSyncDatagramStream> {
     return createNetSyncDatagramStream(rawStream);
   }
   async doHandshake() {
+    this.log('Waiting for handshake request 1');
     await readStream(this.dlpStream, NET_SYNC_HANDSHAKE_REQUEST_1.length);
+    this.log('Sending handshake response 1');
     this.dlpStream.write(NET_SYNC_HANDSHAKE_RESPONSE_1);
+    this.log('Waiting for handshake request 2');
     await readStream(this.dlpStream, NET_SYNC_HANDSHAKE_REQUEST_2.length);
+    this.log('Sending handshake response 2');
     this.dlpStream.write(NET_SYNC_HANDSHAKE_RESPONSE_2);
+    this.log('Waiting for handshake request 3');
     await readStream(this.dlpStream, NET_SYNC_HANDSHAKE_REQUEST_3.length);
   }
 }

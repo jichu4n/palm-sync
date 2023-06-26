@@ -1,3 +1,4 @@
+import isEqual from 'lodash/isEqual';
 import debug, {Debugger} from 'debug';
 import {TypeId} from 'palm-pdb';
 import {
@@ -11,7 +12,7 @@ import {
   bitfield,
   field,
 } from 'serio';
-import {Duplex, DuplexOptions, EventEmitter} from 'stream';
+import {Duplex, DuplexOptions, EventEmitter, Stream} from 'stream';
 import {Device, WebUSBDevice, usb} from 'usb';
 import {DlpReadDBListFlags, DlpReadDBListReqType} from './dlp-commands';
 import {NetSyncConnection} from './network-sync-server';
@@ -20,8 +21,10 @@ import {
   USB_DEVICE_CONFIGS_BY_ID,
   UsbDeviceConfig,
   UsbInitType,
+  UsbProtocolStackType,
   toUsbId,
 } from './usb-device-configs';
+import {SerialSyncConnection} from './serial-sync-server';
 
 /** Vendor USB control requests supported by Palm OS devices. */
 enum UsbControlRequestType {
@@ -53,7 +56,7 @@ class GetNumBytesAvailableResponse extends SObject {
 enum ConnectionPortFunctionType {
   GENERIC = 0x00,
   DEBUGGER = 0x01,
-  HOTSYNC = 0x02,
+  HOT_SYNC = 0x02,
   CONSOLE = 0x03,
   REMOTE_FS = 0x04,
 }
@@ -188,8 +191,11 @@ export class UsbConnectionStream extends Duplex {
     try {
       result = await this.device.transferIn(this.config.inEndpoint, size);
     } catch (e) {
-      this.log(`USB read failed with error: ${e}`);
-      this.destroy(new Error(`USB read failed with error: ${e}`));
+      this.destroy(
+        new Error(
+          'USB read error: ' + (e instanceof Error ? e.message : `${e}`)
+        )
+      );
       return;
     }
     if (result.status === 'ok') {
@@ -241,30 +247,39 @@ export class UsbSyncServer extends EventEmitter {
       const {usbId, rawDevice, deviceConfig} = deviceResult;
       this.log(`Found device ${usbId} - ${deviceConfig.label}`);
 
-      const {device, stream} = await this.openDevice(deviceResult);
+      try {
+        const {device, stream} = await this.openDevice(deviceResult);
 
-      if (stream) {
-        const connection = new NetSyncConnection(stream);
-        this.emit('connect', connection);
+        if (stream) {
+          const connection = new this.USB_PROTOCOL_STACKS[
+            deviceConfig.protocolStackType
+          ](stream);
+          this.emit('connect', connection);
 
-        this.log('Starting handshake');
-        await connection.doHandshake();
-        this.log('Handshake complete');
+          this.log('Starting handshake');
+          await connection.doHandshake();
+          this.log('Handshake complete');
 
-        await connection.start();
+          await connection.start();
 
-        // TODO: Don't make this crash the server
-        await this.syncFn(connection);
+          await this.syncFn(connection);
 
-        await connection.end();
-        this.emit('disconnect', connection);
+          await connection.end();
+          this.emit('disconnect', connection);
+        }
+
+        if (device) {
+          this.log('Closing device');
+          await this.closeDevice(device);
+        }
+      } catch (e) {
+        this.log('Error syncing with device');
       }
 
-      if (device) {
-        await this.closeDevice(device);
-      }
-
-      await this.waitForDeviceToDisconnect(rawDevice);
+      this.log('Waiting for device to disconnect');
+      try {
+        await this.waitForDeviceToDisconnect(rawDevice);
+      } catch (e) {}
     }
   }
 
@@ -349,15 +364,32 @@ export class UsbSyncServer extends EventEmitter {
     }
 
     // 2. Get device config.
-    let connectionConfig: UsbConnectionConfig | null = null;
+    let connectionConfigFromInitFn: UsbConnectionConfig | null = null;
+    let connectionConfigFromUsbDeviceInfo: UsbConnectionConfig | null = null;
     try {
-      connectionConfig =
-        (await this.USB_INIT_FNS[deviceConfig.initType](device)) ||
-        (await this.getConnectionConfigFromUsbDeviceInfo(device));
+      connectionConfigFromInitFn = await this.USB_INIT_FNS[
+        deviceConfig.initType
+      ](device);
+      connectionConfigFromUsbDeviceInfo =
+        await this.getConnectionConfigFromUsbDeviceInfo(device);
     } catch (e) {
       this.log(`Could not identify connection configuration: ${e}`);
       return {device, stream: null};
     }
+    if (
+      connectionConfigFromInitFn &&
+      connectionConfigFromUsbDeviceInfo &&
+      !isEqual(connectionConfigFromInitFn, connectionConfigFromUsbDeviceInfo)
+    ) {
+      this.log(
+        'Connection config from init fn and from USB device info do not match: ' +
+          JSON.stringify(connectionConfigFromInitFn) +
+          ' vs ' +
+          JSON.stringify(connectionConfigFromUsbDeviceInfo)
+      );
+    }
+    const connectionConfig =
+      connectionConfigFromInitFn || connectionConfigFromUsbDeviceInfo;
     if (!connectionConfig) {
       this.log('Could not identify connection configuration');
       return {device, stream: null};
@@ -395,7 +427,6 @@ export class UsbSyncServer extends EventEmitter {
   }
 
   private async waitForDeviceToDisconnect(rawDeviceToWait: Device) {
-    this.log('Waiting for device to disconnect');
     const {idVendor, idProduct} = rawDeviceToWait.deviceDescriptor;
     while (!this.shouldStop) {
       const rawDevices = usb.getDeviceList();
@@ -472,7 +503,7 @@ export class UsbSyncServer extends EventEmitter {
     const portInfo = response.ports
       .slice(0, response.numPorts)
       .find(
-        ({functionType}) => functionType === ConnectionPortFunctionType.HOTSYNC
+        ({functionType}) => functionType === ConnectionPortFunctionType.HOT_SYNC
       );
     if (!portInfo) {
       this.log('Could not identify HotSync port in GetConnectionInfo response');
@@ -481,7 +512,7 @@ export class UsbSyncServer extends EventEmitter {
     return {inEndpoint: portInfo.portNumber, outEndpoint: portInfo.portNumber};
   }
 
-  private async getConnectionConfigUsingExtGetConnectionInfo(
+  private async getConnectionConfigUsingGetExtConnectionInfo(
     device: WebUSBDevice
   ): Promise<UsbConnectionConfig | null> {
     let response: GetExtConnectionInfoResponse;
@@ -552,7 +583,6 @@ export class UsbSyncServer extends EventEmitter {
       );
       return null;
     }
-    this.log('Obtained connection configuration from USB device info');
     return {
       inEndpoint: inEndpoint.endpointNumber,
       outEndpoint: outEndpoint.endpointNumber,
@@ -568,19 +598,22 @@ export class UsbSyncServer extends EventEmitter {
     [UsbInitType.NONE]: async () => {
       return null;
     },
-    [UsbInitType.PALM_OS_4]: async (device) => {
-      let config = await this.getConnectionConfigUsingExtGetConnectionInfo(
-        device
-      );
+    [UsbInitType.GENERIC]: async (device) => {
+      let config: UsbConnectionConfig | null;
+
+      // First try GetExtConnectionInfo. Some devices may have different in and
+      // out endpoints, which can only be fetched with GetExtConnectionInfo.
+      config = await this.getConnectionConfigUsingGetExtConnectionInfo(device);
       if (config) {
         return config;
       }
 
+      // If GetExtConnectionInfo isn't supported, fall back to GetConnectionInfo.
       config = await this.getConnectionConfigUsingGetConnectionInfo(device);
       if (config) {
-        // Query the number of bytes available. We ignore the response because we
-        // don't actually need it, but devices may expect this call before sending
-        // data.
+        // Query the number of bytes available. We ignore the response because
+        // we don't actually need it, but older devices may expect this call
+        // before sending data.
         await this.sendUsbControlRequest(
           device,
           {
@@ -592,28 +625,54 @@ export class UsbSyncServer extends EventEmitter {
           },
           GetNumBytesAvailableResponse
         );
+        return config;
       }
-      return config;
-    },
-    [UsbInitType.PALM_OS_3]: async () => {
-      // TODO
+
       return null;
     },
-    [UsbInitType.EARLY_SONY_CLIE]: async () => {
-      // TODO
+    [UsbInitType.EARLY_SONY_CLIE]: async (device) => {
+      // Based on pilot-link implementation, which is in turn based on Linux
+      // kernel module implementation.
+      await this.sendUsbControlRequest(
+        device,
+        {
+          requestType: 'standard',
+          recipient: 'device',
+          request: usb.LIBUSB_REQUEST_GET_CONFIGURATION,
+          index: 0,
+          value: 0,
+        },
+        SUInt8
+      );
+      await this.sendUsbControlRequest(
+        device,
+        {
+          requestType: 'standard',
+          recipient: 'device',
+          request: usb.LIBUSB_REQUEST_GET_INTERFACE,
+          index: 0,
+          value: 0,
+        },
+        SUInt8
+      );
       return null;
     },
-    [UsbInitType.TAPWAVE]: async () => {
-      // TODO
-      return null;
-    },
+  };
+
+  /** USB protocol stacks indexed by UsbProtocolStackType. */
+  USB_PROTOCOL_STACKS: {
+    [key in UsbProtocolStackType]: new (stream: Duplex) => SyncConnection;
+  } = {
+    [UsbProtocolStackType.NET_SYNC]: NetSyncConnection,
+    [UsbProtocolStackType.SERIAL]: SerialSyncConnection,
   };
 
   private log = debug('palm-dlp').extend('usb');
   /** HotSync logic to run when a connection is made. */
   syncFn: SyncFn;
-  /**  */
+  /** Promise returned by the currently running run() function. */
   private runPromise: Promise<void> | null = null;
+  /** Flag indicating that stop() has been invoked. */
   private shouldStop = false;
 }
 

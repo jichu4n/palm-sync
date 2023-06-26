@@ -142,5 +142,8 @@ export function createNetSyncDatagramStream(
     writeStream,
     readStream
   ) as NetSyncDatagramStream;
+  rawStream.on('error', (e) =>
+    netSyncDatagramStream.emit('error', new Error(e.message, {cause: e}))
+  );
   return netSyncDatagramStream;
 }

@@ -145,7 +145,9 @@ export class PadpStream extends Duplex {
     super(opts);
     this.slpDatagramStream = createSlpDatagramStream(rawStream);
     this.slpDatagramStream.on('data', this.onReceiveSlpDatagram.bind(this));
-    this.slpDatagramStream.on('error', (error) => this.emit('error', error));
+    this.slpDatagramStream.on('error', (e) =>
+      this.emit('error', new Error(e.message, {cause: e}))
+    );
   }
 
   /** Sets the transaction ID for the next datagram sent through this stream.
@@ -322,12 +324,15 @@ export class PadpStream extends Duplex {
     this.slpDatagramStream.write(
       ackSlpDatagram.serialize(),
       'buffer' as BufferEncoding,
-      (error) => {
-        if (error) {
-          this.log(
-            `Error sending ACK xid ${ackSlpDatagram.header.xid}: ${error.message}`
+      (e) => {
+        if (e) {
+          this.emit(
+            'error',
+            new Error(
+              `Error sending ACK xid ${ackSlpDatagram.header.xid}: ${e}`,
+              {cause: e}
+            )
           );
-          this.emit('error', error);
         }
       }
     );

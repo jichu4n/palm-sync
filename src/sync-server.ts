@@ -34,19 +34,29 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
       this.rawStream.setNoDelay(true);
     }
 
+    // The DLP stream should propagate errors through, so we only need to listen
+    // for errors at the DLP stream level.
+    const errorListener = (e: Error) => {
+      this.log('Connection error: ' + (e.stack ? `${e.stack}` : e.message));
+    };
+    this.dlpStream.on('error', errorListener);
+
     this.rawStream.on('close', (hadError: any) => {
       this.log(`Connection closed${hadError ? ' with errors' : ''}`);
-    });
-
-    this.rawStream.on('error', (e) => {
-      this.log(`Error: ${e.message}`);
+      // If there was an error thrown from rawStream, duplexify may emit another
+      // error event when destroyed. So to prevent duplicate errors, we will
+      // ignore all errors after the raw stream is closed.
+      this.dlpStream
+        .removeListener('error', errorListener)
+        // Don't crash on error.
+        .on('error', () => {});
     });
   }
 
   /** Create a stream yielding DLP datagrams based on a raw data stream. */
   abstract createDlpStream(rawStream: Duplex): DlpStreamT;
 
-  /** Perform initial handshake with the Palm device to establish connection. */
+  /** Perform initial handshake with the Palm device to00000 establish connection. */
   abstract doHandshake(): Promise<void>;
 
   /** Common DLP operations to run at the start of a HotSync session. */

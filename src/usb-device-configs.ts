@@ -10,20 +10,26 @@ export interface UsbDeviceConfig {
   label: string;
   /** Device-specific initialization routine required. */
   initType: UsbInitType;
+  /** Protocol stack to use on top of USB connection. */
+  protocolStackType: UsbProtocolStackType;
 }
 
 /** Device-specific initialization routines. */
 export enum UsbInitType {
   /** No USB initialization required. */
   NONE = 'none',
-  /** Palm OS 4.x and above. */
-  PALM_OS_4 = 'palmOs4',
-  /** Palm OS 3.x and below. */
-  PALM_OS_3 = 'palmOs3',
+  /** Generic initialization routine for most Palm OS devices. */
+  GENERIC = 'generic',
   /** Early SONY CLIE devices. */
   EARLY_SONY_CLIE = 'earlySonyClie',
-  /** Tapwave Zodiac specific. */
-  TAPWAVE = 'tapwave',
+}
+
+/** Protocol stack to use on top of USB connection. */
+export enum UsbProtocolStackType {
+  /** Use NetSync protocol stack. */
+  NET_SYNC = 'netSync',
+  /** Use serial protocol stack (SLP, PADP, and CMP). */
+  SERIAL = 'serial',
 }
 
 /** USB hardware configuration info for all known Palm OS devices.
@@ -37,29 +43,33 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
     {
       vendorId: 0x054c,
       productId: 0x0038,
-      label: 'Sony S S320 and other Palm OS 3.5 devices',
+      label: 'Sony S S300 and other Palm OS 3.5 devices',
       initType: UsbInitType.EARLY_SONY_CLIE,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x0066,
       label: 'Sony T, SJ series, and other Palm OS 4.0 devices',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x0095,
       label: 'Sony S360',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x000a,
       label: 'Sony NR and other Palm OS 4.1 devices',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
@@ -67,27 +77,31 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       productId: 0x009a,
       label: 'Sony NR70V/U',
       initType: UsbInitType.EARLY_SONY_CLIE,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x00da,
       label: 'Sony NX',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x00e9,
       label: 'Sony NZ',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
       vendorId: 0x054c,
       productId: 0x0144,
       label: 'Sony UX',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
@@ -95,6 +109,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       productId: 0x0169,
       label: 'Sony TJ',
       initType: UsbInitType.EARLY_SONY_CLIE,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* AlphaSmart */
@@ -102,7 +117,8 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x081e,
       productId: 0xdf00,
       label: 'Alphasmart Dana',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* HANDSPRING (vendor 0x082d) */
@@ -110,20 +126,23 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x082d,
       productId: 0x0100,
       label: 'Visor, Treo 300',
-      initType: UsbInitType.PALM_OS_3,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.SERIAL,
     },
 
     {
       vendorId: 0x082d,
       productId: 0x0200,
       label: 'Treo',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x082d,
       productId: 0x0300,
       label: 'Treo 600',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* PalmOne, Palm Inc */
@@ -131,133 +150,155 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x0830,
       productId: 0x0001,
       label: 'm500',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0002,
       label: 'm505',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0003,
       label: 'm515',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0010,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0011,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0020,
       label: 'i705',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0030,
       label: 'Tungsten|Z',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0031,
       label: 'Tungsten|W',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0040,
       label: 'm125',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0050,
       label: 'm130',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0051,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0052,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0053,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0060,
       label: 'Tungsten series, Zire 71',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0061,
       label: 'Zire 31, 72, Z22',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0062,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0063,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0070,
       label: 'Zire',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0071,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0080,
       label: 'm100',
       initType: UsbInitType.NONE,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0099,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
     {
       vendorId: 0x0830,
       productId: 0x0100,
       label: 'UNKNOWN',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* GARMIN */
@@ -265,7 +306,8 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x091e,
       productId: 0x0004,
       label: 'IQUE 3600',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* Kyocera */
@@ -273,14 +315,16 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x0c88,
       productId: 0x0021,
       label: '7135 Smartphone',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     {
       vendorId: 0x0c88,
       productId: 0xa226,
       label: '6035 Smartphone',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* Tapwave */
@@ -288,7 +332,8 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x12ef,
       productId: 0x0100,
       label: 'Zodiac, Zodiac2',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* ACEECA */
@@ -296,7 +341,8 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x4766,
       productId: 0x0001,
       label: 'MEZ1000',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
     /* Samsung */
@@ -304,7 +350,8 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x04e8,
       productId: 0x8001,
       label: 'i330',
-      initType: UsbInitType.PALM_OS_4,
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
   ].map((obj) => ({...obj, usbId: toUsbId(obj)}))
 );
