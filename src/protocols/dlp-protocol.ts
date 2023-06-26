@@ -37,7 +37,18 @@ export class DlpConnection {
   ) {}
 
   async execute<DlpRequestT extends DlpRequest<any>>(
-    request: DlpRequestT
+    request: DlpRequestT,
+    {
+      ignoreErrorCode,
+    }: {
+      /** Whether to throw an error when the response has a non-zero error code.
+       *
+       * By default, execute() will not throw an error when the response has a
+       * non-zero error code. If this option is set to true, execute() will
+       * return the response as-is.
+       */
+      ignoreErrorCode?: boolean;
+    } = {}
   ): Promise<DlpResponseType<DlpRequestT>> {
     const serializedRequest = request.serialize(
       this.opts.requestSerializeOptions
@@ -45,9 +56,7 @@ export class DlpConnection {
     this.log(
       `>>> ${request.constructor.name} ${serializedRequest.toString('hex')}`
     );
-    this.log(
-      `>>> ${request.constructor.name} ${JSON.stringify(request.toJSON())}`
-    );
+    this.log(`    ${JSON.stringify(request.toJSON())}`);
 
     this.transport.write(serializedRequest);
     const rawResponse = (await pEvent(this.transport, 'data')) as Buffer;
@@ -56,12 +65,22 @@ export class DlpConnection {
     const response: DlpResponseType<DlpRequestT> = new request.responseType();
     try {
       response.deserialize(rawResponse, this.opts.responseDeserializeOptions);
-      this.log(
-        `<<< ${request.responseType.name} ${JSON.stringify(response.toJSON())}`
-      );
     } catch (e: any) {
       this.log(`    Error parsing ${request.responseType.name}: ${e.message}`);
       throw e;
+    }
+
+    if (response.errorCode === DlpRespErrorCode.NONE) {
+      this.log(`    ${JSON.stringify(response.toJSON())}`);
+    } else {
+      const errorMessage =
+        request.responseType.name +
+        ` error 0x${response.errorCode.toString(16).padStart(2, '0')}: ` +
+        response.errorMessage;
+      this.log(`    ${errorMessage}`);
+      if (!ignoreErrorCode) {
+        throw new Error(errorMessage);
+      }
     }
 
     return response;
@@ -268,10 +287,6 @@ export abstract class DlpResponse extends SObject {
             `${numDlpArgs}`
         );
       }
-      throw new Error(
-        `Error 0x${this.errorCode.toString(16).padStart(2, '0')} ` +
-          `in ${this.constructor.name}: ${this.errorMessage}`
-      );
     }
 
     return readOffset;
