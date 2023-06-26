@@ -16,3 +16,4 @@ jobs:
       - run: npm run lint
       - run: DEBUG='palm-sync:*' npm test
       - run: npm run build
+      - run: npm run build:udev-rules new.rules && diff 60-palm-os-devices.rules new.rules
