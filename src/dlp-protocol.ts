@@ -67,7 +67,7 @@ export class DlpConnection {
     return response;
   }
 
-  private log = debug('palm-dlp').extend('dlp');
+  private log = debug('palm-sync').extend('dlp');
 }
 
 /** Base class for DLP requests. */

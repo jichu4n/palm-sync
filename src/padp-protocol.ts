@@ -497,7 +497,7 @@ export class PadpStream extends Duplex {
     return xid;
   }
 
-  private log = debug('palm-dlp').extend('padp');
+  private log = debug('palm-sync').extend('padp');
 
   /** Underlying SLP datagram stream. */
   private slpDatagramStream: SlpDatagramStream;

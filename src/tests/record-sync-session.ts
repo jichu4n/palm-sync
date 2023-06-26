@@ -52,8 +52,8 @@ export function getServerTypeForConnectionType(connectionType: ConnectionType) {
 
 if (require.main === module) {
   (async function () {
-    debug.enable('palm-dlp:*');
-    const log = debug('palm-dlp').extend('record-sync-session');
+    debug.enable('palm-sync:*');
+    const log = debug('palm-sync').extend('record-sync-session');
     program
       .name('record-sync-session')
       .description('Script to record a NetSync session for testing.')

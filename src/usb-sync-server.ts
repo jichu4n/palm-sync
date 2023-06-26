@@ -667,7 +667,7 @@ export class UsbSyncServer extends EventEmitter {
     [UsbProtocolStackType.SERIAL]: SerialSyncConnection,
   };
 
-  private log = debug('palm-dlp').extend('usb');
+  private log = debug('palm-sync').extend('usb');
   /** HotSync logic to run when a connection is made. */
   syncFn: SyncFn;
   /** Promise returned by the currently running run() function. */

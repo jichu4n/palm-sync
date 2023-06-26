@@ -129,7 +129,7 @@ export async function doCmpHandshake(
   stream: PadpStream,
   suggestedBaudRate?: number
 ) {
-  const log = debug('palm-dlp').extend('cmp');
+  const log = debug('palm-sync').extend('cmp');
 
   // Read initial WAKEUP.
   const wakeupDatagram = CmpDatagram.from(await pEvent(stream, 'data'));

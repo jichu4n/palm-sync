@@ -91,7 +91,7 @@ export class SerialSyncServer extends EventEmitter {
   /** HotSync logic to run when a connection is made. */
   syncFn: SyncFn;
   /** Debugger. */
-  private log = debug('palm-dlp').extend('serial');
+  private log = debug('palm-sync').extend('serial');
 }
 
 export class SerialSyncConnection extends SyncConnection<PadpStream> {

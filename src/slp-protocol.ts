@@ -359,7 +359,7 @@ class SlpSeekReadStream extends Transform {
   }
 
   /** Debugger. */
-  private log = debug('palm-dlp').extend('slp');
+  private log = debug('palm-sync').extend('slp');
   /** Whether we've already found the SLP signature. */
   private hasFoundSlpSignature = false;
   /** Data read in previous chunks that may be part of the SLP signature. */

@@ -1,17 +1,17 @@
 {
-  "name": "palm-dlp",
+  "name": "palm-sync",
   "version": "0.1.0",
   "description": "Communicate with Palm OS devices over HotSync",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jichu4n/palm-dlp.git"
+    "url": "git+https://github.com/jichu4n/palm-sync.git"
   },
   "author": "Chuan Ji <chuan@jichu4n.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/jichu4n/palm-dlp/issues"
+    "url": "https://github.com/jichu4n/palm-sync/issues"
   },
-  "homepage": "https://github.com/jichu4n/palm-dlp#readme",
+  "homepage": "https://github.com/jichu4n/palm-sync#readme",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
