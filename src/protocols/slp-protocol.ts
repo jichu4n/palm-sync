@@ -15,9 +15,9 @@ import {Duplex, Transform, TransformCallback} from 'stream';
 
 /** CRC-16 implementation.
  *
- * Stolen from pilot-link.
+ * Copied from pilot-link.
  */
-function crc16(data: Buffer) {
+export function crc16(data: Buffer) {
   let crc = 0;
   for (const byte of data) {
     crc = crc ^ (byte << 8);
@@ -32,8 +32,8 @@ function crc16(data: Buffer) {
   return crc & 0xffff;
 }
 
-/** 3-byte signature that marks the beginning of every SLP datagram.  */
-export const SLP_SIGNATURE = Object.freeze([0xbe, 0xef, 0xed]);
+/** 3-byte signature that marks the beginning of an SLP datagram.  */
+export const SLP_SIGNATURE = [0xbe, 0xef, 0xed] as const;
 
 /** Type of SLP datagrams. */
 export enum SlpDatagramType {
@@ -301,7 +301,7 @@ export class SlpDatagramReadStream extends Transform {
  * beginning, and we are expected to ignore everything up to the first SLP
  * datagram signature.
  */
-class SlpSeekReadStream extends Transform {
+export class SlpSeekReadStream extends Transform {
   _transform(
     chunk: any,
     encoding: BufferEncoding | 'buffer',

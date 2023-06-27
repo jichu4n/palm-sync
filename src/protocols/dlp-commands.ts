@@ -389,7 +389,7 @@ export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
 
   /** DLP version supported by the host. Hard-coded to 1.4 as per pilot-link. */
   @dlpArg(0)
-  private hostDlpVersion = DlpVersionType.with({major: 1, minor: 4});
+  private hostDlpVersion = HOST_DLP_VERSION;
 }
 
 /** DLP response for {@link DlpReadSysInfoReqType}. */
@@ -454,6 +454,9 @@ export class DlpVersionType extends SObject {
     return this.major + this.minor / 10;
   }
 }
+
+/** DLP version supported by the desktop application. Hard-coded to 1.4 as per pilot-link. */
+export const HOST_DLP_VERSION = DlpVersionType.with({major: 1, minor: 4});
 
 // =============================================================================
 // GetSysDateTime (0x13)
@@ -2869,7 +2872,7 @@ export class DlpSetDBInfoReqType extends DlpRequest<DlpSetDBInfoRespType> {
   @dlpArg(0)
   setDbFlags = new DatabaseAttrs();
 
-  /** Database version; DLP_SET_DB_INFO_NO_VERSION_CHANGE = don't change */
+  /** Database version; 0xffff = don't change */
   @dlpArg(0, SUInt16BE)
   dbVersion = DLP_SET_DB_INFO_NO_VERSION_CHANGE;
 
@@ -2898,7 +2901,7 @@ export class DlpSetDBInfoReqType extends DlpRequest<DlpSetDBInfoRespType> {
   name = '';
 }
 
-export const DLP_SET_DB_INFO_NO_VERSION_CHANGE = 0xffff;
+const DLP_SET_DB_INFO_NO_VERSION_CHANGE = 0xffff;
 
 /** DLP response for {@link DlpSetDBInfoReqType}. */
 export class DlpSetDBInfoRespType extends DlpResponse {

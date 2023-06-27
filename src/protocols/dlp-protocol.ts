@@ -375,7 +375,7 @@ function getDlpArgsAsJson(
 }
 
 /** Key for storing DLP argument information on a DlpRequest / DlpResponse. */
-export const DLP_ARG_SPECS_METADATA_KEY = Symbol('__dlpArgSpecs');
+const DLP_ARG_SPECS_METADATA_KEY = Symbol('__dlpArgSpecs');
 
 /** Metadata stored for each DLP argument. */
 export interface DlpArgSpec {
@@ -424,7 +424,9 @@ function registerDlpArg<ValueT>(
 
 /** Decorator for a required DLP argument. */
 export function dlpArg<ValueT>(
+  /** Argument ID offset from DLP_ARG_ID_BASE. */
   argIdOffset: number,
+  /** Serializable wrapper type. */
   wrapperType?: new () => SerializableWrapper<ValueT>
 ) {
   return registerDlpArg(argIdOffset, wrapperType, false);
@@ -432,20 +434,22 @@ export function dlpArg<ValueT>(
 
 /** Decorator for an optional DLP argument. */
 export function optDlpArg<ValueT>(
+  /** Argument ID offset from DLP_ARG_ID_BASE. */
   argIdOffset: number,
+  /** Serializable wrapper type. */
   wrapperType?: new () => SerializableWrapper<ValueT>
 ) {
   return registerDlpArg(argIdOffset, wrapperType, true);
 }
 
 /** Extract DlpArgSpec's defined via dlpArg on a DlpRequest or DlpResponse. */
-export function getDlpArgSpecs(targetInstance: any) {
+function getDlpArgSpecs(targetInstance: any) {
   return (targetInstance[DLP_ARG_SPECS_METADATA_KEY] ??
     []) as Array<DlpArgSpec>;
 }
 
 /** Constructs DlpArg's on a DlpRequest or DlpResponse. */
-export function getDlpArgs(targetInstance: SObject) {
+function getDlpArgs(targetInstance: SObject) {
   const values = targetInstance.mapValuesToSerializable();
   return _(getDlpArgSpecs(targetInstance))
     .groupBy('argId')
@@ -472,14 +476,14 @@ export function getDlpArgs(targetInstance: SObject) {
 }
 
 /** DLP argument type, as determined by the payload size. */
-export enum DlpArgType {
+enum DlpArgType {
   SMALL = 'small',
   SHORT = 'short',
   LONG = 'long',
 }
 
 /** Definition of each argument type. */
-export interface DlpArgTypeSpec {
+interface DlpArgTypeSpec {
   /** Maximum data length supported by this argument type. */
   maxLength: number;
   /** Bitmask applied on the argument ID indicating this argument type. */
@@ -499,7 +503,7 @@ export interface DlpArgTypeSpec {
  *   - https://github.com/jichu4n/pilot-link/blob/master/libpisock/dlp.c#L562
  *   - https://github.com/dwery/coldsync/blob/master/libpconn/dlp.c#L89
  */
-export const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
+const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
   [DlpArgType.SMALL]: {
     maxLength: 0xff,
     bitmask: 0x00, // 0000 0000
@@ -575,7 +579,7 @@ const DLP_ARG_ID_BITMASK = 0xff & ~DLP_ARG_TYPE_BITMASK; // 0011 1111
 export const DLP_ARG_ID_BASE = 0x20;
 
 /** DLP request / response argument. */
-export class DlpArg extends SObject {
+class DlpArg extends SObject {
   /** DLP argument ID */
   argId: number = 0;
   /** Argument data. */
