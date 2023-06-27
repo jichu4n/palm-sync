@@ -38,16 +38,20 @@ export class DlpConnection {
 
   async execute<DlpRequestT extends DlpRequest<any>>(
     request: DlpRequestT,
-    {
-      ignoreErrorCode,
-    }: {
+    opts: {
       /** Whether to throw an error when the response has a non-zero error code.
        *
        * By default, execute() will not throw an error when the response has a
-       * non-zero error code. If this option is set to true, execute() will
-       * return the response as-is.
+       * non-zero error code.
+       *
+       * If ignoreErrorCode is set to true, execute() will ignore non-zero error
+       * codes and return the response as-is.
+       *
+       * If ignoreErrorCode is set to one or more error codes, execute() will
+       * ignore the specified error codes but will still throw an error for
+       * other error codes.
        */
-      ignoreErrorCode?: boolean;
+      ignoreErrorCode?: boolean | DlpRespErrorCode | Array<DlpRespErrorCode>;
     } = {}
   ): Promise<DlpResponseType<DlpRequestT>> {
     const serializedRequest = request.serialize(
@@ -78,7 +82,13 @@ export class DlpConnection {
         ` error 0x${response.errorCode.toString(16).padStart(2, '0')}: ` +
         response.errorMessage;
       this.log(`    ${errorMessage}`);
-      if (!ignoreErrorCode) {
+      if (
+        !opts.ignoreErrorCode ||
+        (typeof opts.ignoreErrorCode === 'number' &&
+          opts.ignoreErrorCode !== response.errorCode) ||
+        (Array.isArray(opts.ignoreErrorCode) &&
+          !opts.ignoreErrorCode.includes(response.errorCode))
+      ) {
         throw new Error(errorMessage);
       }
     }

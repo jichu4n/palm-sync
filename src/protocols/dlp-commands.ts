@@ -694,7 +694,7 @@ export class DlpReadDBListFlags extends SBitmask.of(SUInt8) {
   private padding1 = 0;
 }
 
-/** Database info, used in DlpReadDBListRespType. */
+/** Database info, used in {@link DlpReadDBListRespType} and {@link DlpFindDBRespType}. */
 export class DlpDBInfoType extends SObject {
   /** Total length of this structure. */
   @field(SUInt8)
@@ -1197,7 +1197,7 @@ export class DlpReadNextModifiedRecReqType extends DlpRequest<DlpReadNextModifie
   dbId = 0;
 }
 
-abstract class DlpBaseReadRecordRespType extends DlpResponse {
+export abstract class DlpBaseReadRecordRespType extends DlpResponse {
   /** Record ID. */
   @dlpArg(0, SUInt32BE)
   recordId = 0;
