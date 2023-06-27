@@ -1,9 +1,9 @@
 import debug from 'debug';
-import {DlpReadDBListFlags, DlpReadDBListReqType, NetSyncConnection} from '..';
+import {DlpConnection, DlpReadDBListFlags, DlpReadDBListReqType} from '..';
 
 const log = debug('palm-sync').extend('test');
 
-export async function run({dlpConnection}: NetSyncConnection) {
+export async function run(dlpConnection: DlpConnection) {
   const readDbListResp = await dlpConnection.execute(
     DlpReadDBListReqType.with({
       srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),

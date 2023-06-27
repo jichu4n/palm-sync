@@ -1,8 +1,9 @@
 import {EventEmitter} from 'events';
+import {DlpConnection} from 'src/protocols/dlp-protocol';
 import {SyncConnection} from '../protocols/sync-connections';
 
 /** A function that implements HotSync business logic. */
-export type SyncFn = (connection: SyncConnection) => Promise<void>;
+export type SyncFn = (connection: DlpConnection) => Promise<void>;
 
 /** Base class for HotSync servers.
  *

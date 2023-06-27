@@ -3,7 +3,7 @@ import {Argument, program} from 'commander';
 import debug from 'debug';
 import pEvent from 'p-event';
 import path from 'path';
-import {NetSyncConnection, SyncConnection} from '../protocols/sync-connections';
+import {NetSyncConnection} from '../protocols/sync-connections';
 import {NetworkSyncServer} from '../sync-servers/network-sync-server';
 import {SerialNetworkSyncServer} from '../sync-servers/serial-network-sync-server';
 import {SerialSyncServer} from '../sync-servers/serial-sync-server';
@@ -11,8 +11,7 @@ import {SyncFn} from '../sync-servers/sync-server';
 import {UsbSyncServer} from '../sync-servers/usb-sync-server';
 
 export function getSyncFn(testModule: string) {
-  const syncFn: (connection: SyncConnection) => Promise<void> =
-    require(`./${testModule}`).run;
+  const syncFn: SyncFn = require(`./${testModule}`).run;
   if (!syncFn) {
     throw new Error(`Could not find run function in module ${testModule}`);
   }

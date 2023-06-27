@@ -1,20 +1,20 @@
-import {Category, MemoAppInfo, MemoRecord} from 'palm-pdb';
+import debug from 'debug';
+import {MemoAppInfo, MemoRecord} from 'palm-pdb';
 import {
   DlpCloseDBReqType,
+  DlpConnection,
   DlpOpenConduitReqType,
-  DlpOpenDBReqType,
   DlpOpenDBMode,
+  DlpOpenDBReqType,
+  DlpReadAppBlockReqType,
   DlpReadOpenDBInfoReqType,
   DlpReadRecordByIDReqType,
   DlpReadRecordIDListReqType,
-  NetSyncConnection,
-  DlpReadAppBlockReqType,
 } from '..';
-import debug from 'debug';
 
 const log = debug('palm-sync').extend('test');
 
-export async function run({dlpConnection}: NetSyncConnection) {
+export async function run(dlpConnection: DlpConnection) {
   await dlpConnection.execute(new DlpOpenConduitReqType());
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({

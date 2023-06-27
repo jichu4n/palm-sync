@@ -66,7 +66,7 @@ export class SerialSyncServer extends SyncServer {
     await connection.start();
 
     try {
-      await this.syncFn(connection);
+      await this.syncFn(connection.dlpConnection);
     } catch (e) {
       this.log(
         'Sync error: ' + (e instanceof Error ? e.stack || e.message : `${e}`)
@@ -96,7 +96,7 @@ export class SerialSyncServer extends SyncServer {
 if (require.main === module) {
   const syncServer = new SerialSyncServer(
     '/dev/ttyS0',
-    async ({dlpConnection}) => {
+    async (dlpConnection) => {
       const readDbListResp = await dlpConnection.execute(
         DlpReadDBListReqType.with({
           srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),

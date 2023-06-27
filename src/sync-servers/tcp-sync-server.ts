@@ -50,7 +50,7 @@ export abstract class TcpSyncServer<
     await connection.start();
 
     try {
-      await this.syncFn(connection);
+      await this.syncFn(connection.dlpConnection);
     } catch (e) {
       this.log(
         'Sync error: ' + (e instanceof Error ? e.stack || e.message : `${e}`)

@@ -15,7 +15,7 @@ export class NetworkSyncServer extends TcpSyncServer<NetSyncConnection> {
 }
 
 if (require.main === module) {
-  const syncServer = new NetworkSyncServer(async ({dlpConnection}) => {
+  const syncServer = new NetworkSyncServer(async (dlpConnection) => {
     const readDbListResp = await dlpConnection.execute(
       DlpReadDBListReqType.with({
         srchFlags: DlpReadDBListFlags.with({ram: true, multiple: true}),

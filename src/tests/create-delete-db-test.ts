@@ -1,15 +1,15 @@
+import assert from 'assert';
 import {DatabaseAttrs} from 'palm-pdb';
 import {
   DlpCloseDBReqType,
+  DlpConnection,
   DlpCreateDBReqType,
   DlpDeleteDBReqType,
   DlpFindDBByOpenHandleReqType,
   DlpFindDBOptFlags,
-  NetSyncConnection,
 } from '..';
-import assert from 'assert';
 
-export async function run({dlpConnection}: NetSyncConnection) {
+export async function run(dlpConnection: DlpConnection) {
   try {
     await dlpConnection.execute(DlpDeleteDBReqType.with({name: 'foobar'}));
   } catch (e) {}

@@ -1,5 +1,6 @@
 import assert from 'assert';
 import {
+  DlpConnection,
   DlpGetSysDateTimeReqType,
   DlpNetSyncInfoModFlags,
   DlpReadNetSyncInfoReqType,
@@ -9,10 +10,9 @@ import {
   DlpUserInfoModFlags,
   DlpWriteNetSyncInfoReqType,
   DlpWriteUserInfoReqType,
-  SyncConnection,
 } from '..';
 
-export async function run({dlpConnection}: SyncConnection) {
+export async function run(dlpConnection: DlpConnection) {
   const readUserInfoResp = await dlpConnection.execute(
     new DlpReadUserInfoReqType()
   );
