@@ -10,7 +10,7 @@ import {
   RecordEntryType,
   RsrcEntryType,
 } from 'palm-pdb';
-import {SBuffer, Serializable} from 'serio';
+import {DeserializeOptions, SBuffer, Serializable} from 'serio';
 import {
   DlpCloseDBReqType,
   DlpDBInfoType,
@@ -32,7 +32,8 @@ import {DlpConnection, DlpRespErrorCode} from '../protocols/dlp-protocol';
 
 const log = debug('palm-sync').extend('readDb');
 
-interface ReadDbOptions {
+/** Options to {@link readDb} and {@link readRawDb}. */
+export interface ReadDbOptions {
   /** Card number on the Palm OS device (typically 0). */
   cardNo?: number;
   /** Pre-fetched DlpDBInfoType for the database.
@@ -60,11 +61,11 @@ export async function readDb<DatabaseT extends Serializable>(
   dbType: new () => DatabaseT,
   /** Database name to read. */
   name: string,
-  opts: ReadDbOptions = {}
+  opts: ReadDbOptions & DeserializeOptions = {}
 ) {
   const rawDb = await readRawDb(dlpConnection, name, opts);
   const db = new dbType();
-  db.deserialize(rawDb.serialize());
+  db.deserialize(rawDb.serialize(), opts);
   return db;
 }
 
@@ -191,7 +192,7 @@ export async function readRawDb(
   if (dbInfo.dbFlags.resDB) {
     const records: Array<RawPrcRecord> = [];
     for (let i = 0; i < numRecords; ++i) {
-      log(`Reading resource record ${i + 1} of ${numRecords}`);
+      log(`Reading resource ${i + 1} of ${numRecords}`);
       const readResourceResp = await dlpConnection.execute(
         DlpReadResourceByIndexReqType.with({dbId, index: i})
       );
@@ -219,6 +220,7 @@ export async function readRawDb(
   }
 
   // 5. Close database.
+  log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
 
   db.recomputeOffsets();

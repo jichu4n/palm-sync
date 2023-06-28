@@ -132,6 +132,8 @@ export class PadpDatagram extends SerializableWrapper<Buffer> {
   }
 }
 
+/** How long to wait for an ACK before resending. */
+const PADP_ACK_TIMEOUT_MS = 500;
 /** Number of times to retry sending a PADP datagram before assuming failure. */
 const PADP_SEND_MAX_RETRIES = 10;
 
@@ -417,7 +419,7 @@ export class PadpStream extends Duplex {
         try {
           await new Promise<void>((resolve, reject) => {
             this.ackListener = {resolve, reject, xid};
-            setTimeout(() => reject(new Error('Timeout')), 200);
+            setTimeout(() => reject(new Error('Timeout')), PADP_ACK_TIMEOUT_MS);
           });
         } catch (e: any) {
           error = new Error(

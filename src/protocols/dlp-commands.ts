@@ -1596,8 +1596,8 @@ export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType
   private padding1 = 0;
 
   /** Resource type to write. */
-  @dlpArg(0, SUInt32BE)
-  type = 0;
+  @dlpArg(0, TypeId)
+  type = 'AAAA';
 
   /** Resource ID to write. */
   @dlpArg(0, SUInt16BE)
