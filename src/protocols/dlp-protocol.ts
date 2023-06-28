@@ -79,7 +79,8 @@ export class DlpConnection {
     } else {
       const errorMessage =
         request.responseType.name +
-        ` error 0x${response.errorCode.toString(16).padStart(2, '0')}: ` +
+        ` error 0x${response.errorCode.toString(16).padStart(2, '0')} ` +
+        `${DlpRespErrorCode[response.errorCode]}: ` +
         response.errorMessage;
       this.log(`    ${errorMessage}`);
       if (

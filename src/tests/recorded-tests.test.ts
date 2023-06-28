@@ -15,6 +15,7 @@ const RECORDED_TEST_MODULES = [
   'list-db-test',
   'read-memo-test',
   'create-delete-db-test',
+  'read-db-test',
 ];
 
 /** Connection types to run. */

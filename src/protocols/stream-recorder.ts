@@ -171,7 +171,7 @@ class PlaybackStream extends Duplex {
   _read(): void {
     // If at end of recorded data, push null to signal EOF.
     if (this.cursor >= this.dataEvents.length) {
-      this.push(null);
+      setTimeout(() => this.push(null), 0);
       return;
     }
     if (this.dataEvents[this.cursor].type === DataEventType.READ) {

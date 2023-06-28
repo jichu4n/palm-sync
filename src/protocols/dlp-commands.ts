@@ -652,12 +652,12 @@ export class DlpReadStorageInfoRespType extends DlpResponse {
 // =============================================================================
 /** DLP request to read database list.
  *
+ * DLP 1.0 (PalmOS v1.0 and above)
  *
  * Error codes:
  *   - SYSTEM
  *   - MEMORY
  *   - NOT_FOUND
- * DLP 1.0 (PalmOS v1.0 and above)
  */
 export class DlpReadDBListReqType extends DlpRequest<DlpReadDBListRespType> {
   funcId = DlpFuncId.ReadDBList;
@@ -1197,7 +1197,10 @@ export class DlpReadNextModifiedRecReqType extends DlpRequest<DlpReadNextModifie
   dbId = 0;
 }
 
-export abstract class DlpBaseReadRecordRespType extends DlpResponse {
+/** DLP response for {@link DlpReadRecordByIDReqType} and {@link DlpReadRecordByIndexReqType}. */
+export class DlpReadRecordRespType extends DlpResponse {
+  funcId = DlpFuncId.ReadRecord;
+
   /** Record ID. */
   @dlpArg(0, SUInt32BE)
   recordId = 0;
@@ -1224,7 +1227,7 @@ export abstract class DlpBaseReadRecordRespType extends DlpResponse {
 }
 
 /** DLP response for {@link DlpReadNextModifiedRecReqType}. */
-export class DlpReadNextModifiedRecRespType extends DlpBaseReadRecordRespType {
+export class DlpReadNextModifiedRecRespType extends DlpReadRecordRespType {
   funcId = DlpFuncId.ReadNextModifiedRec;
 }
 
@@ -1305,10 +1308,7 @@ export class DlpReadRecordByIndexReqType extends DlpRequest<DlpReadRecordRespTyp
   numBytes = 0xffff;
 }
 
-/** DLP response for {@link DlpReadRecordByIDReqType} and {@link DlpReadRecordByIndexReqType}. */
-export class DlpReadRecordRespType extends DlpBaseReadRecordRespType {
-  funcId = DlpFuncId.ReadRecord;
-}
+// DlpReadRecordRespType is defined above due to declaration order requirement.
 
 // =============================================================================
 // WriteRecord (0x21)
@@ -1550,8 +1550,8 @@ export class DlpReadResourceRespType extends DlpResponse {
   funcId = DlpFuncId.ReadResource;
 
   /** Resource type. */
-  @dlpArg(0, SUInt32BE)
-  type = 0;
+  @dlpArg(0, TypeId)
+  type = 'AAAA';
 
   /** Resource ID. */
   @dlpArg(0, SUInt16BE)
@@ -2167,7 +2167,7 @@ export class DlpReadNextRecInCategoryReqType extends DlpRequest<DlpReadNextRecIn
 }
 
 /** DLP response for {@link DlpReadNextRecInCategoryReqType}. */
-export class DlpReadNextRecInCategoryRespType extends DlpBaseReadRecordRespType {
+export class DlpReadNextRecInCategoryRespType extends DlpReadRecordRespType {
   funcId = DlpFuncId.ReadNextRecInCategory;
 }
 
@@ -2201,7 +2201,7 @@ export class DlpReadNextModifiedRecInCategoryReqType extends DlpRequest<DlpReadN
 }
 
 /** DLP response for {@link DlpReadNextModifiedRecInCategoryReqType}. */
-export class DlpReadNextModifiedRecInCategoryRespType extends DlpBaseReadRecordRespType {
+export class DlpReadNextModifiedRecInCategoryRespType extends DlpReadRecordRespType {
   funcId = DlpFuncId.ReadNextModifiedRecInCategory;
 }
 
