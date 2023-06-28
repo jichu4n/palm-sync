@@ -42,7 +42,7 @@
     "fs-extra": "^11.1.1",
     "lodash": "^4.17.21",
     "p-event": "^4.2.0",
-    "palm-pdb": "^0.1.2",
+    "palm-pdb": "^0.1.3",
     "serialport": "^11.0.0",
     "serio": "^1.2.2",
     "smart-buffer": "^4.2.0",

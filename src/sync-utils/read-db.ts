@@ -26,6 +26,7 @@ import {
   DlpReadRecordRespType,
   DlpReadResourceByIndexReqType,
   DlpReadResourceRespType,
+  DlpReadSortBlockReqType,
 } from '../protocols/dlp-commands';
 import {DlpConnection, DlpRespErrorCode} from '../protocols/dlp-protocol';
 
@@ -69,8 +70,11 @@ export async function readDb<DatabaseT extends Serializable>(
 
 /** Read a database from a Palm OS device.
  *
- * Based on pilot-link's pi_file_retrieve() function:
- * https://github.com/jichu4n/pilot-link/blob/master/libpisock/pi-file.c#L622
+ * Based on:
+ *   - pilot-link's pi_file_retrieve() function:
+ *     https://github.com/jichu4n/pilot-link/blob/master/libpisock/pi-file.c#L622
+ *   - coldsync's download_database() function:
+ *     https://github.com/dwery/coldsync/blob/master/src/backup.c#L36
  */
 export async function readRawDb(
   dlpConnection: DlpConnection,
@@ -140,22 +144,50 @@ export async function readRawDb(
     if (appInfoBlockResp.errorCode === DlpRespErrorCode.NONE) {
       appInfoBlock = appInfoBlockResp.data;
     } else {
-      log('Could not read AppInfo block');
+      log('AppInfo block not found');
     }
   } else {
     log('Skipping AppInfo block');
   }
 
-  // pilot-link does not read the SortInfo block, so we don't either.
+  // 3. Read SortInfo block.
+  //
+  // Weirdly, pilot-link does not read the SortInfo block, but coldsync does.
+  let sortInfoBlock: Buffer | null = null;
+  if (
+    findDbResp.errorCode !== DlpRespErrorCode.NONE ||
+    findDbResp.sortBlkSize > 0 ||
+    findDbResp.info.miscFlags.ramBased
+  ) {
+    log('Reading SortInfo block');
+    const sortInfoBlockResp = await dlpConnection.execute(
+      DlpReadSortBlockReqType.with({dbId}),
+      {
+        ignoreErrorCode: DlpRespErrorCode.NOT_FOUND,
+      }
+    );
+    if (sortInfoBlockResp.errorCode === DlpRespErrorCode.NONE) {
+      sortInfoBlock = sortInfoBlockResp.data;
+    } else {
+      log('SortInfo block not found');
+    }
+  } else {
+    log('Skipping SortInfo block');
+  }
 
-  // 3. Read records.
-  // TODO: support resource DB.
+  let db: RawPdbDatabase | RawPrcDatabase;
+  let dbFields = {
+    header: createDatabaseHeaderFromDlpDBInfoType(dbInfo),
+    appInfo: appInfoBlock ? SBuffer.of(appInfoBlock) : null,
+    sortInfo: sortInfoBlock ? SBuffer.of(sortInfoBlock) : null,
+  };
+
+  // 4. Read records.
   const numRecords =
     findDbResp.errorCode === DlpRespErrorCode.NONE
       ? findDbResp.numRecords
       : (await dlpConnection.execute(DlpReadOpenDBInfoReqType.with({dbId})))
           .numRec;
-  let db: RawPdbDatabase | RawPrcDatabase;
   if (dbInfo.dbFlags.resDB) {
     const records: Array<RawPrcRecord> = [];
     for (let i = 0; i < numRecords; ++i) {
@@ -165,11 +197,7 @@ export async function readRawDb(
       );
       records.push(createRawPrcRecordFromReadRecordResp(readResourceResp));
     }
-    db = RawPrcDatabase.with({
-      header: createDatabaseHeaderFromDlpDBInfoType(dbInfo),
-      appInfo: appInfoBlock ? SBuffer.of(appInfoBlock) : null,
-      records: records,
-    });
+    db = RawPrcDatabase.with({...dbFields, records});
   } else {
     const records: Array<RawPdbRecord> = [];
     for (let i = 0; i < numRecords; ++i) {
@@ -187,16 +215,13 @@ export async function readRawDb(
         records.push(createRawPdbRecordFromReadRecordResp(readRecordResp));
       }
     }
-    db = RawPdbDatabase.with({
-      header: createDatabaseHeaderFromDlpDBInfoType(dbInfo),
-      appInfo: appInfoBlock ? SBuffer.of(appInfoBlock) : null,
-      records: records,
-    });
+    db = RawPdbDatabase.with({...dbFields, records});
   }
 
-  // 4. Close database.
+  // 5. Close database.
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
 
+  db.recomputeOffsets();
   return db;
 }
 
