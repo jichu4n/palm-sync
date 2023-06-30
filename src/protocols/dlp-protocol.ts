@@ -6,9 +6,7 @@
  *
  * @module
  */
-import debug from 'debug';
 import _ from 'lodash';
-import pEvent from 'p-event';
 import {PDB_EPOCH} from 'palm-pdb';
 import {
   DeserializeOptions,
@@ -22,83 +20,6 @@ import {
   field,
 } from 'serio';
 import {SmartBuffer} from 'smart-buffer';
-import {Duplex} from 'stream';
-
-/** Representation of a DLP connection over an underlying transport. */
-export class DlpConnection {
-  constructor(
-    /** Underlying transport stream. */
-    private transport: Duplex,
-    /** Additional options. */
-    private opts: {
-      requestSerializeOptions?: SerializeOptions;
-      responseDeserializeOptions?: DeserializeOptions;
-    } = {}
-  ) {}
-
-  async execute<DlpRequestT extends DlpRequest<any>>(
-    request: DlpRequestT,
-    opts: {
-      /** Whether to throw an error when the response has a non-zero error code.
-       *
-       * By default, execute() will not throw an error when the response has a
-       * non-zero error code.
-       *
-       * If ignoreErrorCode is set to true, execute() will ignore non-zero error
-       * codes and return the response as-is.
-       *
-       * If ignoreErrorCode is set to one or more error codes, execute() will
-       * ignore the specified error codes but will still throw an error for
-       * other error codes.
-       */
-      ignoreErrorCode?: boolean | DlpRespErrorCode | Array<DlpRespErrorCode>;
-    } = {}
-  ): Promise<DlpResponseType<DlpRequestT>> {
-    const serializedRequest = request.serialize(
-      this.opts.requestSerializeOptions
-    );
-    this.log(
-      `>>> ${request.constructor.name} ${serializedRequest.toString('hex')}`
-    );
-    this.log(`    ${JSON.stringify(request.toJSON())}`);
-
-    this.transport.write(serializedRequest);
-    const rawResponse = (await pEvent(this.transport, 'data')) as Buffer;
-
-    this.log(`<<< ${request.responseType.name} ${rawResponse.toString('hex')}`);
-    const response: DlpResponseType<DlpRequestT> = new request.responseType();
-    try {
-      response.deserialize(rawResponse, this.opts.responseDeserializeOptions);
-    } catch (e: any) {
-      this.log(`    Error parsing ${request.responseType.name}: ${e.message}`);
-      throw e;
-    }
-
-    if (response.errorCode === DlpRespErrorCode.NONE) {
-      this.log(`    ${JSON.stringify(response.toJSON())}`);
-    } else {
-      const errorMessage =
-        request.responseType.name +
-        ` error 0x${response.errorCode.toString(16).padStart(2, '0')} ` +
-        `${DlpRespErrorCode[response.errorCode]}: ` +
-        response.errorMessage;
-      this.log(`    ${errorMessage}`);
-      if (
-        !opts.ignoreErrorCode ||
-        (typeof opts.ignoreErrorCode === 'number' &&
-          opts.ignoreErrorCode !== response.errorCode) ||
-        (Array.isArray(opts.ignoreErrorCode) &&
-          !opts.ignoreErrorCode.includes(response.errorCode))
-      ) {
-        throw new Error(errorMessage);
-      }
-    }
-
-    return response;
-  }
-
-  private log = debug('palm-sync').extend('dlp');
-}
 
 /** Base class for DLP requests. */
 export abstract class DlpRequest<

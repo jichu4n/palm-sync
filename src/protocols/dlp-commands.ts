@@ -392,16 +392,62 @@ export class DlpReadSysInfoReqType extends DlpRequest<DlpReadSysInfoRespType> {
   private hostDlpVersion = HOST_DLP_VERSION;
 }
 
+/** Stage number in a Palm OS ROM version. */
+export enum DlpRomStage {
+  /** Development. */
+  DEVELOPMENT = 0,
+  /** Alpha. */
+  ALPHA = 1,
+  /** Beta. */
+  BETA = 2,
+  /** Release. */
+  RELEASE = 3,
+}
+
+/** Palm OS ROM version. */
+export class DlpRomVersion extends SBitmask.of(SUInt32BE) {
+  /** Major version. */
+  @bitfield(8)
+  major = 0;
+  /** Minor version. */
+  @bitfield(4)
+  minor = 0;
+  /** Bugfix version. */
+  @bitfield(4)
+  fix = 0;
+  /** Stage. */
+  @bitfield(4)
+  stage = DlpRomStage.DEVELOPMENT;
+  /** Build number. */
+  @bitfield(12)
+  build = 0;
+
+  toString(): string {
+    return [
+      `${this.major}.${this.minor}${this.fix}`,
+      this.stage === DlpRomStage.RELEASE
+        ? ''
+        : DlpRomStage[this.stage][0].toLowerCase() +
+          (this.build ? `${this.build}` : ''),
+    ].join('');
+  }
+
+  toJSON() {
+    return this.toString();
+  }
+}
+
 /** DLP response for {@link DlpReadSysInfoReqType}. */
 export class DlpReadSysInfoRespType extends DlpResponse {
   funcId = DlpFuncId.ReadSysInfo;
 
   /** Version of the device ROM.
    *
-   * Format: 0xMMmmffssbb where MM=Major, * mm=minor, ff=fix, ss=stage, bb=build
+   * Format: 0xMMmfsbbb where MM=Major, m=minor, f=fix, s=stage, bbb=build. See:
+   * https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-4/include/Core/System/SystemMgr.h#L749
    */
-  @dlpArg(0, SUInt32BE)
-  romSWVersion = 0;
+  @dlpArg(0)
+  romSWVersion = new DlpRomVersion();
 
   /** Locale for this device. Not sure what the format is. */
   @dlpArg(0, SUInt32BE)
@@ -422,7 +468,7 @@ export class DlpReadSysInfoRespType extends DlpResponse {
   /** DLP protocol version on this device */
   @optDlpArg(1)
   dlpVer = new DlpVersionType();
-  /** Minimum DLP version this device is compatible with */
+  /** Highest DLP version this device is compatible with */
   @optDlpArg(1)
   compVer = new DlpVersionType();
 

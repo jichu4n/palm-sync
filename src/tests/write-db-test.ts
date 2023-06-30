@@ -2,7 +2,7 @@ import debug from 'debug';
 import fs from 'fs-extra';
 import {PalmDocDatabase, RawPrcDatabase} from 'palm-pdb';
 import path from 'path';
-import {DlpConnection} from '../protocols/dlp-protocol';
+import {DlpConnection} from '../protocols/sync-connections';
 import {writeDb, writeRawDb} from '../sync-utils/write-db';
 
 const log = debug('palm-sync').extend('test');

@@ -28,7 +28,8 @@ import {
   DlpReadResourceRespType,
   DlpReadSortBlockReqType,
 } from '../protocols/dlp-commands';
-import {DlpConnection, DlpRespErrorCode} from '../protocols/dlp-protocol';
+import {DlpRespErrorCode} from '../protocols/dlp-protocol';
+import {DlpConnection} from '../protocols/sync-connections';
 
 const log = debug('palm-sync').extend('readDb');
 

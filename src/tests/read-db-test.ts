@@ -1,6 +1,6 @@
 import debug from 'debug';
 import {MemoDatabase} from 'palm-pdb';
-import {DlpConnection} from '../protocols/dlp-protocol';
+import {DlpConnection} from '../protocols/sync-connections';
 import {readDb, readRawDb} from '../sync-utils/read-db';
 import {
   DlpReadDBListFlags,

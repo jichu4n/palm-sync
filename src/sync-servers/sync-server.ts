@@ -1,6 +1,5 @@
 import {EventEmitter} from 'events';
-import {DlpConnection} from 'src/protocols/dlp-protocol';
-import {SyncConnection} from '../protocols/sync-connections';
+import {DlpConnection, SyncConnection} from '../protocols/sync-connections';
 
 /** A function that implements HotSync business logic. */
 export type SyncFn = (connection: DlpConnection) => Promise<void>;

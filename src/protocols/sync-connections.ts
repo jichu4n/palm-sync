@@ -6,15 +6,115 @@ import {doCmpHandshake} from './cmp-protocol';
 import {
   DlpEndOfSyncReqType,
   DlpReadSysInfoReqType,
+  DlpReadSysInfoRespType,
   DlpReadUserInfoReqType,
+  DlpReadUserInfoRespType,
 } from './dlp-commands';
-import {DlpConnection} from './dlp-protocol';
 import {
   NetSyncDatagramStream,
   createNetSyncDatagramStream,
 } from './net-sync-protocol';
 import {PadpStream} from './padp-protocol';
 import {StreamRecorder} from './stream-recorder';
+import {DEFAULT_ENCODING} from 'palm-pdb';
+import {SerializeOptions, DeserializeOptions} from 'serio';
+import {DlpRequest, DlpRespErrorCode, DlpResponseType} from './dlp-protocol';
+
+/** Representation of a DLP connection over an underlying transport. */
+export class DlpConnection {
+  constructor(
+    /** Underlying transport stream. */
+    private readonly transport: Duplex,
+    /** Additional options. */
+    private readonly opts: {
+      requestSerializeOptions?: SerializeOptions;
+      responseDeserializeOptions?: DeserializeOptions;
+    } = {}
+  ) {}
+
+  async execute<DlpRequestT extends DlpRequest<any>>(
+    request: DlpRequestT,
+    opts: {
+      /** Whether to throw an error when the response has a non-zero error code.
+       *
+       * By default, execute() will not throw an error when the response has a
+       * non-zero error code.
+       *
+       * If ignoreErrorCode is set to true, execute() will ignore non-zero error
+       * codes and return the response as-is.
+       *
+       * If ignoreErrorCode is set to one or more error codes, execute() will
+       * ignore the specified error codes but will still throw an error for
+       * other error codes.
+       */
+      ignoreErrorCode?: boolean | DlpRespErrorCode | Array<DlpRespErrorCode>;
+    } = {}
+  ): Promise<DlpResponseType<DlpRequestT>> {
+    const requestBuffer = request.serialize({
+      encoding: DEFAULT_ENCODING,
+      ...this.opts.requestSerializeOptions,
+    });
+    this.log(
+      `>>> ${request.constructor.name} ${requestBuffer.toString('hex')}\n` +
+        `    ${JSON.stringify(request.toJSON())}`
+    );
+
+    this.transport.write(requestBuffer);
+    const responseBuffer = (await pEvent(this.transport, 'data')) as Buffer;
+
+    this.log(
+      `<<< ${request.responseType.name} ${responseBuffer.toString('hex')}`
+    );
+    const response: DlpResponseType<DlpRequestT> = new request.responseType();
+    try {
+      response.deserialize(responseBuffer, {
+        encoding: DEFAULT_ENCODING,
+        ...this.opts.responseDeserializeOptions,
+      });
+    } catch (e: any) {
+      this.log(`    Error parsing ${request.responseType.name}: ${e.message}`);
+      throw e;
+    }
+
+    if (response.errorCode === DlpRespErrorCode.NONE) {
+      this.log(`    ${JSON.stringify(response.toJSON())}`);
+    } else {
+      const errorMessage =
+        request.responseType.name +
+        ` error 0x${response.errorCode.toString(16).padStart(2, '0')} ` +
+        `${DlpRespErrorCode[response.errorCode]}: ` +
+        response.errorMessage;
+      this.log(`    ${errorMessage}`);
+      if (
+        !opts.ignoreErrorCode ||
+        (typeof opts.ignoreErrorCode === 'number' &&
+          opts.ignoreErrorCode !== response.errorCode) ||
+        (Array.isArray(opts.ignoreErrorCode) &&
+          !opts.ignoreErrorCode.includes(response.errorCode))
+      ) {
+        throw new Error(errorMessage);
+      }
+    }
+
+    return response;
+  }
+
+  private log = debug('palm-sync').extend('dlp');
+
+  /** System information about the Palm OS device.
+   *
+   * Configured at the beginning of a HotSync sessiion, so application level
+   * sync logic can assume this information is available by the time it runs.
+   */
+  sysInfo!: DlpReadSysInfoRespType;
+
+  /** HotSync user information.
+   *
+   * Configured at the beginning of a HotSync sessiion, so application level
+   * sync logic can assume this information is available by the time it runs.
+   */
+  userInfo!: DlpReadUserInfoRespType;
+}
 
 /** Base class for HotSync connections.
  *
@@ -23,7 +123,6 @@ import {StreamRecorder} from './stream-recorder';
 export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
   /** Set up a HotSync connection based on an underying raw data stream. */
   constructor(rawStream: Duplex) {
-    this.log = debug('palm-sync').extend('sync');
     this.rawStream = rawStream;
 
     if (this.rawStream instanceof Socket) {
@@ -66,14 +165,12 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
 
   /** Common DLP operations to run at the start of a HotSync session. */
   async start() {
-    const sysInfoResp = await this.dlpConnection.execute(
+    this.dlpConnection.sysInfo = await this.dlpConnection.execute(
       new DlpReadSysInfoReqType()
     );
-    this.log(JSON.stringify(sysInfoResp));
-    const userInfoResp = await this.dlpConnection.execute(
+    this.dlpConnection.userInfo = await this.dlpConnection.execute(
       new DlpReadUserInfoReqType()
     );
-    this.log(JSON.stringify(userInfoResp));
   }
 
   /** Common DLP operations to run at the end of a HotSync session. */
@@ -81,12 +178,14 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
     await this.dlpConnection.execute(new DlpEndOfSyncReqType());
   }
 
+  /** Logger. */
+  protected readonly log = debug('palm-sync').extend('sync');
+
   /** DLP connection for communicating with the device. */
   readonly dlpConnection: DlpConnection;
   /** Recorder for the raw stream. */
   readonly recorder = new StreamRecorder();
-  /** Logger. */
-  protected readonly log: debug.Debugger;
+
   /** Stream for reading / writing DLP datagrams. */
   protected readonly dlpStream: DlpStreamT;
   /** Raw data stream underlying the DLP stream. */
