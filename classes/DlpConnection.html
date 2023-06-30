@@ -24,7 +24,7 @@
 <ul class="tsd-hierarchy">
 <li><span class="target">DlpConnection</span></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/e02400d/src/protocols/sync-connections.ts#L24">src/protocols/sync-connections.ts:24</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/abfd361/src/protocols/sync-connections.ts#L32">src/protocols/sync-connections.ts:32</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -59,18 +59,13 @@
 </div>
 <div class="tsd-comment tsd-typography"></div></li>
 <li>
-<h5><span class="tsd-kind-parameter">opts</span>: <span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">requestSerializeOptions</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type ">SerializeOptions</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">responseDeserializeOptions</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type ">DeserializeOptions</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><span class="tsd-signature-symbol"> = {}</span></h5>
+<h5><span class="tsd-kind-parameter">opts</span>: <a href="../interfaces/DlpConnectionOptions.html" class="tsd-signature-type tsd-kind-interface">DlpConnectionOptions</a><span class="tsd-signature-symbol"> = {}</span></h5>
 <div class="tsd-comment tsd-typography"><p>Additional options.</p>
 </div>
-<div class="tsd-comment tsd-typography"></div>
-<ul class="tsd-parameters">
-<li class="tsd-parameter">
-<h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-property">request<wbr/>Serialize<wbr/>Options</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type ">SerializeOptions</span></h5></li>
-<li class="tsd-parameter">
-<h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-property">response<wbr/>Deserialize<wbr/>Options</span><span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type ">DeserializeOptions</span></h5></li></ul></li></ul></div>
+<div class="tsd-comment tsd-typography"></div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <a href="DlpConnection.html" class="tsd-signature-type tsd-kind-class">DlpConnection</a></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/e02400d/src/protocols/sync-connections.ts#L25">src/protocols/sync-connections.ts:25</a></li></ul></aside></li></ul></section></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/abfd361/src/protocols/sync-connections.ts#L33">src/protocols/sync-connections.ts:33</a></li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
 <section class="tsd-panel tsd-member"><a id="sysInfo" class="tsd-anchor"></a>
@@ -82,7 +77,7 @@ sync logic can assume this information is available by the time it runs.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/e02400d/src/protocols/sync-connections.ts#L109">src/protocols/sync-connections.ts:109</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/abfd361/src/protocols/sync-connections.ts#L114">src/protocols/sync-connections.ts:114</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member"><a id="userInfo" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>user<wbr/>Info</span><a href="#userInfo" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">user<wbr/>Info</span><span class="tsd-signature-symbol">:</span> <a href="DlpReadUserInfoRespType.html" class="tsd-signature-type tsd-kind-class">DlpReadUserInfoRespType</a></div>
@@ -92,7 +87,7 @@ sync logic can assume this information is available by the time it runs.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/e02400d/src/protocols/sync-connections.ts#L116">src/protocols/sync-connections.ts:116</a></li></ul></aside></section></section>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/abfd361/src/protocols/sync-connections.ts#L121">src/protocols/sync-connections.ts:121</a></li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
 <section class="tsd-panel tsd-member"><a id="execute" class="tsd-anchor"></a>
@@ -127,7 +122,7 @@ other error codes.</p>
 <div class="tsd-comment tsd-typography"></div></li></ul></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type ">Promise</span><span class="tsd-signature-symbol">&lt;</span><a href="../types/DlpResponseType.html" class="tsd-signature-type tsd-kind-type-alias">DlpResponseType</a><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">DlpRequestT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">&gt;</span></h4><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/e02400d/src/protocols/sync-connections.ts#L35">src/protocols/sync-connections.ts:35</a></li></ul></aside></li></ul></section></section></div>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/abfd361/src/protocols/sync-connections.ts#L40">src/protocols/sync-connections.ts:40</a></li></ul></aside></li></ul></section></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -303,6 +298,8 @@ other error codes.</p>
 <li><a href="UsbSyncServer.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Usb<wbr/>Sync<wbr/>Server</span></a></li>
 <li><a href="../interfaces/DataEventObject.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-256"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-interface)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6"></rect><path d="M9.51 16V15.016H11.298V8.224H9.51V7.24H14.19V8.224H12.402V15.016H14.19V16H9.51Z" fill="var(--color-text)"></path></g></svg><span>Data<wbr/>Event<wbr/>Object</span></a></li>
 <li><a href="../interfaces/DlpArgSpec.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-256"></use></svg><span>Dlp<wbr/>Arg<wbr/>Spec</span></a></li>
+<li><a href="../interfaces/DlpConnectionOptions.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-256"></use></svg><span>Dlp<wbr/>Connection<wbr/>Options</span></a></li>
+<li><a href="../interfaces/SyncConnectionOptions.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-256"></use></svg><span>Sync<wbr/>Connection<wbr/>Options</span></a></li>
 <li><a href="../interfaces/SyncServerEvents.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-256"></use></svg><span>Sync<wbr/>Server<wbr/>Events</span></a></li>
 <li><a href="../interfaces/UsbConnectionConfig.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-256"></use></svg><span>Usb<wbr/>Connection<wbr/>Config</span></a></li>
 <li><a href="../types/DlpResponseType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-4194304"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-type-alias)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6"></rect><path d="M11.31 16V8.224H8.91V7.24H14.79V8.224H12.39V16H11.31Z" fill="var(--color-text)"></path></g></svg><span>Dlp<wbr/>Response<wbr/>Type</span></a></li>
