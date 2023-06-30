@@ -3,9 +3,9 @@ import {Argument, program} from 'commander';
 import debug from 'debug';
 import pEvent from 'p-event';
 import path from 'path';
-import {NetSyncConnection} from '../protocols/sync-connections';
+import {SyncConnection} from '../protocols/sync-connections';
 import {NetworkSyncServer} from '../sync-servers/network-sync-server';
-import {SerialNetworkSyncServer} from '../sync-servers/serial-network-sync-server';
+import {SerialOverNetworkSyncServer} from '../sync-servers/serial-network-sync-server';
 import {SerialSyncServer} from '../sync-servers/serial-sync-server';
 import {SyncFn} from '../sync-servers/sync-server';
 import {UsbSyncServer} from '../sync-servers/usb-sync-server';
@@ -41,7 +41,7 @@ export function getServerTypeForConnectionType(connectionType: ConnectionType) {
     case ConnectionType.NETWORK:
       return (syncFn: SyncFn) => new NetworkSyncServer(syncFn);
     case ConnectionType.SERIAL_OVER_NETWORK:
-      return (syncFn: SyncFn) => new SerialNetworkSyncServer(syncFn);
+      return (syncFn: SyncFn) => new SerialOverNetworkSyncServer(syncFn);
     case ConnectionType.SERIAL:
       return (syncFn: SyncFn) => new SerialSyncServer('/dev/ttyS0', syncFn);
     case ConnectionType.USB:
@@ -79,7 +79,7 @@ if (require.main === module) {
         log('Waiting for connection...');
         await pEvent(syncServer, 'connect');
         log('Connected!');
-        const connection: NetSyncConnection = await pEvent(
+        const connection: SyncConnection = await pEvent(
           syncServer,
           'disconnect'
         );

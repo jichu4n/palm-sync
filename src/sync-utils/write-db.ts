@@ -1,10 +1,12 @@
 import debug from 'debug';
+import fs from 'fs-extra';
 import {DatabaseHdrType, RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 import {Serializable, SerializeOptions} from 'serio';
 import {
   DlpCloseDBReqType,
   DlpCreateDBReqType,
   DlpDeleteDBReqType,
+  DlpOpenConduitReqType,
   DlpResetSystemReqType,
   DlpWriteAppBlockReqType,
   DlpWriteRecordReqType,
@@ -14,7 +16,8 @@ import {
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
 
-const log = debug('palm-sync').extend('writeDb');
+const log = debug('palm-sync').extend('write');
+const logFile = debug('palm-sync').extend('file');
 
 /** Options to {@link readDb} and {@link readRawDb}. */
 export interface WriteDbOptions {
@@ -42,12 +45,34 @@ export async function writeDb<DatabaseT extends Serializable>(
   db: DatabaseT,
   opts: WriteDbOptions & SerializeOptions = {}
 ): Promise<void> {
-  const buffer = db.serialize(opts);
+  return await writeDbFromBuffer(dlpConnection, db.serialize(opts), opts);
+}
+
+/** Install a PDB / PRC file to a Palm OS device. */
+export async function writeDbFromFile(
+  dlpConnection: DlpConnection,
+  /** Path to the PDB / PRC file to install. */
+  filePath: string,
+  opts: WriteDbOptions = {}
+): Promise<void> {
+  logFile(`=> ${filePath}`);
+  return await writeDbFromBuffer(
+    dlpConnection,
+    await fs.readFile(filePath),
+    opts
+  );
+}
+
+function writeDbFromBuffer(
+  dlpConnection: DlpConnection,
+  buffer: Buffer,
+  opts: WriteDbOptions = {}
+): Promise<void> {
   const header = DatabaseHdrType.from(buffer);
   const rawDb = header.attributes.resDB
     ? RawPrcDatabase.from(buffer)
     : RawPdbDatabase.from(buffer);
-  return await writeRawDb(dlpConnection, rawDb, opts);
+  return writeRawDb(dlpConnection, rawDb, opts);
 }
 
 /** Install a database to a Palm OS device.
@@ -65,6 +90,7 @@ export async function writeRawDb(
   {cardNo = 0, overwrite}: WriteDbOptions = {}
 ): Promise<void> {
   log(`Writing database ${db.header.name} to card ${cardNo}`);
+  await dlpConnection.execute(DlpOpenConduitReqType.with());
 
   // TODO: pilot-link's pi_file_install() function checks the size of records,
   // and aborts if trying to install records exceeds 64k in size to an older

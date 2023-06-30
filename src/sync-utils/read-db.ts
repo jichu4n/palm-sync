@@ -1,4 +1,5 @@
 import debug from 'debug';
+import fs from 'fs-extra';
 import {
   DatabaseHdrType,
   DatabaseTimestamp,
@@ -10,12 +11,14 @@ import {
   RecordEntryType,
   RsrcEntryType,
 } from 'palm-pdb';
+import path from 'path';
 import {DeserializeOptions, SBuffer, Serializable} from 'serio';
 import {
   DlpCloseDBReqType,
   DlpDBInfoType,
   DlpFindDBByOpenHandleReqType,
   DlpFindDBOptFlags,
+  DlpOpenConduitReqType,
   DlpOpenDBMode,
   DlpOpenDBReqType,
   DlpReadAppBlockReqType,
@@ -31,7 +34,8 @@ import {
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
 
-const log = debug('palm-sync').extend('readDb');
+const log = debug('palm-sync').extend('read');
+const logFile = debug('palm-sync').extend('file');
 
 /** Options to {@link readDb} and {@link readRawDb}. */
 export interface ReadDbOptions {
@@ -62,12 +66,90 @@ export async function readDb<DatabaseT extends Serializable>(
   dbType: new () => DatabaseT,
   /** Database name to read. */
   name: string,
+  /** Additional options. */
   opts: ReadDbOptions & DeserializeOptions = {}
 ) {
   const rawDb = await readRawDb(dlpConnection, name, opts);
   const db = new dbType();
   db.deserialize(rawDb.serialize(), opts);
   return db;
+}
+
+/** Read a database and write to PDB / PRC file. */
+export async function readDbToFile(
+  dlpConnection: DlpConnection,
+  /** Database name to read. */
+  name: string,
+  /** Output directory. Defaults to current working directory. */
+  outputDir?: string,
+  /** Additional options. */
+  opts: ReadDbOptions = {}
+) {
+  logFile(`=> ${name}`);
+  const rawDb = await readRawDb(dlpConnection, name, opts);
+  const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
+  const fileName = `${name}.${ext}`;
+  const filePath = outputDir ? path.join(outputDir, fileName) : fileName;
+  await fs.ensureFile(filePath);
+  await fs.writeFile(filePath, rawDb.serialize());
+}
+
+/** Backup all databases from a Palm OS device. */
+export async function readAllDbsToFile(
+  dlpConnection: DlpConnection,
+  /** Output directory. Defaults to current working directory. */
+  outputDir?: string,
+  /** Additional options. */
+  opts: Omit<ReadDbOptions, 'dbInfo'> & {
+    /** Whether to include databases in ROM. Defaults to false. */
+    includeRom?: boolean;
+    /** Whether to include databases in RAM. Defaults to true. */
+    includeRam?: boolean;
+  } = {}
+) {
+  const {cardNo = 0, includeRom = false, includeRam = true} = opts;
+  logFile(
+    `Reading all databases on card ${cardNo} in ${[
+      ...(includeRam ? ['RAM'] : []),
+      ...(includeRom ? ['ROM'] : []),
+    ].join(' and ')}`
+  );
+  const dbInfoList: Array<DlpDBInfoType> = [];
+  let numRequests = 0;
+  for (const flags of [
+    ...(includeRam
+      ? [DlpReadDBListFlags.with({ram: true, multiple: true})]
+      : []),
+    ...(includeRom
+      ? [DlpReadDBListFlags.with({rom: true, multiple: true})]
+      : []),
+  ]) {
+    let start = 0;
+    for (;;) {
+      ++numRequests;
+      const readDbListResp = await dlpConnection.execute(
+        DlpReadDBListReqType.with({
+          srchFlags: flags,
+          cardNo,
+          startIndex: start,
+        }),
+        {ignoreErrorCode: DlpRespErrorCode.NOT_FOUND}
+      );
+      if (readDbListResp.errorCode === DlpRespErrorCode.NOT_FOUND) {
+        break;
+      }
+      dbInfoList.push(...readDbListResp.dbInfo);
+      start = readDbListResp.lastIndex + 1;
+    }
+  }
+  log(`Finished reading database list after ${numRequests} requests`);
+
+  for (const dbInfo of dbInfoList) {
+    await readDbToFile(dlpConnection, dbInfo.name, outputDir, {
+      ...opts,
+      dbInfo,
+    });
+  }
 }
 
 /** Read a database from a Palm OS device.
@@ -82,13 +164,16 @@ export async function readRawDb(
   dlpConnection: DlpConnection,
   /** Database name to read. */
   name: string,
-  {
+  /** Additional options. */
+  opts: ReadDbOptions = {}
+): Promise<RawPdbDatabase | RawPrcDatabase> {
+  const {
     cardNo = 0,
     dbInfo: dbInfoArg,
     includeDeletedAndArchivedRecords,
-  }: ReadDbOptions = {}
-): Promise<RawPdbDatabase | RawPrcDatabase> {
+  } = opts;
   log(`Reading database ${name} on card ${cardNo}`);
+  await dlpConnection.execute(DlpOpenConduitReqType.with());
 
   // 1. Open database and get basic database info.
   const {dbId} = await dlpConnection.execute(

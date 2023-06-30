@@ -1,4 +1,7 @@
-/** Script to generate udev rules for supported devices. */
+/** Script to generate udev rules for supported devices.
+ *
+ * @module
+ */
 
 import {program} from 'commander';
 import {
