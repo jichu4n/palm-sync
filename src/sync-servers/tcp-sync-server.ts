@@ -1,7 +1,10 @@
 import debug from 'debug';
 import {createServer, Server} from 'net';
 import pEvent from 'p-event';
-import {SyncConnection} from 'src/protocols/sync-connections';
+import {
+  SyncConnection,
+  SyncConnectionOptions,
+} from '../protocols/sync-connections';
 import {Duplex} from 'stream';
 import {SyncServer} from './sync-server';
 
@@ -10,7 +13,10 @@ export abstract class TcpSyncServer<
   SyncConnectionT extends SyncConnection
 > extends SyncServer {
   /** Constructor for the corresponding connection type. */
-  protected abstract connectionType: new (rawStream: Duplex) => SyncConnectionT;
+  protected abstract connectionType: new (
+    rawStream: Duplex,
+    opts?: SyncConnectionOptions
+  ) => SyncConnectionT;
 
   /** Port to listen on. */
   protected abstract port: number;
@@ -40,7 +46,7 @@ export abstract class TcpSyncServer<
    * @ignore
    */
   public async onConnection(rawStream: Duplex) {
-    const connection = new this.connectionType(rawStream);
+    const connection = new this.connectionType(rawStream, this.opts);
     this.emit('connect', connection);
 
     this.log('Starting handshake');

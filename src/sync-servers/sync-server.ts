@@ -1,5 +1,9 @@
 import {EventEmitter} from 'events';
-import {DlpConnection, SyncConnection} from '../protocols/sync-connections';
+import {
+  DlpConnection,
+  SyncConnection,
+  SyncConnectionOptions,
+} from '../protocols/sync-connections';
 
 /** A function that implements HotSync business logic. */
 export type SyncFn = (connection: DlpConnection) => Promise<void>;
@@ -14,7 +18,9 @@ export type SyncFn = (connection: DlpConnection) => Promise<void>;
 export abstract class SyncServer extends EventEmitter {
   constructor(
     /** HotSync logic to run when a connection is made. */
-    protected readonly syncFn: SyncFn
+    protected readonly syncFn: SyncFn,
+    /** Options for SyncConnection. */
+    protected readonly opts: SyncConnectionOptions = {}
   ) {
     super();
   }

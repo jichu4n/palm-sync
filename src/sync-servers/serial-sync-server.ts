@@ -6,16 +6,23 @@ import {
   DlpReadDBListFlags,
   DlpReadDBListReqType,
 } from '../protocols/dlp-commands';
-import {SerialSyncConnection} from '../protocols/sync-connections';
+import {
+  SerialSyncConnection,
+  SyncConnectionOptions,
+} from '../protocols/sync-connections';
 import {SyncFn, SyncServer} from './sync-server';
 
 /** Sync server using a serial port. */
 export class SerialSyncServer extends SyncServer {
-  /** Serial port device to listen on. */
-  readonly device: string;
-
-  constructor(device: string, syncFn: SyncFn) {
-    super(syncFn);
+  constructor(
+    /** Serial port device to listen on. */
+    private readonly device: string,
+    /** HotSync logic to run when a connection is made. */
+    syncFn: SyncFn,
+    /** Options for SyncConnection. */
+    opts: SyncConnectionOptions = {}
+  ) {
+    super(syncFn, opts);
     this.device = device;
   }
 
@@ -54,7 +61,7 @@ export class SerialSyncServer extends SyncServer {
    * @ignore
    */
   public async onConnection(rawStream: Duplex) {
-    const connection = new SerialSyncConnection(rawStream);
+    const connection = new SerialSyncConnection(rawStream, this.opts);
     this.emit('connect', connection);
 
     this.serialPort?.update({baudRate: 9600});

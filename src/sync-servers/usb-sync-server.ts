@@ -22,6 +22,7 @@ import {
   NetSyncConnection,
   SerialSyncConnection,
   SyncConnection,
+  SyncConnectionOptions,
 } from '../protocols/sync-connections';
 import {SyncServer} from './sync-server';
 import {
@@ -278,7 +279,8 @@ export class UsbSyncServer extends SyncServer {
     protocolStackType: UsbProtocolStackType = UsbProtocolStackType.NET_SYNC
   ) {
     const connection = new this.USB_PROTOCOL_STACKS[protocolStackType](
-      rawStream
+      rawStream,
+      this.opts
     );
     this.emit('connect', connection);
 
@@ -677,7 +679,10 @@ export class UsbSyncServer extends SyncServer {
 
   /** USB protocol stacks indexed by UsbProtocolStackType. */
   USB_PROTOCOL_STACKS: {
-    [key in UsbProtocolStackType]: new (stream: Duplex) => SyncConnection;
+    [key in UsbProtocolStackType]: new (
+      stream: Duplex,
+      opts?: SyncConnectionOptions
+    ) => SyncConnection;
   } = {
     [UsbProtocolStackType.NET_SYNC]: NetSyncConnection,
     [UsbProtocolStackType.SERIAL]: SerialSyncConnection,
