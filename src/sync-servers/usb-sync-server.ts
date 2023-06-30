@@ -217,14 +217,14 @@ export class UsbConnectionStream extends Duplex {
 const USB_DEVICE_POLLING_INTERVAL_MS = 200;
 
 export class UsbSyncServer extends SyncServer {
-  public override start() {
+  override start() {
     if (this.runPromise) {
       throw new Error('Server already started');
     }
     this.runPromise = this.run();
   }
 
-  public override async stop() {
+  override async stop() {
     if (!this.runPromise || this.shouldStop) {
       return;
     }

@@ -208,7 +208,7 @@ export class SerialSyncConnection extends SyncConnection<PadpStream> {
   protected override createDlpTransportStream(rawStream: Duplex): PadpStream {
     return new PadpStream(rawStream);
   }
-  public override async doHandshake(): Promise<void> {
+  override async doHandshake(): Promise<void> {
     await doCmpHandshake(this.dlpTransportStream, 115200);
   }
 }
@@ -220,7 +220,7 @@ export class NetSyncConnection extends SyncConnection<NetSyncDatagramStream> {
   ): NetSyncDatagramStream {
     return createNetSyncDatagramStream(rawStream);
   }
-  public override async doHandshake() {
+  override async doHandshake() {
     await this.readStream(
       this.dlpTransportStream,
       NET_SYNC_HANDSHAKE_REQUEST_1.length

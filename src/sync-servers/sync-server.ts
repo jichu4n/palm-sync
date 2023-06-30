@@ -26,13 +26,13 @@ export abstract class SyncServer extends EventEmitter {
   }
 
   /** Start listening for HotSync connections. */
-  public abstract start(): void;
+  abstract start(): void;
 
   /** Stop listening for HotSync connections.
    *
    * Waits for existing HotSync operation to complete and any additional clean up.
    */
-  public abstract stop(): Promise<void>;
+  abstract stop(): Promise<void>;
 }
 
 /** Events emitted by SyncServer. */
