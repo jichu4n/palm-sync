@@ -35,7 +35,7 @@ import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
 
 const log = debug('palm-sync').extend('read');
-const logFile = debug('palm-sync').extend('file');
+const logFile = debug('palm-sync').extend('sync-file');
 
 /** Options to {@link readDb} and {@link readRawDb}. */
 export interface ReadDbOptions {
@@ -97,32 +97,34 @@ export async function readDbToFile(
 /** Backup all databases from a Palm OS device. */
 export async function readAllDbsToFile(
   dlpConnection: DlpConnection,
+  /** Which type of storage to include. */
+  storageTypes: {
+    /** Whether to include databases in ROM. */
+    rom: boolean;
+    /** Whether to include databases in RAM. */
+    ram: boolean;
+  },
   /** Output directory. Defaults to current working directory. */
   outputDir?: string,
   /** Additional options. */
-  opts: Omit<ReadDbOptions, 'dbInfo'> & {
-    /** Whether to include databases in ROM. Defaults to false. */
-    includeRom?: boolean;
-    /** Whether to include databases in RAM. Defaults to true. */
-    includeRam?: boolean;
-  } = {}
+  opts: Omit<ReadDbOptions, 'dbInfo'> = {}
 ) {
-  const {cardNo = 0, includeRom = false, includeRam = true} = opts;
+  const {cardNo = 0} = opts;
+  const {rom, ram} = storageTypes;
+  if (!rom && !ram) {
+    throw new Error('Must specify at least one of rom or ram in storageTypes');
+  }
   logFile(
     `Reading all databases on card ${cardNo} in ${[
-      ...(includeRam ? ['RAM'] : []),
-      ...(includeRom ? ['ROM'] : []),
+      ...(ram ? ['RAM'] : []),
+      ...(rom ? ['ROM'] : []),
     ].join(' and ')}`
   );
   const dbInfoList: Array<DlpDBInfoType> = [];
   let numRequests = 0;
   for (const flags of [
-    ...(includeRam
-      ? [DlpReadDBListFlags.with({ram: true, multiple: true})]
-      : []),
-    ...(includeRom
-      ? [DlpReadDBListFlags.with({rom: true, multiple: true})]
-      : []),
+    ...(ram ? [DlpReadDBListFlags.with({ram, multiple: true})] : []),
+    ...(rom ? [DlpReadDBListFlags.with({rom, multiple: true})] : []),
   ]) {
     let start = 0;
     for (;;) {

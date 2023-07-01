@@ -17,7 +17,7 @@ import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
 
 const log = debug('palm-sync').extend('write');
-const logFile = debug('palm-sync').extend('file');
+const logFile = debug('palm-sync').extend('sync-file');
 
 /** Options to {@link readDb} and {@link readRawDb}. */
 export interface WriteDbOptions {

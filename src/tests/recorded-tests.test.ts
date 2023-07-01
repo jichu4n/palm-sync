@@ -1,12 +1,11 @@
+import debug from 'debug';
 import fs from 'fs-extra';
 import {StreamRecorder} from '../protocols/stream-recorder';
+import {createSyncServer} from '../sync-servers/sync-server-utils';
 import {
-  ConnectionType,
   getRecordedSessionFilePath,
-  getServerTypeForConnectionType,
   getSyncFn,
-} from './record-sync-session';
-import debug from 'debug';
+} from '../bin/record-sync-session';
 
 /** Test modules to run. */
 const RECORDED_TEST_MODULES = [
@@ -20,11 +19,7 @@ const RECORDED_TEST_MODULES = [
 ];
 
 /** Connection types to run. */
-const CONNECTION_TYPES = [
-  ConnectionType.SERIAL_OVER_NETWORK,
-  ConnectionType.NETWORK,
-  ConnectionType.USB,
-];
+const CONNECTION_TYPES = ['serial-over-network', 'network', 'usb'];
 
 const log = debug('palm-sync').extend('test');
 
@@ -45,8 +40,7 @@ describe('recorded tests', function () {
           const recorder = await StreamRecorder.loadFromFile(
             recordedSessionFilePath
           );
-          const syncServer =
-            getServerTypeForConnectionType(connectionType)(syncFn);
+          const syncServer = createSyncServer(connectionType, syncFn);
           await syncServer.onConnection(recorder.playback());
         });
       }

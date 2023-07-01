@@ -20,7 +20,8 @@
     "build:udev-rules": "ts-node ./src/bin/generate-udev-rules.ts",
     "lint": "prettier --check .",
     "test": "env TZ=UTC jest",
-    "record-sync-session": "env TZ=UTC ts-node ./src/tests/record-sync-session.ts"
+    "cli": "ts-node ./src/bin/cli.ts",
+    "record-sync-session": "env TZ=UTC ts-node ./src/bin/record-sync-session.ts"
   },
   "devDependencies": {
     "@types/debug": "^4.1.8",
