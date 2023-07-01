@@ -13,6 +13,7 @@ import {SyncFn} from '../sync-servers/sync-server';
 import {createSyncServerAndRunSync} from '../sync-servers/sync-server-utils';
 import {readAllDbsToFile, readDbToFile} from '../sync-utils/read-db';
 import {writeDbFromFile} from '../sync-utils/write-db';
+import {DlpGetSysDateTimeReqType} from '../protocols/dlp-commands';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -56,6 +57,46 @@ if (require.main === module) {
       .name('palm-sync')
       .version(packageJson.version)
       .description('CLI tool for synchronizing with Palm OS devices.');
+
+    program
+      .command('info')
+      .description('Get information about a Palm OS device')
+      .argument(...connectionArg)
+      .option(...encodingOption)
+      .action(
+        async (connectionString: string, {encoding}: {encoding?: string}) => {
+          await createSyncServerAndRunSync(
+            connectionString,
+            async (dlpConnection) => {
+              const {dateTime: deviceDateTime} = await dlpConnection.execute(
+                DlpGetSysDateTimeReqType.with()
+              );
+              const lines: Array<[string, string]> = [
+                ['OS version', dlpConnection.sysInfo.romSWVersion.toString()],
+                ['DLP version', dlpConnection.sysInfo.dlpVer.toString()],
+                ['User name', dlpConnection.userInfo.userName],
+                ['Last sync PC', dlpConnection.userInfo.lastSyncPc.toString()],
+                ['User ID', dlpConnection.userInfo.userId.toString()],
+                [
+                  'Last sync',
+                  dlpConnection.userInfo.lastSyncDate.toLocaleString(),
+                ],
+                [
+                  'Last sync succ',
+                  dlpConnection.userInfo.succSyncDate.toLocaleString(),
+                ],
+                ['System time', deviceDateTime.toLocaleString()],
+              ];
+              log(
+                lines
+                  .map(([label, value]) => `\t${label}:\t${value}`)
+                  .join('\n')
+              );
+            },
+            createSyncConnectionOptions(encoding)
+          );
+        }
+      );
 
     program
       .command('pull')
