@@ -7,7 +7,9 @@
 
 import {program} from 'commander';
 import debug from 'debug';
+import path from 'path';
 import {SyncConnectionOptions} from '../protocols/sync-connections';
+import {SyncFn} from '../sync-servers/sync-server';
 import {createSyncServerAndRunSync} from '../sync-servers/sync-server-utils';
 import {readAllDbsToFile, readDbToFile} from '../sync-utils/read-db';
 import {writeDbFromFile} from '../sync-utils/write-db';
@@ -69,8 +71,8 @@ if (require.main === module) {
       .option(...encodingOption)
       .action(
         async (
-          connectionString,
-          names,
+          connectionString: string,
+          names: Array<string>,
           {
             allRam,
             allRom,
@@ -123,8 +125,8 @@ if (require.main === module) {
       .option(...encodingOption)
       .action(
         async (
-          connectionString,
-          filePaths,
+          connectionString: string,
+          filePaths: Array<string>,
           {encoding, overwrite}: {encoding?: string; overwrite?: boolean}
         ) => {
           await createSyncServerAndRunSync(
@@ -134,6 +136,45 @@ if (require.main === module) {
                 await writeDbFromFile(dlpConnection, filePath, {overwrite});
               }
             },
+            createSyncConnectionOptions(encoding)
+          );
+        }
+      );
+
+    program
+      .command('run')
+      .description('Run a custom sync function')
+      .argument(...connectionArg)
+      .argument(
+        '<syncFnModule>',
+        'Require path to module containing run() function'
+      )
+      .option('--fn <name>', 'Name of sync function in module', 'run')
+      .option(...encodingOption)
+      .action(
+        async (
+          connectionString: string,
+          syncFnModule: string,
+          {fn, encoding}: {fn: string; encoding?: string}
+        ) => {
+          if (!path.isAbsolute(syncFnModule)) {
+            syncFnModule = path.join(process.cwd(), syncFnModule);
+          }
+          let syncFn: SyncFn;
+          try {
+            syncFn = require(syncFnModule)[fn];
+          } catch (e) {
+            log(`Error loading module ${syncFnModule}: ${e}`);
+            process.exit(1);
+          }
+          if (typeof syncFn !== 'function') {
+            log(`Module ${syncFnModule} does not export a run() function`);
+            process.exit(1);
+          }
+          log(`Running function "${fn}" in ${syncFnModule}`);
+          await createSyncServerAndRunSync(
+            connectionString,
+            syncFn,
             createSyncConnectionOptions(encoding)
           );
         }
