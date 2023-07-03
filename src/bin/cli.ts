@@ -49,7 +49,7 @@ if (require.main === module) {
 
     const connectionArg = [
       '<connection>',
-      'Connection to use: usb, net, serial:/dev/ttyXXX, or serial-over-net',
+      'Connection to use: usb, net, serial:/dev/ttyXXX, or serial:net',
     ] as const;
     const encodingOption = [
       '-e, --encoding <encoding>',

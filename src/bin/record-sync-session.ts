@@ -13,15 +13,19 @@ export function getSyncFn(testModule: string) {
   return syncFn;
 }
 
+export const RECORDED_SESSION_DIR = path.join(
+  __dirname,
+  '..',
+  'tests',
+  'testdata'
+);
+
 export function getRecordedSessionFilePath(
   connectionString: string,
   testModule: string
 ) {
   return path.join(
-    __dirname,
-    '..',
-    'tests',
-    'testdata',
+    RECORDED_SESSION_DIR,
     `${testModule}.${connectionString}.json`
   );
 }
@@ -35,7 +39,7 @@ if (require.main === module) {
       .description('Script to record a NetSync session for testing.')
       .argument(
         '<connection>',
-        'Connection to use: usb, net, serial:/dev/ttyXXX, or serial-over-net'
+        'Connection to use: usb, net, serial:/dev/ttyXXX, or serial:net'
       )
       .argument('<test-module>', 'Test module to run, relative to this script')
       .action(async (connectionString: string, testModule: string) => {

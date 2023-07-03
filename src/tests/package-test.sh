@@ -11,10 +11,16 @@ import fs from 'fs-extra';
 import {createSyncServer} from 'palm-sync';
 
 (async function() {
-  const server = await createSyncServer('net', async () => {});
-  server.start();
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  await server.stop();
+  for (const connectionString of [
+    'net',
+    'usb',
+    'serial:net',
+  ]) {
+    const server = await createSyncServer(connectionString, async () => {});
+    server.start();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await server.stop();
+  }
 })();
 
 EOF
@@ -68,17 +74,19 @@ else
 fi
 echo
 
-echo "> Running test shell script"
-if test_shell_script; then
+if [ $exit_code -eq 0 ]; then
+  echo "> Running test shell script"
+  if test_shell_script; then
+    echo
+    echo "> Success!"
+    exit_code=0
+  else
+    exit_code=$?
+    echo
+    echo "> Error - script returned status ${exit_code}"
+  fi
   echo
-	echo "> Success!"
-	exit_code=0
-else
-  exit_code=$?
-  echo
-	echo "> Error - script returned status ${exit_code}"
 fi
-echo
 
 echo "> Cleaning up"
 cd "$SOURCE_DIR"

@@ -35,13 +35,12 @@ export function createSyncServer(
     return new NetworkSyncServer(syncFn, opts);
   }
   if (connection.startsWith('serial:')) {
-    return new SerialSyncServer(connection.split(':', 2)[1], syncFn, opts);
-  }
-  if (
-    connection === 'serial-over-net' ||
-    connection === 'serial-over-network'
-  ) {
-    return new SerialOverNetworkSyncServer(syncFn, opts);
+    const device = connection.split(':', 2)[1];
+    if (device === 'net' || device === 'network') {
+      return new SerialOverNetworkSyncServer(syncFn, opts);
+    } else {
+      return new SerialSyncServer(device, syncFn, opts);
+    }
   }
   throw new Error(`Invalid connection type: ${connection}`);
 }
