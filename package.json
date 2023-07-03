@@ -1,7 +1,7 @@
 {
   "name": "palm-sync",
   "version": "0.1.0",
-  "description": "Communicate with Palm OS devices over HotSync",
+  "description": "Sync with Palm OS devices",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jichu4n/palm-sync.git"
@@ -22,7 +22,9 @@
     "lint": "prettier --check .",
     "test": "env TZ=UTC jest",
     "cli": "ts-node ./src/bin/cli.ts",
-    "record-sync-session": "env TZ=UTC ts-node ./src/bin/record-sync-session.ts"
+    "record-sync-session": "env TZ=UTC ts-node ./src/bin/record-sync-session.ts",
+    "prepack": "npm run lint && npm run build && npm test && rm -r ./dist/tests",
+    "prepublishOnly": "./src/tests/package-test.sh"
   },
   "devDependencies": {
     "@types/debug": "^4.1.8",
