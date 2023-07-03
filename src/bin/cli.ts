@@ -1,3 +1,5 @@
+#!/usr.bin/env node
+
 /** palm-sync CLI tool.
  *
  * The commands (pull, push etc.) are inspired by the Android SDK's adb tool.
@@ -8,12 +10,12 @@
 import {program} from 'commander';
 import debug from 'debug';
 import path from 'path';
+import {DlpGetSysDateTimeReqType} from '../protocols/dlp-commands';
 import {SyncConnectionOptions} from '../protocols/sync-connections';
 import {SyncFn} from '../sync-servers/sync-server';
 import {createSyncServerAndRunSync} from '../sync-servers/sync-server-utils';
 import {readAllDbsToFile, readDbToFile} from '../sync-utils/read-db';
 import {writeDbFromFile} from '../sync-utils/write-db';
-import {DlpGetSysDateTimeReqType} from '../protocols/dlp-commands';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
