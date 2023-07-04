@@ -7,7 +7,7 @@
  * @module
  */
 
-import {program} from 'commander';
+import {Command, program} from 'commander';
 import debug from 'debug';
 import path from 'path';
 import {DlpGetSysDateTimeReqType} from '../protocols/dlp-commands';
@@ -22,16 +22,55 @@ const packageJson = require('../../package.json');
 
 const log = debug('palm-sync').extend('cli');
 
-function createSyncConnectionOptions(
-  encoding: string | undefined
-): SyncConnectionOptions {
-  if (!encoding) {
-    return {};
+interface CommonOptions {
+  encoding?: string;
+  usb?: boolean;
+  net?: boolean;
+  serial?: string;
+}
+
+async function runSyncForCommand(command: Command, syncFn: SyncFn) {
+  const {encoding, usb, net, serial} =
+    command.optsWithGlobals() as CommonOptions;
+
+  let connectionString: string = '';
+  if (usb) {
+    if (net || serial) {
+      log('Cannot specify both --usb and --net/--serial');
+      process.exit(1);
+    }
+    connectionString = 'usb';
+  } else if (net) {
+    if (usb || serial) {
+      log('Cannot specify both --net and --usb/--serial');
+      process.exit(1);
+    }
+    connectionString = 'net';
+  } else if (serial) {
+    if (usb || net) {
+      log('Cannot specify both --serial and --usb/--net');
+      process.exit(1);
+    }
+    connectionString = `serial:${serial}`;
+  } else if (process.env.PALM_SYNC_CONNECTION) {
+    connectionString = process.env.PALM_SYNC_CONNECTION;
+  } else {
+    log('Please specify one of --usb, --net, or --serial');
+    process.exit(1);
   }
-  return {
-    requestSerializeOptions: {encoding},
-    responseDeserializeOptions: {encoding},
-  };
+
+  const syncConnectionOptions: SyncConnectionOptions = encoding
+    ? {
+        requestSerializeOptions: {encoding},
+        responseDeserializeOptions: {encoding},
+      }
+    : {};
+
+  return await createSyncServerAndRunSync(
+    connectionString,
+    syncFn,
+    syncConnectionOptions
+  );
 }
 
 if (require.main === module) {
@@ -47,91 +86,77 @@ if (require.main === module) {
       };
     }
 
-    const connectionArg = [
-      '<connection>',
-      'Connection to use: usb, net, serial:/dev/ttyXXX, or serial:net',
-    ] as const;
-    const encodingOption = [
-      '-e, --encoding <encoding>',
-      'Text encoding to use for database names',
-    ] as const;
     program
       .name('palm-sync')
       .version(packageJson.version)
-      .description('CLI tool for synchronizing with Palm OS devices.');
+      .description('CLI tool for synchronizing with Palm OS devices.')
+      .configureHelp({showGlobalOptions: true})
+      .option(
+        '-e, --encoding <encoding>',
+        'Text encoding to use for database names'
+      )
+      .option('--usb', 'Listen for USB connection')
+      .option('--net', 'Listen for network connection')
+      .option(
+        '--serial <device>',
+        'Listen for serial connection on device, e.g. "/dev/ttyUSB0", "COM1", or "net"'
+      );
 
     program
       .command('info')
       .description('Get information about a Palm OS device')
-      .argument(...connectionArg)
-      .option(...encodingOption)
-      .action(
-        async (connectionString: string, {encoding}: {encoding?: string}) => {
-          await createSyncServerAndRunSync(
-            connectionString,
-            async (dlpConnection) => {
-              const {dateTime: deviceDateTime} = await dlpConnection.execute(
-                DlpGetSysDateTimeReqType.with()
-              );
-              const lines: Array<[string, string]> = [
-                ['OS version', dlpConnection.sysInfo.romSWVersion.toString()],
-                ['DLP version', dlpConnection.sysInfo.dlpVer.toString()],
-                ['User name', dlpConnection.userInfo.userName],
-                ['Last sync PC', dlpConnection.userInfo.lastSyncPc.toString()],
-                ['User ID', dlpConnection.userInfo.userId.toString()],
-                [
-                  'Last sync',
-                  dlpConnection.userInfo.lastSyncDate.toLocaleString(),
-                ],
-                [
-                  'Last sync succ',
-                  dlpConnection.userInfo.succSyncDate.toLocaleString(),
-                ],
-                ['System time', deviceDateTime.toLocaleString()],
-              ];
-              log(
-                lines
-                  .map(([label, value]) => `\t${label}:\t${value}`)
-                  .join('\n')
-              );
-            },
-            createSyncConnectionOptions(encoding)
+      .action(async (opts: {}, command: Command) => {
+        await runSyncForCommand(command, async (dlpConnection) => {
+          const {dateTime: deviceDateTime} = await dlpConnection.execute(
+            DlpGetSysDateTimeReqType.with()
           );
-        }
-      );
+          const lines: Array<[string, string]> = [
+            ['OS version', dlpConnection.sysInfo.romSWVersion.toString()],
+            ['DLP version', dlpConnection.sysInfo.dlpVer.toString()],
+            ['User name', dlpConnection.userInfo.userName],
+            ['Last sync PC', dlpConnection.userInfo.lastSyncPc.toString()],
+            ['User ID', dlpConnection.userInfo.userId.toString()],
+            ['Last sync', dlpConnection.userInfo.lastSyncDate.toLocaleString()],
+            [
+              'Last sync succ',
+              dlpConnection.userInfo.succSyncDate.toLocaleString(),
+            ],
+            ['System time', deviceDateTime.toLocaleString()],
+          ];
+          log(
+            lines.map(([label, value]) => `\t${label}:\t${value}`).join('\n')
+          );
+        });
+      });
 
     program
       .command('pull')
       .description('Transfer databases from Palm OS device to computer')
-      .argument(...connectionArg)
       .argument(
         '[names...]',
         'Names of databases to transfer from Palm OS device'
       )
-      .option('--all-ram', 'Transfer all databases in RAM to computer')
-      .option('--all-rom', 'Transfer all databases in ROM to computer')
+      .option('--ram', 'Transfer all databases in RAM to computer')
+      .option('--rom', 'Transfer all databases in ROM to computer')
       .option('-o, --output-dir <outputDir>', 'Output directory')
-      .option(...encodingOption)
       .action(
         async (
-          connectionString: string,
           names: Array<string>,
           {
-            allRam,
-            allRom,
+            ram,
+            rom,
             outputDir,
-            encoding,
           }: {
-            allRam?: boolean;
-            allRom?: boolean;
+            ram?: boolean;
+            rom?: boolean;
             outputDir?: string;
-            encoding?: string;
-          }
+          },
+          command: Command
         ) => {
           let syncFn: (dlpConnection: any) => Promise<void>;
           if (names.length > 0) {
-            if (allRam || allRom) {
-              log('Cannot specify both database names and --all-ram/--all-rom');
+            if (ram || rom) {
+              log('Cannot specify both database names and --ram/--rom');
               process.exit(1);
             }
             syncFn = async (dlpConnection) => {
@@ -139,67 +164,51 @@ if (require.main === module) {
                 await readDbToFile(dlpConnection, name, outputDir);
               }
             };
-          } else if (allRam || allRom) {
+          } else if (ram || rom) {
             syncFn = async (dlpConnection) => {
               await readAllDbsToFile(
                 dlpConnection,
-                {ram: !!allRam, rom: !!allRom},
+                {ram: !!ram, rom: !!rom},
                 outputDir
               );
             };
           } else {
-            log('Must specify either database names or --all-ram/--all-rom');
+            log('Must specify either database names or --ram/--rom');
             process.exit(1);
           }
-          await createSyncServerAndRunSync(
-            connectionString,
-            syncFn,
-            createSyncConnectionOptions(encoding)
-          );
+          await runSyncForCommand(command, syncFn);
         }
       );
 
     program
       .command('push')
       .description('Transfer PDB / PRC file to Palm OS device')
-      .argument(...connectionArg)
       .argument('<filePaths...>', 'Paths to PDB / PRC files')
       .option('--no-overwrite', 'Skip if database already exists on the device')
-      .option(...encodingOption)
       .action(
         async (
-          connectionString: string,
           filePaths: Array<string>,
-          {encoding, overwrite}: {encoding?: string; overwrite?: boolean}
+          {overwrite}: {overwrite?: boolean},
+          command: Command
         ) => {
-          await createSyncServerAndRunSync(
-            connectionString,
-            async (dlpConnection) => {
-              for (const filePath of filePaths) {
-                await writeDbFromFile(dlpConnection, filePath, {overwrite});
-              }
-            },
-            createSyncConnectionOptions(encoding)
-          );
+          await runSyncForCommand(command, async (dlpConnection) => {
+            for (const filePath of filePaths) {
+              await writeDbFromFile(dlpConnection, filePath, {overwrite});
+            }
+          });
         }
       );
 
     program
       .command('run')
       .description('Run a custom sync function')
-      .argument(...connectionArg)
       .argument(
         '<syncFnModule>',
         'Require path to module containing run() function'
       )
       .option('--fn <name>', 'Name of sync function in module', 'run')
-      .option(...encodingOption)
       .action(
-        async (
-          connectionString: string,
-          syncFnModule: string,
-          {fn, encoding}: {fn: string; encoding?: string}
-        ) => {
+        async (syncFnModule: string, {fn}: {fn: string}, command: Command) => {
           if (!path.isAbsolute(syncFnModule)) {
             syncFnModule = path.join(process.cwd(), syncFnModule);
           }
@@ -214,12 +223,10 @@ if (require.main === module) {
             log(`Module ${syncFnModule} does not export a run() function`);
             process.exit(1);
           }
-          log(`Running function "${fn}" in ${syncFnModule}`);
-          await createSyncServerAndRunSync(
-            connectionString,
-            syncFn,
-            createSyncConnectionOptions(encoding)
-          );
+          await runSyncForCommand(command, async (connection) => {
+            log(`Running function "${fn}" in ${syncFnModule}`);
+            await syncFn(connection);
+          });
         }
       );
 
