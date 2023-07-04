@@ -56,8 +56,10 @@ export async function runSync(syncServer: SyncServer) {
   log('Waiting for connection...');
   const connection: SyncConnection = await pEvent(syncServer, 'connect');
   log('Connected!');
+  log('');
 
   await pEvent(syncServer, 'disconnect');
+  log('');
   log('Disconnected');
 
   await syncServer.stop();

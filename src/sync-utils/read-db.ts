@@ -94,8 +94,8 @@ export async function readDbToFile(
   await fs.writeFile(filePath, rawDb.serialize());
 }
 
-/** Backup all databases from a Palm OS device. */
-export async function readAllDbsToFile(
+/** Read list of all databases from a Palm OS device. */
+export async function readDbList(
   dlpConnection: DlpConnection,
   /** Which type of storage to include. */
   storageTypes: {
@@ -104,18 +104,18 @@ export async function readAllDbsToFile(
     /** Whether to include databases in RAM. */
     ram: boolean;
   },
-  /** Output directory. Defaults to current working directory. */
-  outputDir?: string,
-  /** Additional options. */
-  opts: Omit<ReadDbOptions, 'dbInfo'> = {}
-) {
+  opts: {
+    /** Card number on the Palm OS device (typically 0). */
+    cardNo?: number;
+  } = {}
+): Promise<Array<DlpDBInfoType>> {
   const {cardNo = 0} = opts;
   const {rom, ram} = storageTypes;
   if (!rom && !ram) {
     throw new Error('Must specify at least one of rom or ram in storageTypes');
   }
-  logFile(
-    `Reading all databases on card ${cardNo} in ${[
+  log(
+    `Reading list of databases on card ${cardNo} in ${[
       ...(ram ? ['RAM'] : []),
       ...(rom ? ['ROM'] : []),
     ].join(' and ')}`
@@ -146,6 +146,26 @@ export async function readAllDbsToFile(
   }
   log(`Finished reading database list after ${numRequests} requests`);
 
+  return dbInfoList;
+}
+
+/** Backup all databases from a Palm OS device. */
+export async function readAllDbsToFile(
+  dlpConnection: DlpConnection,
+  /** Which type of storage to include. */
+  storageTypes: {
+    /** Whether to include databases in ROM. */
+    rom: boolean;
+    /** Whether to include databases in RAM. */
+    ram: boolean;
+  },
+  /** Output directory. Defaults to current working directory. */
+  outputDir?: string,
+  /** Additional options. */
+  opts: Omit<ReadDbOptions, 'dbInfo'> = {}
+) {
+  const dbInfoList = await readDbList(dlpConnection, storageTypes, opts);
+  log(`Reading ${dbInfoList.length} databases`);
   for (const dbInfo of dbInfoList) {
     await readDbToFile(dlpConnection, dbInfo.name, outputDir, {
       ...opts,

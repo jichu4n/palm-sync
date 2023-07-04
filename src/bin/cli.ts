@@ -14,7 +14,11 @@ import {DlpGetSysDateTimeReqType} from '../protocols/dlp-commands';
 import {SyncConnectionOptions} from '../protocols/sync-connections';
 import {SyncFn} from '../sync-servers/sync-server';
 import {createSyncServerAndRunSync} from '../sync-servers/sync-server-utils';
-import {readAllDbsToFile, readDbToFile} from '../sync-utils/read-db';
+import {
+  readAllDbsToFile,
+  readDbList,
+  readDbToFile,
+} from '../sync-utils/read-db';
 import {writeDbFromFile} from '../sync-utils/write-db';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
@@ -128,6 +132,30 @@ if (require.main === module) {
           );
         });
       });
+
+    program
+      .command('list')
+      .alias('ls')
+      .description('List databases on Palm OS device')
+      .option('--ram', 'Transfer all databases in RAM to computer')
+      .option('--rom', 'Transfer all databases in ROM to computer')
+      .action(
+        async (
+          {ram, rom}: {ram?: boolean; rom?: boolean},
+          command: Command
+        ) => {
+          if (!ram && !rom) {
+            ram = true;
+          }
+          await runSyncForCommand(command, async (dlpConnection) => {
+            const dbInfoList = await readDbList(dlpConnection, {
+              ram: !!ram,
+              rom: !!rom,
+            });
+            log(dbInfoList.map(({name}) => `=> ${name}`).join('\n'));
+          });
+        }
+      );
 
     program
       .command('pull')
