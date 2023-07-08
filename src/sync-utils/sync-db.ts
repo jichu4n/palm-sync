@@ -343,7 +343,6 @@ export function computeRecordActions(
 ): Array<RecordAction> {
   const deviceRecordState = computeRecordState(deviceRecord);
   const desktopRecordState = computeRecordState(desktopRecord);
-
   const actions = RECORD_SYNC_LOGIC[deviceRecordState][desktopRecordState](
     deviceRecord,
     desktopRecord,
@@ -359,15 +358,8 @@ export function computeRecordActions(
 }
 
 export interface RecordActionContext {
-  device:
-    | {
-        dlpConnection: DlpConnection;
-        dbId: number;
-      }
-    | {
-        deviceDb: RawPdbDatabase;
-      };
-  desktopDb: RawPdbDatabase;
+  device: DbSyncInterface;
+  desktop: DbSyncInterface;
   archiveDb: RawPdbDatabase;
 }
 
@@ -378,91 +370,34 @@ type RecordActionFn = (
 export const RECORD_ACTION_FNS: {[key in RecordActionType]: RecordActionFn} = {
   [ADD_ON_DEVICE]: async ({device}, record) => {
     clearRecordAttrs(record);
-    if ('deviceDb' in device) {
-      const {deviceDb} = device;
-      const existingRecordIndex = deviceDb.records.findIndex(
-        ({entry: {uniqueId}}) => uniqueId === record.entry.uniqueId
+    const newRecordId = await device.writeRecord(record);
+    if (newRecordId !== record.entry.uniqueId) {
+      throw new Error(
+        `Error writing record ${record.entry.uniqueId}: ` +
+          `device returned record ID ${newRecordId}`
       );
-      if (existingRecordIndex >= 0) {
-        deviceDb.records[existingRecordIndex] = record;
-      } else {
-        deviceDb.records.push(record);
-      }
-    } else {
-      const {dlpConnection, dbId} = device;
-      const {recordId: newRecordId} = await dlpConnection.execute(
-        createWriteRecordReqFromRawPdbRecord(dbId, record)
-      );
-      if (newRecordId !== record.entry.uniqueId) {
-        throw new Error(
-          `Error writing record ${record.entry.uniqueId}: ` +
-            `device returned record ID ${newRecordId}`
-        );
-      }
     }
   },
   [ADD_ON_DEVICE_WITH_NEW_ID]: async ({device}, record) => {
     clearRecordAttrs(record);
-    if ('deviceDb' in device) {
-      const {deviceDb} = device;
-      record.entry.uniqueId = Math.floor(1 + Math.random() * (0xffffffff - 1));
-      deviceDb.records.push(record);
-    } else {
-      const {dlpConnection, dbId} = device;
-      record.entry.uniqueId = 0;
-      const {recordId: newRecordId} = await dlpConnection.execute(
-        createWriteRecordReqFromRawPdbRecord(dbId, record)
+    record.entry.uniqueId = 0;
+    const newRecordId = await device.writeRecord(record);
+    if (newRecordId === 0) {
+      throw new Error(
+        'Error writing record with new ID: device returned record ID 0'
       );
-      if (newRecordId === 0) {
-        throw new Error(
-          'Error writing record with new ID: device returned record ID 0'
-        );
-      }
-      record.entry.uniqueId = newRecordId;
     }
+    record.entry.uniqueId = newRecordId;
   },
-  [ADD_ON_DESKTOP]: async ({desktopDb}, record) => {
+  [ADD_ON_DESKTOP]: async ({desktop}, record) => {
     clearRecordAttrs(record);
-    const existingRecordIndex = desktopDb.records.findIndex(
-      ({entry: {uniqueId}}) => uniqueId === record.entry.uniqueId
-    );
-    if (existingRecordIndex >= 0) {
-      desktopDb.records[existingRecordIndex] = record;
-    } else {
-      desktopDb.records.push(record);
-    }
+    await desktop.writeRecord(record);
   },
   [DELETE_ON_DEVICE]: async ({device}, record) => {
-    if ('deviceDb' in device) {
-      const {deviceDb} = device;
-      const existingRecordIndex = deviceDb.records.findIndex(
-        ({entry: {uniqueId}}) => uniqueId === record.entry.uniqueId
-      );
-      if (existingRecordIndex >= 0) {
-        deviceDb.records.splice(existingRecordIndex, 1);
-      } else {
-        throw new Error(
-          `Attempting to delete non-existent record ${record.entry.uniqueId} on device`
-        );
-      }
-    } else {
-      const {dlpConnection, dbId} = device;
-      await dlpConnection.execute(
-        DlpDeleteRecordReqType.with({dbId, recordId: record.entry.uniqueId})
-      );
-    }
+    await device.deleteRecord(record.entry.uniqueId);
   },
-  [DELETE_ON_DESKTOP]: async ({desktopDb}, record) => {
-    const existingRecordIndex = desktopDb.records.findIndex(
-      ({entry: {uniqueId}}) => uniqueId === record.entry.uniqueId
-    );
-    if (existingRecordIndex >= 0) {
-      desktopDb.records.splice(existingRecordIndex, 1);
-    } else {
-      throw new Error(
-        `Attempting to delete non-existent record ${record.entry.uniqueId} on desktop`
-      );
-    }
+  [DELETE_ON_DESKTOP]: async ({desktop}, record) => {
+    await desktop.deleteRecord(record.entry.uniqueId);
   },
   [ARCHIVE]: async ({archiveDb}, record) => {
     if (!record.entry.attributes.archive) {
@@ -485,6 +420,146 @@ export function clearRecordAttrs(record: RawPdbRecord) {
   attrs.busy = false;
 }
 
+/** Abstract interface for reading / writing for sync. */
+interface DbSyncInterface {
+  /** Return all modified records. */
+  readModifiedRecords(): Promise<Array<RawPdbRecord>>;
+  /** Write a record. */
+  writeRecord(record: RawPdbRecord): Promise<number>;
+  /** Read a record by ID. */
+  readRecord(recordId: number): Promise<RawPdbRecord | null>;
+  /** Delete a record by ID. */
+  deleteRecord(recordId: number): Promise<void>;
+  /** Clean up. Removes deleted records and resets dirty flags. */
+  cleanUp(): Promise<void>;
+}
+
+/** Sync interface backed by a RawPdbDatabase. */
+class RawPdbDatabaseSyncInterface implements DbSyncInterface {
+  constructor(private readonly db: RawPdbDatabase) {}
+
+  async readModifiedRecords(): Promise<Array<RawPdbRecord>> {
+    return this.db.records.filter(
+      (record) => computeRecordState(record) !== RecordState.UNCHANGED
+    );
+  }
+
+  async writeRecord(record: RawPdbRecord): Promise<number> {
+    let recordId: number;
+    if (record.entry.uniqueId === 0) {
+      recordId = Math.floor(1 + Math.random() * (0xffffffff - 1));
+      this.db.records.push(record);
+    } else {
+      recordId = record.entry.uniqueId;
+      const existingRecordIndex = this.db.records.findIndex(
+        ({entry: {uniqueId}}) => uniqueId === record.entry.uniqueId
+      );
+      if (existingRecordIndex >= 0) {
+        this.db.records[existingRecordIndex] = record;
+      } else {
+        this.db.records.push(record);
+      }
+    }
+    return recordId;
+  }
+
+  async readRecord(recordId: number): Promise<RawPdbRecord | null> {
+    return (
+      this.db.records.find(({entry: {uniqueId}}) => uniqueId === recordId) ??
+      null
+    );
+  }
+
+  async deleteRecord(recordId: number): Promise<void> {
+    const existingRecordIndex = this.db.records.findIndex(
+      ({entry: {uniqueId}}) => uniqueId === recordId
+    );
+    if (existingRecordIndex >= 0) {
+      this.db.records.splice(existingRecordIndex, 1);
+    } else {
+      throw new Error(`Attempting to delete non-existent record ${recordId}`);
+    }
+  }
+
+  async cleanUp(): Promise<void> {
+    const records: Array<RawPdbRecord> = [];
+    for (const record of this.db.records) {
+      const {attributes} = record.entry;
+      if (attributes.delete) {
+        continue;
+      }
+      if (attributes.archive) {
+        attributes.archive = false;
+      }
+      attributes.dirty = false;
+      attributes.busy = false;
+      records.push(record);
+    }
+    this.db.records = records;
+  }
+}
+
+/** Sync interface for actual Palm OS devices. */
+class DeviceSyncInterface implements DbSyncInterface {
+  constructor(
+    private readonly dlpConnection: DlpConnection,
+    private readonly dbId: number
+  ) {}
+
+  async readModifiedRecords(): Promise<Array<RawPdbRecord>> {
+    const records: Array<RawPdbRecord> = [];
+    for (;;) {
+      const readRecordResp = await this.dlpConnection.execute(
+        DlpReadNextModifiedRecReqType.with({dbId: this.dbId}),
+        {ignoreErrorCode: DlpRespErrorCode.NOT_FOUND}
+      );
+      if (readRecordResp.errorCode === DlpRespErrorCode.NOT_FOUND) {
+        break;
+      }
+      records.push(createRawPdbRecordFromReadRecordResp(readRecordResp));
+    }
+    return records;
+  }
+
+  async writeRecord(record: RawPdbRecord): Promise<number> {
+    const {recordId: newRecordId} = await this.dlpConnection.execute(
+      createWriteRecordReqFromRawPdbRecord(this.dbId, record)
+    );
+    return newRecordId;
+  }
+
+  async readRecord(recordId: number): Promise<RawPdbRecord | null> {
+    if (!recordId) {
+      return null;
+    }
+    const readRecordResp = await this.dlpConnection.execute(
+      DlpReadRecordByIDReqType.with({
+        dbId: this.dbId,
+        recordId,
+      }),
+      {ignoreErrorCode: DlpRespErrorCode.NOT_FOUND}
+    );
+    return readRecordResp.errorCode === DlpRespErrorCode.NONE
+      ? createRawPdbRecordFromReadRecordResp(readRecordResp)
+      : null;
+  }
+
+  async deleteRecord(recordId: number): Promise<void> {
+    await this.dlpConnection.execute(
+      DlpDeleteRecordReqType.with({dbId: this.dbId, recordId})
+    );
+  }
+
+  async cleanUp(): Promise<void> {
+    await this.dlpConnection.execute(
+      DlpCleanUpDatabaseReqType.with({dbId: this.dbId})
+    );
+    await this.dlpConnection.execute(
+      DlpResetSyncFlagsReqType.with({dbId: this.dbId})
+    );
+  }
+}
+
 /** Options for {@link syncRawDb}. */
 export interface SyncDbOptions {
   /** Card number on the Palm OS device (typically 0). */
@@ -502,6 +577,51 @@ export interface SyncDbOptions {
 
 /** Perform a fast sync for a database. */
 export async function fastSync(
+  device: DbSyncInterface,
+  desktop: DbSyncInterface
+) {
+  const processedRecordIds = new Set<number>();
+  const recordActions: Array<RecordAction> = [];
+
+  // 1. Sync records modified on device.
+  for (const deviceRecord of await device.readModifiedRecords()) {
+    const {uniqueId: recordId} = deviceRecord.entry;
+    const desktopRecord = await desktop.readRecord(recordId);
+    recordActions.push(...computeRecordActions(deviceRecord, desktopRecord));
+    processedRecordIds.add(recordId);
+  }
+
+  // 2. Sync records modified on the desktop.
+  for (const desktopRecord of await desktop.readModifiedRecords()) {
+    const {uniqueId: recordId} = desktopRecord.entry;
+    if (recordId !== 0 && processedRecordIds.has(recordId)) {
+      continue;
+    }
+    const deviceRecord =
+      desktopRecord.entry.uniqueId === 0
+        ? null
+        : await device.readRecord(recordId);
+    recordActions.push(...computeRecordActions(deviceRecord, desktopRecord));
+    processedRecordIds.add(recordId);
+  }
+
+  // 3. Execute record actions.
+  const ctx: RecordActionContext = {
+    device,
+    desktop,
+    archiveDb: new RawPdbDatabase(),
+  };
+  for (const {type, record} of recordActions) {
+    await RECORD_ACTION_FNS[type](ctx, record);
+  }
+
+  log('Cleaning up database');
+  await device.cleanUp();
+  await desktop.cleanUp();
+}
+
+/** Perform a fast sync for a database. */
+export async function syncDb(
   dlpConnection: DlpConnection,
   desktopDb: RawPdbDatabase,
   {cardNo = 0, dbInfo}: SyncDbOptions = {}
@@ -509,7 +629,6 @@ export async function fastSync(
   log(`Fast sync database ${name} on card ${cardNo}`);
   await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
-  // 1. Open database.
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
       cardNo,
@@ -518,72 +637,10 @@ export async function fastSync(
     })
   );
 
-  const processedRecordIds = new Set<number>();
-  const recordActions: Array<RecordAction> = [];
-
-  // 2. Sync records modified on the Palm OS device.
-  for (;;) {
-    const readRecordResp = await dlpConnection.execute(
-      DlpReadNextModifiedRecReqType.with({dbId}),
-      {ignoreErrorCode: DlpRespErrorCode.NOT_FOUND}
-    );
-    if (readRecordResp.errorCode === DlpRespErrorCode.NOT_FOUND) {
-      break;
-    }
-
-    const deviceRecord = createRawPdbRecordFromReadRecordResp(readRecordResp);
-    const {uniqueId: recordId} = deviceRecord.entry;
-    const desktopRecordIndex = desktopDb.records.findIndex(
-      ({entry: {uniqueId}}) => uniqueId === recordId
-    );
-    const desktopRecord =
-      desktopRecordIndex >= 0 ? desktopDb.records[desktopRecordIndex] : null;
-
-    recordActions.push(...computeRecordActions(deviceRecord, desktopRecord));
-
-    processedRecordIds.add(recordId);
-  }
-
-  // 3. Sync records modified on the desktop.
-  for (const desktopRecord of desktopDb.records) {
-    const {uniqueId: recordId} = desktopRecord.entry;
-    if (
-      (recordId !== 0 && processedRecordIds.has(recordId)) ||
-      computeRecordState(desktopRecord) === RecordState.UNCHANGED
-    ) {
-      continue;
-    }
-
-    const deviceRecord =
-      desktopRecord.entry.uniqueId === 0
-        ? null
-        : createRawPdbRecordFromReadRecordResp(
-            await dlpConnection.execute(
-              DlpReadRecordByIDReqType.with({
-                dbId,
-                recordId: desktopRecord.entry.uniqueId,
-              })
-            )
-          );
-
-    recordActions.push(...computeRecordActions(deviceRecord, desktopRecord));
-
-    processedRecordIds.add(recordId);
-  }
-
-  // 4. Execute record actions.
-  const ctx: RecordActionContext = {
-    device: {dlpConnection, dbId},
-    desktopDb,
-    archiveDb: new RawPdbDatabase(),
-  };
-  for (const {type, record} of recordActions) {
-    await RECORD_ACTION_FNS[type](ctx, record);
-  }
-
-  log('Cleaning up database');
-  await dlpConnection.execute(DlpCleanUpDatabaseReqType.with({dbId}));
-  await dlpConnection.execute(DlpResetSyncFlagsReqType.with({dbId}));
+  await fastSync(
+    new DeviceSyncInterface(dlpConnection, dbId),
+    new RawPdbDatabaseSyncInterface(desktopDb)
+  );
 
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
