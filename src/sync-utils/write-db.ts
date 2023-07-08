@@ -1,6 +1,23 @@
+/** Writing PDB / PRC files to a Palm OS device using HotSync.
+ *
+ * References:
+ *   - pilot-link's pi_file_install() function:
+ *     https://github.com/jichu4n/pilot-link/blob/master/libpisock/pi-file.c#L784
+ *   - coldsync's upload_database() function:
+ *     https://github.com/dwery/coldsync/blob/master/src/install.c#L49
+ *
+ * @module
+ */
+
 import debug from 'debug';
 import fs from 'fs-extra';
-import {DatabaseHdrType, RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
+import {
+  DatabaseHdrType,
+  RawPdbDatabase,
+  RawPdbRecord,
+  RawPrcDatabase,
+  RawPrcRecord,
+} from 'palm-pdb';
 import {Serializable, SerializeOptions} from 'serio';
 import {
   DlpCloseDBReqType,
@@ -16,7 +33,7 @@ import {
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
 
-const log = debug('palm-sync').extend('write');
+const log = debug('palm-sync').extend('write-db');
 const logFile = debug('palm-sync').extend('sync-file');
 
 /** Options to {@link readDb} and {@link readRawDb}. */
@@ -75,14 +92,7 @@ function writeDbFromBuffer(
   return writeRawDb(dlpConnection, rawDb, opts);
 }
 
-/** Install a database to a Palm OS device.
- *
- * Based on:
- *   - pilot-link's pi_file_install() function:
- *     https://github.com/jichu4n/pilot-link/blob/master/libpisock/pi-file.c#L784
- *   - coldsync's upload_database() function:
- *     https://github.com/dwery/coldsync/blob/master/src/install.c#L49
- */
+/** Install a database to a Palm OS device. */
 export async function writeRawDb(
   dlpConnection: DlpConnection,
   /** Database to write. */
@@ -149,12 +159,7 @@ export async function writeRawDb(
       log(`Writing resource ${i + 1} of ${db.records.length}`);
       const record = db.records[i];
       await dlpConnection.execute(
-        DlpWriteResourceReqType.with({
-          dbId,
-          type: record.entry.type,
-          id: record.entry.resourceId,
-          data: record.data,
-        })
+        createWriteResourceReqFromRawPrcRecord(dbId, record)
       );
       // If we see a 'boot' section, we should reset the system.
       if (record.entry.type === 'boot') {
@@ -169,12 +174,7 @@ export async function writeRawDb(
       log(`Writing record ${i + 1} of ${db.records.length}`);
       const record = db.records[i];
       await dlpConnection.execute(
-        DlpWriteRecordReqType.with({
-          dbId,
-          recordId: record.entry.uniqueId,
-          attributes: record.entry.attributes,
-          data: record.data,
-        })
+        createWriteRecordReqFromRawPdbRecord(dbId, record)
       );
     }
   }
@@ -186,4 +186,28 @@ export async function writeRawDb(
   }
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
+}
+
+export function createWriteRecordReqFromRawPdbRecord(
+  dbId: number,
+  record: RawPdbRecord
+) {
+  return DlpWriteRecordReqType.with({
+    dbId,
+    recordId: record.entry.uniqueId,
+    attributes: record.entry.attributes,
+    data: record.data,
+  });
+}
+
+export function createWriteResourceReqFromRawPrcRecord(
+  dbId: number,
+  record: RawPrcRecord
+) {
+  return DlpWriteResourceReqType.with({
+    dbId,
+    type: record.entry.type,
+    id: record.entry.resourceId,
+    data: record.data,
+  });
 }

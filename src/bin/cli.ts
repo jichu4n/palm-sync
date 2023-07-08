@@ -95,6 +95,7 @@ if (require.main === module) {
       .version(packageJson.version)
       .description('CLI tool for synchronizing with Palm OS devices.')
       .configureHelp({showGlobalOptions: true})
+      // Global options
       .option(
         '-e, --encoding <encoding>',
         'Text encoding to use for database names'

@@ -1,3 +1,13 @@
+/** Reading databases from a Palm OS device using HotSync.
+ *
+ * References:
+ *   - pilot-link's pi_file_retrieve() function:
+ *     https://github.com/jichu4n/pilot-link/blob/master/libpisock/pi-file.c#L622
+ *   - coldsync's download_database() function:
+ *     https://github.com/dwery/coldsync/blob/master/src/backup.c#L36
+ *
+ * @module
+ */
 import debug from 'debug';
 import fs from 'fs-extra';
 import {
@@ -34,7 +44,7 @@ import {
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
 
-const log = debug('palm-sync').extend('read');
+const log = debug('palm-sync').extend('read-db');
 const logFile = debug('palm-sync').extend('sync-file');
 
 /** Options to {@link readDb} and {@link readRawDb}. */
@@ -174,14 +184,7 @@ export async function readAllDbsToFile(
   }
 }
 
-/** Read a database from a Palm OS device.
- *
- * Based on:
- *   - pilot-link's pi_file_retrieve() function:
- *     https://github.com/jichu4n/pilot-link/blob/master/libpisock/pi-file.c#L622
- *   - coldsync's download_database() function:
- *     https://github.com/dwery/coldsync/blob/master/src/backup.c#L36
- */
+/** Read a database from a Palm OS device. */
 export async function readRawDb(
   dlpConnection: DlpConnection,
   /** Database name to read. */
