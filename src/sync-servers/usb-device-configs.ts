@@ -108,7 +108,7 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x054c,
       productId: 0x0169,
       label: 'Sony TJ',
-      initType: UsbInitType.EARLY_SONY_CLIE,
+      initType: UsbInitType.GENERIC,
       protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
 
