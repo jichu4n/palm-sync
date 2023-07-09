@@ -10,11 +10,10 @@
  */
 
 import debug from 'debug';
-import {RawPdbDatabase, RawPdbRecord, RecordAttrs} from 'palm-pdb';
+import {RawPdbDatabase, RawPdbRecord} from 'palm-pdb';
 import {
   DlpCleanUpDatabaseReqType,
   DlpCloseDBReqType,
-  DlpDBInfoType,
   DlpDeleteRecordReqType,
   DlpOpenConduitReqType,
   DlpOpenDBMode,
@@ -22,17 +21,16 @@ import {
   DlpReadNextModifiedRecReqType,
   DlpReadRecordByIDReqType,
   DlpResetSyncFlagsReqType,
-  DlpWriteRecordReqType,
 } from '../protocols/dlp-commands';
-import {DlpConnection} from '../protocols/sync-connections';
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
+import {DlpConnection} from '../protocols/sync-connections';
 import {createRawPdbRecordFromReadRecordResp} from './read-db';
 import {createWriteRecordReqFromRawPdbRecord} from './write-db';
 
 const log = debug('palm-sync').extend('sync-db');
 
 /** State of a record. */
-export enum RecordState {
+enum RecordState {
   /** No matching record in database. */
   NOT_FOUND = 'notFound',
   /** Record is archived and modified. */
@@ -48,7 +46,7 @@ export enum RecordState {
 }
 
 /** Computes record state for a record. */
-export function computeRecordState(record: RawPdbRecord | null) {
+function computeRecordState(record: RawPdbRecord | null) {
   if (!record) {
     return RecordState.NOT_FOUND;
   }
@@ -65,7 +63,7 @@ export function computeRecordState(record: RawPdbRecord | null) {
 }
 
 /** Type of sync action to be performed on a record. */
-export enum RecordActionType {
+enum RecordActionType {
   /** Add the provided record on the desktop.
    *
    *  If a record with the same ID already exists on the desktop, it will be overwritten.
@@ -88,7 +86,7 @@ export enum RecordActionType {
 }
 
 /** Sync action to be performed on a record. */
-export interface RecordAction {
+interface RecordAction {
   /** Type of sync action to perform. */
   type: RecordActionType;
   /** Record to perform the action on. */
@@ -128,7 +126,7 @@ const {
  *
  * The structure is [deviceRecordState][desktopRecordState].
  */
-export const RECORD_SYNC_LOGIC: {
+const RECORD_SYNC_LOGIC: {
   [key in RecordState]: {
     [key in RecordState]: RecordSyncFn;
   };
@@ -141,10 +139,9 @@ export const RECORD_SYNC_LOGIC: {
     [RecordState.ARCHIVED_CHANGED]: (deviceRecord, desktopRecord) => [
       [ARCHIVE, desktopRecord],
     ],
-    // Ditto.
-    [RecordState.ARCHIVED_UNCHANGED]: (deviceRecord, desktopRecord) => [
-      [ARCHIVE, desktopRecord],
-    ],
+    // This shouldn't happen - if record archived but not modified on desktop,
+    // it should have been preent on device during last sync.
+    [RecordState.ARCHIVED_UNCHANGED]: unexpectedRecordState,
     // Added then deleted on desktop since last sync. Nothing to do.
     [RecordState.DELETED]: (deviceRecord, desktopRecord) => [],
     // Added then modified on desktop since last sync, so push to device.
@@ -343,18 +340,34 @@ export function computeRecordActions(
 ): Array<RecordAction> {
   const deviceRecordState = computeRecordState(deviceRecord);
   const desktopRecordState = computeRecordState(desktopRecord);
-  const actions = RECORD_SYNC_LOGIC[deviceRecordState][desktopRecordState](
+  const actionTuples = RECORD_SYNC_LOGIC[deviceRecordState][desktopRecordState](
     deviceRecord,
     desktopRecord,
     deviceRecordState,
     desktopRecordState
   );
-  return actions.map(([type, record]) => {
+  const actions = actionTuples.map(([type, record]) => {
     if (!record) {
       throw new Error('Unexpected null record');
     }
     return {type, record};
   });
+  const deviceRecordString = `${
+    deviceRecord ? deviceRecord.entry.uniqueId : 'null'
+  } ${deviceRecordState}`;
+  const desktopRecordString = `${
+    desktopRecord ? desktopRecord.entry.uniqueId : 'null'
+  } ${desktopRecordState}`;
+  const actionsString =
+    actions.length === 0
+      ? '[]'
+      : '[\n' +
+        actions
+          .map(({type, record}) => `    ${type} ${record.entry.uniqueId},`)
+          .join('\n') +
+        '\n]';
+  log(`${deviceRecordString} <> ${desktopRecordString} => ${actionsString}`);
+  return actions;
 }
 
 export interface RecordActionContext {
@@ -438,42 +451,45 @@ interface DbSyncInterface {
 class RawPdbDatabaseSyncInterface implements DbSyncInterface {
   constructor(private readonly db: RawPdbDatabase) {}
 
-  async readModifiedRecords(): Promise<Array<RawPdbRecord>> {
-    return this.db.records.filter(
-      (record) => computeRecordState(record) !== RecordState.UNCHANGED
+  private findRecordIndex(recordId: number): number {
+    return this.db.records.findIndex(
+      ({entry: {uniqueId}}) => uniqueId === recordId
     );
+  }
+
+  async readModifiedRecords(): Promise<Array<RawPdbRecord>> {
+    return this.db.records
+      .filter((record) => computeRecordState(record) !== RecordState.UNCHANGED)
+      .map(cloneRecord);
   }
 
   async writeRecord(record: RawPdbRecord): Promise<number> {
-    let recordId: number;
+    const newRecord = cloneRecord(record);
     if (record.entry.uniqueId === 0) {
-      recordId = Math.floor(1 + Math.random() * (0xffffffff - 1));
-      this.db.records.push(record);
+      do {
+        newRecord.entry.uniqueId = Math.floor(
+          1 + Math.random() * (0xffffffff - 1)
+        );
+      } while (this.findRecordIndex(newRecord.entry.uniqueId) >= 0);
+      this.db.records.push(newRecord);
     } else {
-      recordId = record.entry.uniqueId;
-      const existingRecordIndex = this.db.records.findIndex(
-        ({entry: {uniqueId}}) => uniqueId === record.entry.uniqueId
-      );
+      const existingRecordIndex = this.findRecordIndex(record.entry.uniqueId);
       if (existingRecordIndex >= 0) {
-        this.db.records[existingRecordIndex] = record;
+        this.db.records[existingRecordIndex] = newRecord;
       } else {
-        this.db.records.push(record);
+        this.db.records.push(newRecord);
       }
     }
-    return recordId;
+    return newRecord.entry.uniqueId;
   }
 
   async readRecord(recordId: number): Promise<RawPdbRecord | null> {
-    return (
-      this.db.records.find(({entry: {uniqueId}}) => uniqueId === recordId) ??
-      null
-    );
+    const recordIndex = this.findRecordIndex(recordId);
+    return recordIndex >= 0 ? cloneRecord(this.db.records[recordIndex]) : null;
   }
 
   async deleteRecord(recordId: number): Promise<void> {
-    const existingRecordIndex = this.db.records.findIndex(
-      ({entry: {uniqueId}}) => uniqueId === recordId
-    );
+    const existingRecordIndex = this.findRecordIndex(recordId);
     if (existingRecordIndex >= 0) {
       this.db.records.splice(existingRecordIndex, 1);
     } else {
@@ -495,7 +511,7 @@ class RawPdbDatabaseSyncInterface implements DbSyncInterface {
       attributes.busy = false;
       records.push(record);
     }
-    this.db.records = records;
+    this.db.records.splice(0, this.db.records.length, ...records);
   }
 }
 
@@ -560,19 +576,16 @@ class DeviceSyncInterface implements DbSyncInterface {
   }
 }
 
+function cloneRecord(record: RawPdbRecord): RawPdbRecord {
+  const newRecord = RawPdbRecord.from(record.serialize());
+  newRecord.entry.deserialize(record.entry.serialize());
+  return newRecord;
+}
+
 /** Options for {@link syncRawDb}. */
 export interface SyncDbOptions {
   /** Card number on the Palm OS device (typically 0). */
   cardNo?: number;
-  /** Pre-fetched DlpDBInfoType for the database.
-   *
-   * On Palm OS 2.x and earlier, there is no way to get a DlpDBInfoType for a
-   * single database as DlpFindDBByName is not supported. Instead, we need to
-   * use DlpReadDBList to read DlpDBInfoType for all databases on the device.
-   * So if doing a bulk backup, we should call DlpReadDBList first and pass in
-   * the corresponding DlpDBInfoType in each call to readDb().
-   */
-  dbInfo?: DlpDBInfoType;
 }
 
 /** Perform a fast sync for a database. */
@@ -580,7 +593,7 @@ export async function fastSync(
   device: DbSyncInterface,
   desktop: DbSyncInterface
 ) {
-  const processedRecordIds = new Set<number>();
+  const recordIdsModifiedOnDevice = new Set<number>();
   const recordActions: Array<RecordAction> = [];
 
   // 1. Sync records modified on device.
@@ -588,13 +601,13 @@ export async function fastSync(
     const {uniqueId: recordId} = deviceRecord.entry;
     const desktopRecord = await desktop.readRecord(recordId);
     recordActions.push(...computeRecordActions(deviceRecord, desktopRecord));
-    processedRecordIds.add(recordId);
+    recordIdsModifiedOnDevice.add(recordId);
   }
 
   // 2. Sync records modified on the desktop.
   for (const desktopRecord of await desktop.readModifiedRecords()) {
     const {uniqueId: recordId} = desktopRecord.entry;
-    if (recordId !== 0 && processedRecordIds.has(recordId)) {
+    if (recordId !== 0 && recordIdsModifiedOnDevice.has(recordId)) {
       continue;
     }
     const deviceRecord =
@@ -602,7 +615,6 @@ export async function fastSync(
         ? null
         : await device.readRecord(recordId);
     recordActions.push(...computeRecordActions(deviceRecord, desktopRecord));
-    processedRecordIds.add(recordId);
   }
 
   // 3. Execute record actions.
@@ -611,7 +623,9 @@ export async function fastSync(
     desktop,
     archiveDb: new RawPdbDatabase(),
   };
+  log(`Executing ${recordActions.length} record actions`);
   for (const {type, record} of recordActions) {
+    log(`    ${type} ${record.entry.uniqueId} (${record.data.length})`);
     await RECORD_ACTION_FNS[type](ctx, record);
   }
 
@@ -624,16 +638,16 @@ export async function fastSync(
 export async function syncDb(
   dlpConnection: DlpConnection,
   desktopDb: RawPdbDatabase,
-  {cardNo = 0, dbInfo}: SyncDbOptions = {}
+  {cardNo = 0}: SyncDbOptions = {}
 ) {
-  log(`Fast sync database ${name} on card ${cardNo}`);
+  log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
   await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
       cardNo,
       name: desktopDb.header.name,
-      mode: DlpOpenDBMode.with({read: true, secret: true}),
+      mode: DlpOpenDBMode.with({read: true, write: true, secret: true}),
     })
   );
 
