@@ -1,4 +1,4 @@
-<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>DlpReadStorageInfoRespType | palm-sync</title><meta name="description" content="Documentation for palm-sync"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/search.js" id="tsd-search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>DlpRecordAttrs | palm-sync</title><meta name="description" content="Documentation for palm-sync"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script defer src="../assets/main.js"></script><script async src="../assets/search.js" id="tsd-search-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
 <div class="tsd-toolbar-contents container">
 <div class="table-cell" id="tsd-search" data-base="..">
 <div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
@@ -13,20 +13,26 @@
 <div class="tsd-page-title">
 <ul class="tsd-breadcrumb">
 <li><a href="../modules.html">palm-sync</a></li>
-<li><a href="DlpReadStorageInfoRespType.html">DlpReadStorageInfoRespType</a></li></ul>
-<h1>Class DlpReadStorageInfoRespType</h1></div>
+<li><a href="DlpRecordAttrs.html">DlpRecordAttrs</a></li></ul>
+<h1>Class DlpRecordAttrs</h1></div>
 <section class="tsd-panel tsd-comment">
-<div class="tsd-comment tsd-typography"><p>DLP response for <a href="DlpReadStorageInfoReqType.html" class="tsd-kind-class">DlpReadStorageInfoReqType</a>.</p>
+<div class="tsd-comment tsd-typography"><p>Record attribute flags in the DLP protocol.</p>
+<p>In the DLP protocol, we use one byte to store record attribute flags and
+another byte to store the record category. However, in PDB files, we use a
+single byte is used to store both attribute flags and the record category.</p>
+<p>See
+<a href="https://jichu4n.github.io/palm-pdb/classes/RecordAttrs.html">RecordAttrs</a>
+for more context.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div></section>
 <section class="tsd-panel tsd-hierarchy">
 <h4>Hierarchy</h4>
 <ul class="tsd-hierarchy">
-<li><a href="DlpResponse.html" class="tsd-signature-type tsd-kind-class">DlpResponse</a>
+<li><span class="tsd-signature-symbol">{ </span><br/><span>    </span><span class="tsd-kind-property">value</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-property">wrapperType</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type ">SerializableWrapper</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-call-signature">deserialize</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">buffer</span>, <span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-call-signature">getSerializedLength</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-call-signature">serialize</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type ">Buffer</span><span class="tsd-signature-symbol">; </span><br/><span>    </span><span class="tsd-kind-call-signature">toJSON</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span>
 <ul class="tsd-hierarchy">
-<li><span class="target">DlpReadStorageInfoRespType</span></li></ul></li></ul></section><aside class="tsd-sources">
+<li><span class="target">DlpRecordAttrs</span></li></ul></li></ul></section><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L664">src/protocols/dlp-commands.ts:664</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L1256">src/protocols/dlp-commands.ts:1256</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-index-accordion" open><summary class="tsd-accordion-summary tsd-index-summary">
@@ -34,142 +40,108 @@
 <div class="tsd-accordion-details">
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Constructors</h3>
-<div class="tsd-index-list"><a href="DlpReadStorageInfoRespType.html#constructor" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-512"><rect fill="var(--color-icon-background)" stroke="#4D7FFF" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12"></rect><path d="M11.898 16.1201C11.098 16.1201 10.466 15.8961 10.002 15.4481C9.53803 15.0001 9.30603 14.3841 9.30603 13.6001V9.64012C9.30603 8.85612 9.53803 8.24012 10.002 7.79212C10.466 7.34412 11.098 7.12012 11.898 7.12012C12.682 7.12012 13.306 7.34812 13.77 7.80412C14.234 8.25212 14.466 8.86412 14.466 9.64012H13.386C13.386 9.14412 13.254 8.76412 12.99 8.50012C12.734 8.22812 12.37 8.09212 11.898 8.09212C11.426 8.09212 11.054 8.22412 10.782 8.48812C10.518 8.75212 10.386 9.13212 10.386 9.62812V13.6001C10.386 14.0961 10.518 14.4801 10.782 14.7521C11.054 15.0161 11.426 15.1481 11.898 15.1481C12.37 15.1481 12.734 15.0161 12.99 14.7521C13.254 14.4801 13.386 14.0961 13.386 13.6001H14.466C14.466 14.3761 14.234 14.9921 13.77 15.4481C13.306 15.8961 12.682 16.1201 11.898 16.1201Z" fill="var(--color-text)"></path></g></svg><span>constructor</span></a>
+<div class="tsd-index-list"><a href="DlpRecordAttrs.html#constructor" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-512"><rect fill="var(--color-icon-background)" stroke="#4D7FFF" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12"></rect><path d="M11.898 16.1201C11.098 16.1201 10.466 15.8961 10.002 15.4481C9.53803 15.0001 9.30603 14.3841 9.30603 13.6001V9.64012C9.30603 8.85612 9.53803 8.24012 10.002 7.79212C10.466 7.34412 11.098 7.12012 11.898 7.12012C12.682 7.12012 13.306 7.34812 13.77 7.80412C14.234 8.25212 14.466 8.86412 14.466 9.64012H13.386C13.386 9.14412 13.254 8.76412 12.99 8.50012C12.734 8.22812 12.37 8.09212 11.898 8.09212C11.426 8.09212 11.054 8.22412 10.782 8.48812C10.518 8.75212 10.386 9.13212 10.386 9.62812V13.6001C10.386 14.0961 10.518 14.4801 10.782 14.7521C11.054 15.0161 11.426 15.1481 11.898 15.1481C12.37 15.1481 12.734 15.0161 12.99 14.7521C13.254 14.4801 13.386 14.0961 13.386 13.6001H14.466C14.466 14.3761 14.234 14.9921 13.77 15.4481C13.306 15.8961 12.682 16.1201 11.898 16.1201Z" fill="var(--color-text)"></path></g></svg><span>constructor</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Properties</h3>
-<div class="tsd-index-list"><a href="DlpReadStorageInfoRespType.html#cardInfo" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-1024"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)"></path></g></svg><span>card<wbr/>Info</span></a>
-<a href="DlpReadStorageInfoRespType.html#errorCode" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>error<wbr/>Code</span></a>
-<a href="DlpReadStorageInfoRespType.html#funcId" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>func<wbr/>Id</span></a>
-<a href="DlpReadStorageInfoRespType.html#lastCardNo" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>last<wbr/>Card<wbr/>No</span></a>
-<a href="DlpReadStorageInfoRespType.html#more" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>more</span></a>
-<a href="DlpReadStorageInfoRespType.html#ramDBCount" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>ramDBCount</span></a>
-<a href="DlpReadStorageInfoRespType.html#romDBCount" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>romDBCount</span></a>
-</div></section>
-<section class="tsd-index-section">
-<h3 class="tsd-index-heading">Accessors</h3>
-<div class="tsd-index-list"><a href="DlpReadStorageInfoRespType.html#errorMessage" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-262144"><rect fill="var(--color-icon-background)" stroke="#FF4D4D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12"></rect><path d="M8.85 16L11.13 7.24H12.582L14.85 16H13.758L13.182 13.672H10.53L9.954 16H8.85ZM10.746 12.76H12.954L12.282 10.06C12.154 9.548 12.054 9.12 11.982 8.776C11.91 8.432 11.866 8.208 11.85 8.104C11.834 8.208 11.79 8.432 11.718 8.776C11.646 9.12 11.546 9.544 11.418 10.048L10.746 12.76Z" fill="var(--color-text)"></path></g></svg><span>error<wbr/>Message</span></a>
+<div class="tsd-index-list"><a href="DlpRecordAttrs.html#archive" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-1024"><rect fill="var(--color-icon-background)" stroke="#FF984D" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12"></rect><path d="M9.354 16V7.24H12.174C12.99 7.24 13.638 7.476 14.118 7.948C14.606 8.412 14.85 9.036 14.85 9.82C14.85 10.604 14.606 11.232 14.118 11.704C13.638 12.168 12.99 12.4 12.174 12.4H10.434V16H9.354ZM10.434 11.428H12.174C12.646 11.428 13.022 11.284 13.302 10.996C13.59 10.7 13.734 10.308 13.734 9.82C13.734 9.324 13.59 8.932 13.302 8.644C13.022 8.356 12.646 8.212 12.174 8.212H10.434V11.428Z" fill="var(--color-text)"></path></g></svg><span>archive</span></a>
+<a href="DlpRecordAttrs.html#busy" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>busy</span></a>
+<a href="DlpRecordAttrs.html#delete" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>delete</span></a>
+<a href="DlpRecordAttrs.html#dirty" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>dirty</span></a>
+<a href="DlpRecordAttrs.html#secret" class="tsd-index-link"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>secret</span></a>
+<a href="DlpRecordAttrs.html#value" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>value</span></a>
+<a href="DlpRecordAttrs.html#wrapperType" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>wrapper<wbr/>Type</span></a>
 </div></section>
 <section class="tsd-index-section">
 <h3 class="tsd-index-heading">Methods</h3>
-<div class="tsd-index-list"><a href="DlpReadStorageInfoRespType.html#assignFromSerializable" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-2048"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)"></path></g></svg><span>assign<wbr/>From<wbr/>Serializable</span></a>
-<a href="DlpReadStorageInfoRespType.html#deserialize" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>deserialize</span></a>
-<a href="DlpReadStorageInfoRespType.html#getSerializedLength" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>get<wbr/>Serialized<wbr/>Length</span></a>
-<a href="DlpReadStorageInfoRespType.html#mapValuesToSerializable" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>map<wbr/>Values<wbr/>To<wbr/>Serializable</span></a>
-<a href="DlpReadStorageInfoRespType.html#serialize" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>serialize</span></a>
-<a href="DlpReadStorageInfoRespType.html#toJSON" class="tsd-index-link tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>toJSON</span></a>
-<a href="DlpReadStorageInfoRespType.html#from" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>from</span></a>
-<a href="DlpReadStorageInfoRespType.html#with" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>with</span></a>
+<div class="tsd-index-list"><a href="DlpRecordAttrs.html#deserialize" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-2048"><rect fill="var(--color-icon-background)" stroke="#FF4DB8" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="12"></rect><path d="M9.162 16V7.24H10.578L11.514 10.072C11.602 10.328 11.674 10.584 11.73 10.84C11.794 11.088 11.842 11.28 11.874 11.416C11.906 11.28 11.954 11.088 12.018 10.84C12.082 10.584 12.154 10.324 12.234 10.06L13.122 7.24H14.538V16H13.482V12.82C13.482 12.468 13.49 12.068 13.506 11.62C13.53 11.172 13.558 10.716 13.59 10.252C13.622 9.78 13.654 9.332 13.686 8.908C13.726 8.476 13.762 8.1 13.794 7.78L12.366 12.16H11.334L9.894 7.78C9.934 8.092 9.97 8.456 10.002 8.872C10.042 9.28 10.078 9.716 10.11 10.18C10.142 10.636 10.166 11.092 10.182 11.548C10.206 12.004 10.218 12.428 10.218 12.82V16H9.162Z" fill="var(--color-text)"></path></g></svg><span>deserialize</span></a>
+<a href="DlpRecordAttrs.html#getSerializedLength" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>get<wbr/>Serialized<wbr/>Length</span></a>
+<a href="DlpRecordAttrs.html#serialize" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>serialize</span></a>
+<a href="DlpRecordAttrs.html#toJSON" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>toJSON</span></a>
+<a href="DlpRecordAttrs.html#from" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>from</span></a>
+<a href="DlpRecordAttrs.html#of" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>of</span></a>
+<a href="DlpRecordAttrs.html#with" class="tsd-index-link tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>with</span></a>
 </div></section></div></details></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Constructors</h2>
-<section class="tsd-panel tsd-member tsd-is-inherited"><a id="constructor" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="constructor" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>constructor</span><a href="#constructor" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><g stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" id="icon-anchor"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path></g></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="constructor.new_DlpReadStorageInfoRespType"><span class="tsd-kind-constructor-signature">new <wbr/>Dlp<wbr/>Read<wbr/>Storage<wbr/>Info<wbr/>Resp<wbr/>Type</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="DlpReadStorageInfoRespType.html" class="tsd-signature-type tsd-kind-class">DlpReadStorageInfoRespType</a><a href="#constructor.new_DlpReadStorageInfoRespType" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
+<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
+<li class="tsd-signature tsd-anchor-link" id="constructor.new_DlpRecordAttrs"><span class="tsd-kind-constructor-signature">new <wbr/>Dlp<wbr/>Record<wbr/>Attrs</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="DlpRecordAttrs.html" class="tsd-signature-type tsd-kind-class">DlpRecordAttrs</a><a href="#constructor.new_DlpRecordAttrs" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <a href="DlpReadStorageInfoRespType.html" class="tsd-signature-type tsd-kind-class">DlpReadStorageInfoRespType</a></h4><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#constructor">constructor</a></p></aside></li></ul></section></section>
+<h4 class="tsd-returns-title">Returns <a href="DlpRecordAttrs.html" class="tsd-signature-type tsd-kind-class">DlpRecordAttrs</a></h4><aside class="tsd-sources">
+<p>Inherited from SBitmask.of(SUInt8).constructor</p>
+<ul>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:23</li></ul></aside></li></ul></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Properties</h2>
-<section class="tsd-panel tsd-member"><a id="cardInfo" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>card<wbr/>Info</span><a href="#cardInfo" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">card<wbr/>Info</span><span class="tsd-signature-symbol">:</span> <a href="DlpCardInfoType.html" class="tsd-signature-type tsd-kind-class">DlpCardInfoType</a><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol"> = []</span></div><aside class="tsd-sources">
-<ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L679">src/protocols/dlp-commands.ts:679</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member tsd-is-inherited"><a id="errorCode" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>error<wbr/>Code</span><a href="#errorCode" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">error<wbr/>Code</span><span class="tsd-signature-symbol">:</span> <a href="../enums/DlpRespErrorCode.html" class="tsd-signature-type tsd-kind-enum">DlpRespErrorCode</a><span class="tsd-signature-symbol"> = DlpRespErrorCode.NONE</span></div>
-<div class="tsd-comment tsd-typography"><p>Error code.</p>
-</div>
-<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#errorCode">errorCode</a></p>
-<ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-protocol.ts#L181">src/protocols/dlp-protocol.ts:181</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member"><a id="funcId" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>func<wbr/>Id</span><a href="#funcId" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">func<wbr/>Id</span><span class="tsd-signature-symbol">:</span> <a href="../enums/DlpFuncId.html" class="tsd-signature-type tsd-kind-enum">DlpFuncId</a><span class="tsd-signature-symbol"> = DlpFuncId.ReadStorageInfo</span></div>
-<div class="tsd-comment tsd-typography"><p>Expected DLP function ID.</p>
-</div>
-<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
-<p>Overrides <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#funcId">funcId</a></p>
-<ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L665">src/protocols/dlp-commands.ts:665</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member"><a id="lastCardNo" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>last<wbr/>Card<wbr/>No</span><a href="#lastCardNo" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">last<wbr/>Card<wbr/>No</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
-<div class="tsd-comment tsd-typography"><p>Card number of lats card retrieved.</p>
+<section class="tsd-panel tsd-member"><a id="archive" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>archive</span><a href="#archive" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">archive</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+<div class="tsd-comment tsd-typography"><p>Record is archived.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L669">src/protocols/dlp-commands.ts:669</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member"><a id="more" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>more</span><a href="#more" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">more</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
-<div class="tsd-comment tsd-typography"><p>Non-zero if there are more cards.</p>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L1275">src/protocols/dlp-commands.ts:1275</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member"><a id="busy" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>busy</span><a href="#busy" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">busy</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+<div class="tsd-comment tsd-typography"><p>Record currently in use.</p>
+<p>This bit may also indicate the record has been deleted -- see comments in
+<a href="https://github.com/dwery/coldsync/blob/master/include/pdb.h">https://github.com/dwery/coldsync/blob/master/include/pdb.h</a> .</p>
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L673">src/protocols/dlp-commands.ts:673</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member"><a id="ramDBCount" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>ramDBCount</span><a href="#ramDBCount" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">ramDBCount</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
-<div class="tsd-comment tsd-typography"><p>RAM database count.</p>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L1269">src/protocols/dlp-commands.ts:1269</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member"><a id="delete" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>delete</span><a href="#delete" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">delete</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+<div class="tsd-comment tsd-typography"><p>Record has been deleted.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L689">src/protocols/dlp-commands.ts:689</a></li></ul></aside></section>
-<section class="tsd-panel tsd-member"><a id="romDBCount" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>romDBCount</span><a href="#romDBCount" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<div class="tsd-signature"><span class="tsd-kind-property">romDBCount</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol"> = 0</span></div>
-<div class="tsd-comment tsd-typography"><p>ROM database count.</p>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L1259">src/protocols/dlp-commands.ts:1259</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member"><a id="dirty" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>dirty</span><a href="#dirty" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">dirty</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+<div class="tsd-comment tsd-typography"><p>Record has been modified.</p>
 </div>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L685">src/protocols/dlp-commands.ts:685</a></li></ul></aside></section></section>
-<section class="tsd-panel-group tsd-member-group">
-<h2>Accessors</h2>
-<section class="tsd-panel tsd-member tsd-is-inherited"><a id="errorMessage" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>error<wbr/>Message</span><a href="#errorMessage" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
-<li class="tsd-signature" id="errorMessage.errorMessage-1"><span class="tsd-signature-symbol">get</span> errorMessage<span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></li>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L1262">src/protocols/dlp-commands.ts:1262</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member"><a id="secret" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>secret</span><a href="#secret" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">secret</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">boolean</span><span class="tsd-signature-symbol"> = false</span></div>
+<div class="tsd-comment tsd-typography"><p>&quot;Secret&quot; record - password protected.</p>
+</div>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
+<ul>
+<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-commands.ts#L1272">src/protocols/dlp-commands.ts:1272</a></li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="value" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>value</span><a href="#value" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">value</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span></div><aside class="tsd-sources">
+<p>Inherited from SBitmask.of(SUInt8).value</p>
+<ul>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:25</li></ul></aside></section>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="wrapperType" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><span>wrapper<wbr/>Type</span><a href="#wrapperType" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<div class="tsd-signature"><span class="tsd-kind-property">wrapper<wbr/>Type</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type ">SerializableWrapper</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span></div>
+<div class="tsd-type-declaration">
+<h4>Type declaration</h4>
+<ul class="tsd-parameters">
+<li class="tsd-parameter-signature">
+<ul class="tsd-signatures tsd-is-external">
+<li class="tsd-signature" id="wrapperType.__type.new_wrapperType"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">SerializableWrapper</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Human-readable error message corresponding to status.</p>
-</div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">string</span></h4>
-<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
-<p>Inherited from DlpResponse.errorMessage</p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type ">SerializableWrapper</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4></li></ul></li></ul></div><aside class="tsd-sources">
+<p>Inherited from SBitmask.of(SUInt8).wrapperType</p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-protocol.ts#L183">src/protocols/dlp-protocol.ts:183</a></li></ul></aside></li></ul></section></section>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:24</li></ul></aside></section></section>
 <section class="tsd-panel-group tsd-member-group">
 <h2>Methods</h2>
-<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="assignFromSerializable" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>assign<wbr/>From<wbr/>Serializable</span><a href="#assignFromSerializable" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
-<li class="tsd-signature tsd-anchor-link" id="assignFromSerializable.assignFromSerializable-1"><span class="tsd-kind-call-signature">assign<wbr/>From<wbr/>Serializable</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">serializableMap</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">void</span><a href="#assignFromSerializable.assignFromSerializable-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Assign properties to this object from a map of Serializables.</p>
-<p>Conceptually equivalent to Object.assign(), but automatically unwraps
-wrapped properties. Fields defined with <code>@field()</code> are directly assigned,
-and fields defined with <code>@field(wrapper)</code> are assigned by unwrapping the
-corresponding SerializableWrapper. Unknown fields are ignored.</p>
-</div>
-<div class="tsd-parameters">
-<h4 class="tsd-parameters-title">Parameters</h4>
-<ul class="tsd-parameter-list">
-<li>
-<h5><span class="tsd-kind-parameter">serializableMap</span>: <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[<span class="tsd-kind-index-signature">propertyKey</span>: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Serializable</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></h5>
-<ul class="tsd-parameters">
-<li class="tsd-parameter-index-signature">
-<h5><span class="tsd-signature-symbol">[</span><span class="tsd-kind-parameter">propertyKey</span>: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type ">Serializable</span></h5></li></ul></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
-<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#assignFromSerializable">assignFromSerializable</a></p>
-<ul>
-<li>Defined in node_modules/serio/dist/serializable-objects.d.ts:26</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited"><a id="deserialize" class="tsd-anchor"></a>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="deserialize" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>deserialize</span><a href="#deserialize" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
+<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
 <li class="tsd-signature tsd-anchor-link" id="deserialize.deserialize-1"><span class="tsd-kind-call-signature">deserialize</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">buffer</span>, <span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><a href="#deserialize.deserialize-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
@@ -180,12 +152,12 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">opts</span>: <span class="tsd-signature-type ">DeserializeOptions</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#deserialize">deserialize</a></p>
+<p>Inherited from SBitmask.of(SUInt8).deserialize</p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-protocol.ts#L187">src/protocols/dlp-protocol.ts:187</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited"><a id="getSerializedLength" class="tsd-anchor"></a>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:26</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="getSerializedLength" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>get<wbr/>Serialized<wbr/>Length</span><a href="#getSerializedLength" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
+<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
 <li class="tsd-signature tsd-anchor-link" id="getSerializedLength.getSerializedLength-1"><span class="tsd-kind-call-signature">get<wbr/>Serialized<wbr/>Length</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span><a href="#getSerializedLength.getSerializedLength-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
@@ -194,29 +166,12 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">opts</span>: <span class="tsd-signature-type ">SerializeOptions</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">number</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#getSerializedLength">getSerializedLength</a></p>
+<p>Inherited from SBitmask.of(SUInt8).getSerializedLength</p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-protocol.ts#L239">src/protocols/dlp-protocol.ts:239</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="mapValuesToSerializable" class="tsd-anchor"></a>
-<h3 class="tsd-anchor-link"><span>map<wbr/>Values<wbr/>To<wbr/>Serializable</span><a href="#mapValuesToSerializable" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
-<li class="tsd-signature tsd-anchor-link" id="mapValuesToSerializable.mapValuesToSerializable-1"><span class="tsd-kind-call-signature">map<wbr/>Values<wbr/>To<wbr/>Serializable</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-symbol">{ </span><br/><span>    </span>[<span class="tsd-kind-index-signature">propertyKey</span>: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Serializable</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span><a href="#mapValuesToSerializable.mapValuesToSerializable-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
-<li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Map values of this object to Serializable.</p>
-<p>Fields defined with <code>@field()</code> are preserved as-is, and field defined with
-<code>@field(wrapper)</code> are wrapped in their respective wrapper types.</p>
-</div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-symbol">{ </span><br/><span>    </span>[<span class="tsd-kind-index-signature">propertyKey</span>: <span class="tsd-signature-type">string</span>]<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Serializable</span><span class="tsd-signature-symbol">; </span><br/><span class="tsd-signature-symbol">}</span></h4>
-<ul class="tsd-parameters">
-<li class="tsd-parameter-index-signature">
-<h5><span class="tsd-signature-symbol">[</span><span class="tsd-kind-parameter">propertyKey</span>: <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">]: </span><span class="tsd-signature-type ">Serializable</span></h5></li></ul>
-<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#mapValuesToSerializable">mapValuesToSerializable</a></p>
-<ul>
-<li>Defined in node_modules/serio/dist/serializable-objects.d.ts:16</li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited"><a id="serialize" class="tsd-anchor"></a>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:28</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="serialize" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>serialize</span><a href="#serialize" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
+<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
 <li class="tsd-signature tsd-anchor-link" id="serialize.serialize-1"><span class="tsd-kind-call-signature">serialize</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Buffer</span><a href="#serialize.serialize-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
 <div class="tsd-parameters">
@@ -225,50 +180,97 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <li>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">opts</span>: <span class="tsd-signature-type ">SerializeOptions</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type ">Buffer</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#serialize">serialize</a></p>
+<p>Inherited from SBitmask.of(SUInt8).serialize</p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-protocol.ts#L227">src/protocols/dlp-protocol.ts:227</a></li></ul></aside></li></ul></section>
-<section class="tsd-panel tsd-member tsd-is-inherited"><a id="toJSON" class="tsd-anchor"></a>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:27</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="toJSON" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><span>toJSON</span><a href="#toJSON" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
-<ul class="tsd-signatures tsd-is-inherited">
-<li class="tsd-signature tsd-anchor-link" id="toJSON.toJSON-1"><span class="tsd-kind-call-signature">toJSON</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">Object</span><a href="#toJSON.toJSON-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
+<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
+<li class="tsd-signature tsd-anchor-link" id="toJSON.toJSON-1"><span class="tsd-kind-call-signature">toJSON</span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><a href="#toJSON.toJSON-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type ">Object</span></h4><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#toJSON">toJSON</a></p>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4><aside class="tsd-sources">
+<p>Inherited from SBitmask.of(SUInt8).toJSON</p>
 <ul>
-<li>Defined in <a href="https://github.com/jichu4n/palm-sync/blob/7e4b2c4/src/protocols/dlp-protocol.ts#L245">src/protocols/dlp-protocol.ts:245</a></li></ul></aside></li></ul></section>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:29</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="from" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <span>from</span><a href="#from" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited tsd-is-external">
-<li class="tsd-signature tsd-anchor-link" id="from.from-1"><span class="tsd-kind-call-signature">from</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span>, <span class="tsd-kind-parameter">buffer</span>, <span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><a href="#from.from-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
+<li class="tsd-signature tsd-anchor-link" id="from.from-1"><span class="tsd-kind-call-signature">from</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">T_1</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span>, <span class="tsd-kind-parameter">buffer</span>, <span class="tsd-kind-parameter">opts</span><span class="tsd-signature-symbol">?</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type tsd-kind-type-parameter">T_1</span><a href="#from.from-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
 <li class="tsd-description">
-<div class="tsd-comment tsd-typography"><p>Creates a new instance of this value by deserializing from a buffer.</p>
+<section class="tsd-panel">
+<h4>Type Parameters</h4>
+<ul class="tsd-type-parameter-list">
+<li>
+<h4><span class="tsd-kind-type-parameter">T_1</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type ">Serializable</span></h4></li></ul></section>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5><span class="tsd-kind-parameter">this</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type tsd-kind-type-parameter">T_1</span><span class="tsd-signature-symbol">)</span></h5>
+<ul class="tsd-parameters">
+<li class="tsd-parameter-signature">
+<ul class="tsd-signatures tsd-is-external">
+<li class="tsd-signature"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type tsd-kind-type-parameter">T_1</span></li>
+<li class="tsd-description">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">T_1</span></h4></li></ul></li></ul></li>
+<li>
+<h5><span class="tsd-kind-parameter">buffer</span>: <span class="tsd-signature-type ">Buffer</span></h5></li>
+<li>
+<h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">opts</span>: <span class="tsd-signature-type ">DeserializeOptions</span></h5></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">T_1</span></h4><aside class="tsd-sources">
+<p>Inherited from SBitmask.of(SUInt8).from</p>
+<ul>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:37</li></ul></aside></li></ul></section>
+<section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="of" class="tsd-anchor"></a>
+<h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <span>of</span><a href="#of" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
+<ul class="tsd-signatures tsd-is-inherited tsd-is-external">
+<li class="tsd-signature tsd-anchor-link" id="of.of-1"><span class="tsd-kind-call-signature">of</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">SBitmaskT</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">this</span>, <span class="tsd-kind-parameter">value</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type tsd-kind-type-parameter">SBitmaskT</span><a href="#of.of-1" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Create a new instance of this wrapper class from a raw value.</p>
 </div>
 <section class="tsd-panel">
 <h4>Type Parameters</h4>
 <ul class="tsd-type-parameter-list">
 <li>
-<h4><span class="tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type ">Serializable</span></h4></li></ul></section>
+<h4><span class="tsd-kind-type-parameter">SBitmaskT</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type ">SBitmask</span></h4></li></ul></section>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
 <li>
-<h5><span class="tsd-kind-parameter">this</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol">)</span></h5>
+<h5><span class="tsd-kind-parameter">this</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type tsd-kind-type-parameter">SBitmaskT</span><span class="tsd-signature-symbol">)</span></h5>
 <ul class="tsd-parameters">
 <li class="tsd-parameter-signature">
 <ul class="tsd-signatures tsd-is-external">
-<li class="tsd-signature"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type tsd-kind-type-parameter">T</span></li>
+<li class="tsd-signature"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type tsd-kind-type-parameter">SBitmaskT</span></li>
 <li class="tsd-description">
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">T</span></h4></li></ul></li></ul></li>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">SBitmaskT</span></h4></li></ul></li></ul></li>
 <li>
-<h5><span class="tsd-kind-parameter">buffer</span>: <span class="tsd-signature-type ">Buffer</span></h5></li>
-<li>
-<h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">opts</span>: <span class="tsd-signature-type ">DeserializeOptions</span></h5></li></ul></div>
-<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">T</span></h4>
+<h5><span class="tsd-kind-parameter">value</span>: <span class="tsd-signature-type">number</span></h5></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">SBitmaskT</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#from">from</a></p>
+<p>Inherited from SBitmask.of(SUInt8).of</p>
 <ul>
-<li>Defined in node_modules/serio/dist/serializable.d.ts:35</li></ul></aside></li></ul></section>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:32</li></ul></aside></li>
+<li class="tsd-signature tsd-anchor-link" id="of.of-2"><span class="tsd-kind-call-signature">of</span><span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">wrapperType</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">any</span><a href="#of.of-2" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></li>
+<li class="tsd-description">
+<div class="tsd-comment tsd-typography"><p>Create a new instance of this wrapper class from a raw value.</p>
+</div>
+<div class="tsd-parameters">
+<h4 class="tsd-parameters-title">Parameters</h4>
+<ul class="tsd-parameter-list">
+<li>
+<h5><span class="tsd-kind-parameter">wrapperType</span>: <span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol"> =&gt; </span><span class="tsd-signature-type ">SerializableWrapper</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol">)</span></h5>
+<ul class="tsd-parameters">
+<li class="tsd-parameter-signature">
+<ul class="tsd-signatures tsd-is-external">
+<li class="tsd-signature"><span class="tsd-signature-symbol">new </span><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type ">SerializableWrapper</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></li>
+<li class="tsd-description">
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type ">SerializableWrapper</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">&gt;</span></h4></li></ul></li></ul></li></ul></div>
+<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">any</span></h4>
+<div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
+<p>Inherited from SBitmask.of(SUInt8).of</p>
+<ul>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:34</li></ul></aside></li></ul></section>
 <section class="tsd-panel tsd-member tsd-is-inherited tsd-is-external"><a id="with" class="tsd-anchor"></a>
 <h3 class="tsd-anchor-link"><code class="tsd-tag ts-flagStatic">Static</code> <span>with</span><a href="#with" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24"><use href="#icon-anchor"></use></svg></a></h3>
 <ul class="tsd-signatures tsd-is-inherited tsd-is-external">
@@ -280,7 +282,7 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <h4>Type Parameters</h4>
 <ul class="tsd-type-parameter-list">
 <li>
-<h4><span class="tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type ">SObject</span></h4></li></ul></section>
+<h4><span class="tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol"> extends </span><span class="tsd-signature-type ">SBitmask</span></h4></li></ul></section>
 <div class="tsd-parameters">
 <h4 class="tsd-parameters-title">Parameters</h4>
 <ul class="tsd-parameter-list">
@@ -296,9 +298,9 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <h5><code class="tsd-tag ts-flagOptional">Optional</code> <span class="tsd-kind-parameter">props</span>: <span class="tsd-signature-type ">Partial</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type tsd-kind-type-parameter">T</span><span class="tsd-signature-symbol">&gt;</span></h5></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type tsd-kind-type-parameter">T</span></h4>
 <div class="tsd-comment tsd-typography"></div><aside class="tsd-sources">
-<p>Inherited from <a href="DlpResponse.html">DlpResponse</a>.<a href="DlpResponse.html#with">with</a></p>
+<p>Inherited from SBitmask.of(SUInt8).with</p>
 <ul>
-<li>Defined in node_modules/serio/dist/serializable-objects.d.ts:10</li></ul></aside></li></ul></section></section></div>
+<li>Defined in node_modules/serio/dist/serializable-bitmasks.d.ts:36</li></ul></aside></li></ul></section></section></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
@@ -317,22 +319,20 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><use href="#icon-chevronDown"></use></svg>On This Page</h3></summary>
 <div class="tsd-accordion-details">
 <ul>
-<li><a href="#constructor" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-512"></use></svg><span>constructor</span></a></li>
-<li><a href="#cardInfo" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>card<wbr/>Info</span></a></li>
-<li><a href="#errorCode" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>error<wbr/>Code</span></a></li>
-<li><a href="#funcId" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>func<wbr/>Id</span></a></li>
-<li><a href="#lastCardNo" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>last<wbr/>Card<wbr/>No</span></a></li>
-<li><a href="#more" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>more</span></a></li>
-<li><a href="#ramDBCount" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>ramDBCount</span></a></li>
-<li><a href="#romDBCount" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>romDBCount</span></a></li>
-<li><a href="#errorMessage" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-262144"></use></svg><span>error<wbr/>Message</span></a></li>
-<li><a href="#assignFromSerializable" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>assign<wbr/>From<wbr/>Serializable</span></a></li>
-<li><a href="#deserialize" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>deserialize</span></a></li>
-<li><a href="#getSerializedLength" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>get<wbr/>Serialized<wbr/>Length</span></a></li>
-<li><a href="#mapValuesToSerializable" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>map<wbr/>Values<wbr/>To<wbr/>Serializable</span></a></li>
-<li><a href="#serialize" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>serialize</span></a></li>
-<li><a href="#toJSON" class="tsd-is-inherited"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>toJSON</span></a></li>
+<li><a href="#constructor" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-512"></use></svg><span>constructor</span></a></li>
+<li><a href="#archive" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>archive</span></a></li>
+<li><a href="#busy" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>busy</span></a></li>
+<li><a href="#delete" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>delete</span></a></li>
+<li><a href="#dirty" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>dirty</span></a></li>
+<li><a href="#secret" class=""><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>secret</span></a></li>
+<li><a href="#value" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>value</span></a></li>
+<li><a href="#wrapperType" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-1024"></use></svg><span>wrapper<wbr/>Type</span></a></li>
+<li><a href="#deserialize" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>deserialize</span></a></li>
+<li><a href="#getSerializedLength" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>get<wbr/>Serialized<wbr/>Length</span></a></li>
+<li><a href="#serialize" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>serialize</span></a></li>
+<li><a href="#toJSON" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>toJSON</span></a></li>
 <li><a href="#from" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>from</span></a></li>
+<li><a href="#of" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>of</span></a></li>
 <li><a href="#with" class="tsd-is-inherited tsd-is-external"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-2048"></use></svg><span>with</span></a></li></ul></div></details></div>
 <div class="site-menu">
 <nav class="tsd-navigation"><a href="../modules.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><g id="icon-4"><rect fill="var(--color-icon-background)" stroke="var(--color-ts-namespace)" stroke-width="1.5" x="1" y="1" width="22" height="22" rx="6"></rect><path d="M9.33 16V7.24H10.77L13.446 14.74C13.43 14.54 13.41 14.296 13.386 14.008C13.37 13.712 13.354 13.404 13.338 13.084C13.33 12.756 13.326 12.448 13.326 12.16V7.24H14.37V16H12.93L10.266 8.5C10.282 8.692 10.298 8.936 10.314 9.232C10.33 9.52 10.342 9.828 10.35 10.156C10.366 10.476 10.374 10.784 10.374 11.08V16H9.33Z" fill="var(--color-text)"></path></g></svg><span>palm-<wbr/>sync</span></a>
@@ -429,12 +429,12 @@ corresponding SerializableWrapper. Unknown fields are ignored.</p>
 <li><a href="DlpReadSortBlockReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>Sort<wbr/>Block<wbr/>Req<wbr/>Type</span></a></li>
 <li><a href="DlpReadSortBlockRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>Sort<wbr/>Block<wbr/>Resp<wbr/>Type</span></a></li>
 <li><a href="DlpReadStorageInfoReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>Storage<wbr/>Info<wbr/>Req<wbr/>Type</span></a></li>
-<li><a href="DlpReadStorageInfoRespType.html" class="current"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>Storage<wbr/>Info<wbr/>Resp<wbr/>Type</span></a></li>
+<li><a href="DlpReadStorageInfoRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>Storage<wbr/>Info<wbr/>Resp<wbr/>Type</span></a></li>
 <li><a href="DlpReadSysInfoReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>Sys<wbr/>Info<wbr/>Req<wbr/>Type</span></a></li>
 <li><a href="DlpReadSysInfoRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>Sys<wbr/>Info<wbr/>Resp<wbr/>Type</span></a></li>
 <li><a href="DlpReadUserInfoReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>User<wbr/>Info<wbr/>Req<wbr/>Type</span></a></li>
 <li><a href="DlpReadUserInfoRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Read<wbr/>User<wbr/>Info<wbr/>Resp<wbr/>Type</span></a></li>
-<li><a href="DlpRecordAttrs.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Record<wbr/>Attrs</span></a></li>
+<li><a href="DlpRecordAttrs.html" class="current"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Record<wbr/>Attrs</span></a></li>
 <li><a href="DlpRequest.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Request</span></a></li>
 <li><a href="DlpResetRecordIndexReqType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Reset<wbr/>Record<wbr/>Index<wbr/>Req<wbr/>Type</span></a></li>
 <li><a href="DlpResetRecordIndexRespType.html"><svg class="tsd-kind-icon" viewBox="0 0 24 24"><use href="#icon-128"></use></svg><span>Dlp<wbr/>Reset<wbr/>Record<wbr/>Index<wbr/>Resp<wbr/>Type</span></a></li>
