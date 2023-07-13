@@ -40,6 +40,7 @@ import {
   DlpReadResourceByIndexReqType,
   DlpReadResourceRespType,
   DlpReadSortBlockReqType,
+  DlpRecordAttrs,
 } from '../protocols/dlp-commands';
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
@@ -403,21 +404,40 @@ export function createDatabaseHeaderFromDlpDBInfoType(
   });
 }
 
+/** Convert DlpRecordAttrs and category to RecordAttrs for use in PDB files. */
+export function convertToRecordAttrs(
+  dlpAttrs: DlpRecordAttrs,
+  category: number,
+  log?: (msg: string) => void
+): RecordAttrs {
+  const pdbAttrs = new RecordAttrs();
+  pdbAttrs.delete = dlpAttrs.delete;
+  pdbAttrs.dirty = dlpAttrs.dirty;
+  pdbAttrs.busy = dlpAttrs.busy;
+  pdbAttrs.secret = dlpAttrs.secret;
+  if (dlpAttrs.archive) {
+    // In PDB files, the lowest 4 bits are overloaded to both store the archive
+    // bit and the category, and the way to distinguish between the two cases is
+    // to check the `delete` or the `busy` bit. So we'll set the busy bit here
+    // in order to preserve the archive bit.
+    if (!(dlpAttrs.delete || dlpAttrs.busy)) {
+      pdbAttrs.busy = true;
+    }
+    pdbAttrs.archive = true;
+  } else if (!(dlpAttrs.delete || dlpAttrs.busy)) {
+    pdbAttrs.category = category;
+  }
+  return pdbAttrs;
+}
+
 /** Convert DlpReadRecordRespType to RawPdbRecord. */
 export function createRawPdbRecordFromReadRecordResp(
   resp: DlpReadRecordRespType
 ): RawPdbRecord {
-  const attributes = RecordAttrs.with({...resp.attributes});
-  if (!attributes.delete && !attributes.busy) {
-    attributes.category = resp.category;
-  } else if (resp.category) {
-    log(
-      `Warning: Record #${resp.index} (${resp.recordId}) ` +
-        `has category ${resp.category} but is deleted or busy`
-    );
-  }
   const entry = RecordEntryType.with({
-    attributes,
+    attributes: convertToRecordAttrs(resp.attributes, resp.category, (msg) =>
+      log(`Record ${resp.recordId}: ${msg}`)
+    ),
     uniqueId: resp.recordId,
   });
   return RawPdbRecord.with({entry, data: resp.data});

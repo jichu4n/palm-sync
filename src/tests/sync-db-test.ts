@@ -128,7 +128,7 @@ const SYNC_TEST_CASES: Array<SyncTestCase> = [
   {
     device: ['Archived & changed', {delete: true, archive: true, dirty: true}],
     desktop: ['Changed', {dirty: true}],
-    result: ['Archived & changed', 'changed'],
+    result: ['Archived & changed', 'Changed'],
   },
 
   {

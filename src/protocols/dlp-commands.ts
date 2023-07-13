@@ -1243,6 +1243,41 @@ export class DlpReadNextModifiedRecReqType extends DlpRequest<DlpReadNextModifie
   dbId = 0;
 }
 
+/** Record attribute flags in the DLP protocol.
+ *
+ * In the DLP protocol, we use one byte to store record attribute flags and
+ * another byte to store the record category. However, in PDB files, we use a
+ * single byte is used to store both attribute flags and the record category.
+ *
+ * See
+ * [RecordAttrs](https://jichu4n.github.io/palm-pdb/classes/RecordAttrs.html)
+ * for more context.
+ */
+export class DlpRecordAttrs extends SBitmask.of(SUInt8) {
+  /** Record has been deleted. */
+  @bitfield(1)
+  delete = false;
+  /** Record has been modified. */
+  @bitfield(1)
+  dirty = false;
+  /** Record currently in use.
+   *
+   * This bit may also indicate the record has been deleted -- see comments in
+   * https://github.com/dwery/coldsync/blob/master/include/pdb.h .
+   */
+  @bitfield(1)
+  busy = false;
+  /** "Secret" record - password protected. */
+  @bitfield(1)
+  secret = false;
+  /** Record is archived. */
+  @bitfield(1)
+  archive = false;
+
+  @bitfield(3)
+  private padding1 = 0;
+}
+
 /** DLP response for {@link DlpReadRecordByIDReqType} and {@link DlpReadRecordByIndexReqType}. */
 export class DlpReadRecordRespType extends DlpResponse {
   funcId = DlpFuncId.ReadRecord;
@@ -1261,7 +1296,7 @@ export class DlpReadRecordRespType extends DlpResponse {
 
   /** Record attributes. */
   @dlpArg(0)
-  attributes = new RecordAttrs();
+  attributes = new DlpRecordAttrs();
 
   /** Record category index. */
   @dlpArg(0, SUInt8)
@@ -1398,7 +1433,7 @@ export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
    *   - dirty
    */
   @dlpArg(0)
-  attributes = new RecordAttrs();
+  attributes = new DlpRecordAttrs();
 
   /** Record category index. */
   @dlpArg(0, SUInt8)
