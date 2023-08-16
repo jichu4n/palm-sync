@@ -44,8 +44,8 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       vendorId: 0x054c,
       productId: 0x0038,
       label: 'Sony S S300 and other Palm OS 3.5 devices',
-      initType: UsbInitType.EARLY_SONY_CLIE,
-      protocolStackType: UsbProtocolStackType.NET_SYNC,
+      initType: UsbInitType.NONE,
+      protocolStackType: UsbProtocolStackType.SERIAL,
     },
 
     {
