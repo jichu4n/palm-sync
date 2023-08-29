@@ -5,11 +5,12 @@ import {writeDb, writeRawDb} from '../sync-utils/write-db';
 import {syncDb} from '../sync-utils/sync-db';
 import assert from 'assert';
 import {readDb} from '../sync-utils/read-db';
+import {DlpRecordAttrs} from '../protocols/dlp-commands';
 
 const log = debug('palm-sync').extend('test');
 
 interface SyncTestCase {
-  device: [string, Partial<RecordAttrs>] | null;
+  device: [string, Partial<DlpRecordAttrs>] | null;
   desktop: [string, Partial<RecordAttrs>] | null;
   result: Array<string>;
 }
@@ -24,7 +25,10 @@ async function runSyncTestCase(
   if (testCase.device) {
     const deviceRecord = MemoRecord.with({value: testCase.device[0]});
     deviceRecord.entry.uniqueId = 1;
-    Object.assign(deviceRecord.entry.attributes, testCase.device[1]);
+    deviceRecord.entry.attributes = DlpRecordAttrs.toRecordAttrs(
+      DlpRecordAttrs.with(testCase.device[1]),
+      0
+    );
     deviceDb.records.push(deviceRecord);
   }
 
@@ -99,34 +103,28 @@ const SYNC_TEST_CASES: Array<SyncTestCase> = [
   },
 
   // Device record = ARCHIVED_CHANGED
-  //
-  // TODO: This is failing because when reading back device records the delete
-  // bit is not set, even though it is set when we originally wrote it.
-  //
-  // Further, when deleting & archiving on the device itself, the delete bit is
-  // indeed not set when archive is set. So we have a problem :/
   {
-    device: ['Archived & changed', {delete: true, archive: true, dirty: true}],
+    device: ['Archived & changed', {archive: true, dirty: true}],
     desktop: null,
     result: [],
   },
   {
-    device: ['Archived & changed', {delete: true, archive: true, dirty: true}],
-    desktop: ['Archived & changed', {delete: true, archive: true, dirty: true}],
+    device: ['Archived & changed', {archive: true, dirty: true}],
+    desktop: ['Archived & changed', {busy: true, archive: true, dirty: true}],
     result: [],
   },
   {
-    device: ['Archived & changed', {delete: true, archive: true, dirty: true}],
-    desktop: ['Archived & unchanged', {delete: true, archive: true}],
+    device: ['Archived & changed', {archive: true, dirty: true}],
+    desktop: ['Archived & unchanged', {busy: true, archive: true}],
     result: [],
   },
   {
-    device: ['Archived & changed', {delete: true, archive: true, dirty: true}],
+    device: ['Archived & changed', {archive: true, dirty: true}],
     desktop: ['Deleted', {delete: true}],
     result: [],
   },
   {
-    device: ['Archived & changed', {delete: true, archive: true, dirty: true}],
+    device: ['Archived & changed', {archive: true, dirty: true}],
     desktop: ['Changed', {dirty: true}],
     result: ['Archived & changed', 'Changed'],
   },

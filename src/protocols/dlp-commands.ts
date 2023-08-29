@@ -1276,6 +1276,58 @@ export class DlpRecordAttrs extends SBitmask.of(SUInt8) {
 
   @bitfield(3)
   private padding1 = 0;
+
+  /** Convert DlpRecordAttrs and category to RecordAttrs for use in PDB files.
+   */
+  static toRecordAttrs(
+    dlpAttrs: DlpRecordAttrs,
+    category: number
+  ): RecordAttrs {
+    const pdbAttrs = new RecordAttrs();
+    pdbAttrs.delete = dlpAttrs.delete;
+    pdbAttrs.dirty = dlpAttrs.dirty;
+    pdbAttrs.busy = dlpAttrs.busy;
+    pdbAttrs.secret = dlpAttrs.secret;
+    if (dlpAttrs.archive) {
+      // In PDB files, the lowest 4 bits are overloaded to both store the archive
+      // bit and the category, and the way to distinguish between the two cases is
+      // to check the `delete` or the `busy` bit. So we'll set the busy bit here
+      // in order to preserve the archive bit.
+      if (!(dlpAttrs.delete || dlpAttrs.busy)) {
+        pdbAttrs.busy = true;
+      }
+      pdbAttrs.archive = true;
+    } else if (!(dlpAttrs.delete || dlpAttrs.busy)) {
+      pdbAttrs.category = category;
+    }
+    return pdbAttrs;
+  }
+
+  /** Convert RecordAttrs to DlpRecordAttrs and category for use in DLP
+   * protocol.
+   */
+  static fromRecordAttrs(pdbAttrs: RecordAttrs): {
+    attributes: DlpRecordAttrs;
+    category: number;
+  } {
+    const dlpAttrs = new DlpRecordAttrs();
+    dlpAttrs.delete = pdbAttrs.delete;
+    dlpAttrs.dirty = pdbAttrs.dirty;
+    dlpAttrs.busy = pdbAttrs.busy;
+    dlpAttrs.secret = pdbAttrs.secret;
+    let category: number;
+    if (pdbAttrs.delete || pdbAttrs.busy) {
+      dlpAttrs.archive = pdbAttrs.archive;
+      category = 0;
+    } else {
+      dlpAttrs.archive = false;
+      category = pdbAttrs.category;
+    }
+    return {
+      attributes: dlpAttrs,
+      category,
+    };
+  }
 }
 
 /** DLP response for {@link DlpReadRecordByIDReqType} and {@link DlpReadRecordByIndexReqType}. */

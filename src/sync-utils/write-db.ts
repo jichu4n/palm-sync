@@ -190,35 +190,11 @@ export async function writeRawDb(
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
 }
 
-/** Convert RecordAttrs from a PDB file to DlpRecordAttrs and category. */
-export function convertToDlpRecordAttrsAndCategory(pdbAttrs: RecordAttrs): {
-  attributes: DlpRecordAttrs;
-  category: number;
-} {
-  const dlpAttrs = new DlpRecordAttrs();
-  dlpAttrs.delete = pdbAttrs.delete;
-  dlpAttrs.dirty = pdbAttrs.dirty;
-  dlpAttrs.busy = pdbAttrs.busy;
-  dlpAttrs.secret = pdbAttrs.secret;
-  let category: number;
-  if (pdbAttrs.delete || pdbAttrs.busy) {
-    dlpAttrs.archive = pdbAttrs.archive;
-    category = 0;
-  } else {
-    dlpAttrs.archive = false;
-    category = pdbAttrs.category;
-  }
-  return {
-    attributes: dlpAttrs,
-    category,
-  };
-}
-
 export function createWriteRecordReqFromRawPdbRecord(
   dbId: number,
   record: RawPdbRecord
 ) {
-  const {attributes, category} = convertToDlpRecordAttrsAndCategory(
+  const {attributes, category} = DlpRecordAttrs.fromRecordAttrs(
     record.entry.attributes
   );
   return DlpWriteRecordReqType.with({

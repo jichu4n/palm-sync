@@ -501,11 +501,8 @@ class RawPdbDatabaseSyncInterface implements DbSyncInterface {
     const records: Array<RawPdbRecord> = [];
     for (const record of this.db.records) {
       const {attributes} = record.entry;
-      if (attributes.delete) {
+      if (attributes.delete || attributes.archive) {
         continue;
-      }
-      if (attributes.archive) {
-        attributes.archive = false;
       }
       attributes.dirty = false;
       attributes.busy = false;
