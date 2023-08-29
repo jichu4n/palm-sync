@@ -128,6 +128,44 @@ const SYNC_TEST_CASES: Array<SyncTestCase> = [
     desktop: ['Changed', {dirty: true}],
     result: ['Archived & changed', 'Changed'],
   },
+  {
+    device: ['Archived & changed', {archive: true, dirty: true}],
+    desktop: ['Original', {}],
+    result: [],
+  },
+
+  // Device record = ARCHIVED_UNCHANGED
+  {
+    device: ['Archived', {archive: true}],
+    desktop: ['Archived & changed', {busy: true, archive: true, dirty: true}],
+    result: [],
+  },
+  {
+    device: ['Archived', {archive: true}],
+    desktop: ['Archived', {busy: true, archive: true}],
+    result: [],
+  },
+  {
+    device: ['Archived', {archive: true}],
+    desktop: ['Deleted', {delete: true}],
+    result: [],
+  },
+  {
+    device: ['Archived', {archive: true}],
+    desktop: ['Changed', {dirty: true}],
+    result: ['Changed'],
+  },
+  {
+    device: ['Archived', {archive: true}],
+    desktop: ['Original', {}],
+    result: [],
+  },
+
+  // Not possible to test device record = DELETED as it's not possible to
+  // isntall a deleted record onto the device. If we do try, the record will be
+  // converted to ARCHIVED_UNCHANGED on the device.
+
+  // TODO: moar test cases
 
   {
     device: ['Original', {}],
