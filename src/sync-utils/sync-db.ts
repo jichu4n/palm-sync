@@ -10,7 +10,7 @@
  */
 
 import debug from 'debug';
-import {RawPdbDatabase, RawPdbRecord} from 'palm-pdb';
+import {RawPdbDatabase, RawPdbRecord, RawPrcDatabase} from 'palm-pdb';
 import {
   DlpCleanUpDatabaseReqType,
   DlpCloseDBReqType,
@@ -655,4 +655,11 @@ export async function syncDb(
 
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
+}
+
+export async function cleanUpDb(
+  rawDb: RawPdbDatabase,
+) {
+  console.log(`Cleaning up database [${rawDb.header.name}]`)
+  await new RawPdbDatabaseSyncInterface(rawDb).cleanUp();
 }

@@ -20,6 +20,7 @@ import {
   readDbToFile,
 } from '../sync-utils/read-db';
 import {writeDbFromFile} from '../sync-utils/write-db';
+import { syncDevice } from '../sync-utils/sync-device';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -183,28 +184,28 @@ if (require.main === module) {
           command: Command
         ) => {
           let syncFn: (dlpConnection: any) => Promise<void>;
-          if (names.length > 0) {
-            if (ram || rom) {
-              log('Cannot specify both database names and --ram/--rom');
-              process.exit(1);
-            }
-            syncFn = async (dlpConnection) => {
-              for (const name of names) {
-                await readDbToFile(dlpConnection, name, outputDir);
-              }
-            };
-          } else if (ram || rom) {
+          // if (names.length > 0) {
+          //   if (ram || rom) {
+          //     log('Cannot specify both database names and --ram/--rom');
+          //     process.exit(1);
+          //   }
+          //   syncFn = async (dlpConnection) => {
+          //     for (const name of names) {
+          //       await readDbToFile(dlpConnection, name, outputDir);
+          //     }
+          //   };
+          // } else if (ram || rom) {
             syncFn = async (dlpConnection) => {
               await readAllDbsToFile(
                 dlpConnection,
-                {ram: !!ram, rom: !!rom},
+                {ram: true, rom: false},
                 outputDir
               );
             };
-          } else {
-            log('Must specify either database names or --ram/--rom');
-            process.exit(1);
-          }
+          // } else {
+          //   log('Must specify either database names or --ram/--rom');
+          //   process.exit(1);
+          // }
           await runSyncForCommand(command, syncFn);
         }
       );
@@ -257,6 +258,23 @@ if (require.main === module) {
             await syncFn(connection);
           });
         }
+      );
+
+    program
+      .command('sync')
+      .description('HotSync a Palm OS device')
+      .action(async (opts: {}, command: Command) => {
+          // console.log(palmDir);
+          // console.log(command);
+        await runSyncForCommand(command, async (dlpConnection) => {
+          try {
+            await syncDevice(dlpConnection, '/Users/opinheiro/Palm', 'testVisor')
+          } catch (error) {
+            console.error(error);
+          }
+        });
+      }
+      
       );
 
     await program.parseAsync();

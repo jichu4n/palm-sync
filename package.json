@@ -21,7 +21,7 @@
     "build:udev-rules": "ts-node ./src/bin/generate-udev-rules.ts",
     "lint": "prettier --check .",
     "test": "env TZ=UTC jest",
-    "cli": "ts-node ./src/bin/cli.ts",
+    "cli": "ts-node ./src/bin/cli.ts --usb sync",
     "record-sync-session": "env TZ=UTC ts-node ./src/bin/record-sync-session.ts",
     "prepack": "npm run lint && npm run build && npm test && rm -r ./dist/tests",
     "prepublishOnly": "./src/tests/package-test.sh"
