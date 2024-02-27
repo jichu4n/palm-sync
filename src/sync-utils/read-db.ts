@@ -95,16 +95,26 @@ export async function readDbToFile(
   outputDir?: string,
   /** Additional options. */
   opts: ReadDbOptions = {}
-) : Promise<RawPdbDatabase | RawPrcDatabase>  {
+) {
   logFile(`=> ${name}`);
   const rawDb = await readRawDb(dlpConnection, name, opts);
+  await writeRawDbToFile(rawDb, name, outputDir);
+}
+
+/** Write a raw database to a PDB / PRC file */
+export async function writeRawDbToFile(
+   /** The raw database to be written */
+   rawDb: RawPdbDatabase | RawPrcDatabase,
+   /** Database name to read. */
+   name: string,
+   /** Output directory. Defaults to current working directory. */
+   outputDir?: string
+) {
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
   const filePath = outputDir ? path.join(outputDir, fileName) : fileName;
   await fs.ensureFile(filePath);
   await fs.writeFile(filePath, rawDb.serialize());
-
-  return rawDb;
 }
 
 /** Read list of all databases from a Palm OS device. */
@@ -306,7 +316,7 @@ export async function readRawDb(
   if (dbInfo.dbFlags.resDB) {
     const records: Array<RawPrcRecord> = [];
     for (let i = 0; i < numRecords; ++i) {
-      console.log(`Reading resource ${i + 1} of ${numRecords}`);
+      log(`Reading resource ${i + 1} of ${numRecords}`);
       const readResourceResp = await dlpConnection.execute(
         DlpReadResourceByIndexReqType.with({dbId, index: i})
       );
@@ -316,7 +326,7 @@ export async function readRawDb(
   } else {
     const records: Array<RawPdbRecord> = [];
     for (let i = 0; i < numRecords; ++i) {
-      console.log(`Reading record ${i + 1} of ${numRecords}`);
+      log(`Reading record ${i + 1} of ${numRecords}`);
       const readRecordResp = await dlpConnection.execute(
         DlpReadRecordByIndexReqType.with({dbId, index: i})
       );

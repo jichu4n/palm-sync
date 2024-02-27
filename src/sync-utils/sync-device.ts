@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import { DlpReadStorageInfoReqType, DlpSetSysDateTimeReqType, DlpUserInfoModFlags, DlpWriteUserInfoReqType } from "../protocols/dlp-commands";
 import { DlpConnection } from "../protocols/sync-connections";
 import { writeDbFromFile } from "./write-db";
-import { readDbList, readDbToFile } from "./read-db";
+import { ReadDbOptions, readAllDbsToFile, readDbList, readDbToFile, readRawDb, writeRawDbToFile } from "./read-db";
 import { SObject, SStringNT, SUInt32BE, SUInt8, field } from "serio";
 import { cleanUpDb } from "./sync-db";
 import { RawPdbDatabase } from "palm-pdb";
@@ -42,7 +42,7 @@ export async function syncDevice(
         }
 
         let needSlowSync = false;
-        let isFirstSync = true;
+        let isFirstSync = false;
         let localID = new PalmDeviceLocalIdentification;
         let writeUserInfoReq = new DlpWriteUserInfoReqType;
 
@@ -67,6 +67,7 @@ export async function syncDevice(
           console.log(`The username [${palmName}] is new. Creating new local-id file.`);
           fs.writeJSONSync(`${palmDir}/${JSON_PALM_ID}`, localID);
           isFirstSync = true;
+          needSlowSync = true;
         } else {
           console.log(`The username [${palmName}] was synced before. Loading local-id file.`);
           localID = fs.readJSONSync(`${palmDir}/${JSON_PALM_ID}`);
@@ -90,11 +91,32 @@ export async function syncDevice(
           },
           {
             cardNo: 0,
-          });
-
+          }
+        );
         console.log(`Fetched [${dbList.length}] databases`);
 
-        console.log(`Executing Sync step: 2/X - Install apps in the install dir`);
+        console.log(`Executing Sync step: 2/X - Sync databases`);
+
+        if (isFirstSync) {
+          console.log(`This is the first sync for this device! Downloading all databases...`);
+ 
+          for (let index = 0; index < dbList.length; index++) {
+            const dbInfo = dbList[index];
+            console.log(`Download DB ${index+1} of ${dbList.length}`);
+            const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
+            const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
+              ...opts,
+              dbInfo,
+            });
+            if (!rawDb.header.attributes.resDB) {
+              await cleanUpDb(rawDb as RawPdbDatabase);
+            }
+
+            await writeRawDbToFile(rawDb, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
+          }
+        }
+
+        console.log(`Executing Sync step: 3/X - Install apps in the install dir`);
 
         let toInstallDir = fs.opendirSync(`${palmDir}/${TO_INSTALL_DIR}`);
 
@@ -105,19 +127,6 @@ export async function syncDevice(
         } catch (err) {
           console.log(`Failed to install apps!`);
           console.error(err);
-        }
-
-        console.log(`Executing Sync step: 3/X - Sync databases`);
-
-        if (isFirstSync) {
-          console.log(`This is the first sync for this device! Downloading all databases...`);
-          for (let index = 0; index < dbList.length; index++) {
-            const dbInfo = dbList[index];
-            console.log(`Download DB ${index+1} of ${dbList.length}`)
-            const rawDb = await readDbToFile(dlpConnection, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
-            if (!rawDb.header.attributes.resDB)
-              await cleanUpDb(rawDb as RawPdbDatabase);
-          }
         }
 
         console.log(`Executing Sync step: X/X - Update date and time on Palm PDA`);
