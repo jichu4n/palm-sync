@@ -1,13 +1,11 @@
-import debug from "debug";
 import fs from 'fs-extra';
-import { DlpOpenConduitReqType, DlpOpenDBMode, DlpOpenDBReqType, DlpReadStorageInfoReqType, DlpSetSysDateTimeReqType, DlpUserInfoModFlags, DlpWriteUserInfoReqType } from "../protocols/dlp-commands";
+import { DlpOpenConduitReqType, DlpSetSysDateTimeReqType, DlpWriteUserInfoReqType } from "../protocols/dlp-commands";
 import { DlpConnection } from "../protocols/sync-connections";
 import { writeDbFromFile } from "./write-db";
-import { ReadDbOptions, readAllDbsToFile, readDbList, readDbToFile, readRawDb, writeRawDbToFile } from "./read-db";
-import { SObject, SStringNT, SUInt32BE, SUInt8, field } from "serio";
-import { cleanUpDb, fastSync, fastSyncDb } from "./sync-db";
-import { DatabaseHdrType, RawPdbDatabase, RawPrcDatabase } from "palm-pdb";
-import { buffer } from "stream/consumers";
+import { ReadDbOptions, readDbList, readRawDb, writeRawDbToFile } from "./read-db";
+import { SObject, SStringNT, SUInt32BE, field } from "serio";
+import { cleanUpDb, fastSyncDb } from "./sync-db";
+import { RawPdbDatabase } from "palm-pdb";
 const crypto = require('crypto');
 
 
@@ -135,6 +133,12 @@ export async function syncDevice(
 
               const fileName = `${dbInfo.name}.pdb`;
 
+              const resourceExistsOnPC = await fs.exists(`${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`);
+              if (!resourceExistsOnPC) {
+                console.log(`The databse [${fileName}] does not exists on PC, skipping...`);
+                continue;
+              }
+
               const resourceFile = await fs.readFile(`${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`);
               const rawDb = RawPdbDatabase.from(resourceFile);
 
@@ -157,7 +161,30 @@ export async function syncDevice(
             throw new Error(`Invalid sync type! This is an error, please report it to the maintener`);
         }
 
-        console.log(`Executing Sync step: X/X - Install apps in the install dir`);
+        console.log(`Executing Sync step: X/X - Download resources that exists on Palm but not on PC`);
+        await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+
+        for (let index = 0; index < dbList.length; index++) {
+          const dbInfo = dbList[index];
+
+          const ext = dbInfo.dbFlags.resDB ? 'prc' : 'pdb';
+          const fileName = `${dbInfo.name}.${ext}`;
+
+          const resourceExists = await fs.exists(`${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`);
+
+          if (!resourceExists) {
+            console.log(`The resource [${fileName}] exists on Palm but on on PC! Downloading it...`);
+            const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
+            const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
+              ...opts,
+              dbInfo,
+            });
+            await writeRawDbToFile(rawDb, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
+          }
+
+        }
+
+        console.log(`Executing Sync step: X/X - Install resources that are present in the install dir`);
         await dlpConnection.execute(DlpOpenConduitReqType.with({}));
         let toInstallDir = fs.opendirSync(`${palmDir}/${TO_INSTALL_DIR}`);
 
@@ -171,7 +198,7 @@ export async function syncDevice(
           console.error(err);
         }
 
-        console.log(`Executing Sync step: X/X - Update date and time on Palm PDA`);
+        console.log(`Executing Sync step: X/X - Updating date and time`);
         await dlpConnection.execute(DlpOpenConduitReqType.with({}));
         let setDateTimeReq = new DlpSetSysDateTimeReqType;
         setDateTimeReq.dateTime = new Date();
