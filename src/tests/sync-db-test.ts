@@ -2,7 +2,7 @@ import debug from 'debug';
 import {MemoDatabase, MemoRecord, RawPdbDatabase, RecordAttrs} from 'palm-pdb';
 import {DlpConnection} from '../protocols/sync-connections';
 import {writeDb, writeRawDb} from '../sync-utils/write-db';
-import {syncDb} from '../sync-utils/sync-db';
+import {fastSyncDb} from '../sync-utils/sync-db';
 import assert from 'assert';
 import {readDb} from '../sync-utils/read-db';
 import {DlpRecordAttrs} from '../protocols/dlp-commands';
@@ -42,7 +42,7 @@ async function runSyncTestCase(
   await writeDb(dlpConnection, deviceDb, {overwrite: true});
 
   const rawDesktopDb = RawPdbDatabase.from(desktopDb.serialize());
-  await syncDb(dlpConnection, rawDesktopDb);
+  await fastSyncDb(dlpConnection, rawDesktopDb, {cardNo: 0}, true);
 
   const syncedDeviceDb = await readDb(
     dlpConnection,

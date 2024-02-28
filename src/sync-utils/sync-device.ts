@@ -1,20 +1,22 @@
 import debug from "debug";
 import fs from 'fs-extra';
-import { DlpReadStorageInfoReqType, DlpSetSysDateTimeReqType, DlpUserInfoModFlags, DlpWriteUserInfoReqType } from "../protocols/dlp-commands";
+import { DlpOpenConduitReqType, DlpOpenDBMode, DlpOpenDBReqType, DlpReadStorageInfoReqType, DlpSetSysDateTimeReqType, DlpUserInfoModFlags, DlpWriteUserInfoReqType } from "../protocols/dlp-commands";
 import { DlpConnection } from "../protocols/sync-connections";
 import { writeDbFromFile } from "./write-db";
 import { ReadDbOptions, readAllDbsToFile, readDbList, readDbToFile, readRawDb, writeRawDbToFile } from "./read-db";
 import { SObject, SStringNT, SUInt32BE, SUInt8, field } from "serio";
-import { cleanUpDb } from "./sync-db";
-import { RawPdbDatabase } from "palm-pdb";
+import { cleanUpDb, fastSync, fastSyncDb } from "./sync-db";
+import { DatabaseHdrType, RawPdbDatabase, RawPrcDatabase } from "palm-pdb";
+import { buffer } from "stream/consumers";
 const crypto = require('crypto');
 
 
 // const log = debug('palm-sync').extend('sync-db');
 const THIS_SYNC_PC_ID = 6789;
-const TO_INSTALL_DIR = 'install'
-const DATABASES_STORAGE_DIR = 'databases'
-const JSON_PALM_ID = 'palm-id.json'
+const TO_INSTALL_DIR = 'install';
+const DATABASES_STORAGE_DIR = 'databases';
+const JSON_PALM_ID = 'palm-id.json';
+const CARD_ZERO = 0;
 
 class PalmDeviceLocalIdentification extends SObject {
   @field(SUInt32BE)
@@ -22,6 +24,12 @@ class PalmDeviceLocalIdentification extends SObject {
 
   @field(SStringNT)
   userName = '';
+}
+
+enum SyncType {
+  FIRST_SYNC = "FIRST SYNC",
+  SLOW_SYNC = "SLOW SYNC",
+  FAST_SYNC = "FAST SYNC"
 }
 
 export async function syncDevice(
@@ -41,8 +49,7 @@ export async function syncDevice(
           console.log(e);
         }
 
-        let needSlowSync = false;
-        let isFirstSync = false;
+        let syncType = SyncType.FAST_SYNC;
         let localID = new PalmDeviceLocalIdentification;
         let writeUserInfoReq = new DlpWriteUserInfoReqType;
 
@@ -66,8 +73,7 @@ export async function syncDevice(
         if (!fs.existsSync(`${palmDir}/${JSON_PALM_ID}`)) {
           console.log(`The username [${palmName}] is new. Creating new local-id file.`);
           fs.writeJSONSync(`${palmDir}/${JSON_PALM_ID}`, localID);
-          isFirstSync = true;
-          needSlowSync = true;
+          syncType = SyncType.FIRST_SYNC;
         } else {
           console.log(`The username [${palmName}] was synced before. Loading local-id file.`);
           localID = fs.readJSONSync(`${palmDir}/${JSON_PALM_ID}`);
@@ -78,10 +84,10 @@ export async function syncDevice(
             writeUserInfoReq.lastSyncPc = THIS_SYNC_PC_ID;
             writeUserInfoReq.modFlags.lastSyncPc = true;
             console.log(`We also need a Slow Sync because the last sync PC doesn't match. Setting the flag.`);
-            needSlowSync = true;
+            syncType = SyncType.SLOW_SYNC;
         }
 
-        console.log(`Need Slow Sync: ${needSlowSync}`);
+        console.log(`Sync Type is [${syncType.valueOf()}]`);
         console.log(`Executing Sync step: 1/X - Fetch all databases`);
 
         const dbList = await readDbList(dlpConnection,
@@ -90,39 +96,75 @@ export async function syncDevice(
             ram: true
           },
           {
-            cardNo: 0,
+            cardNo: CARD_ZERO,
           }
         );
         console.log(`Fetched [${dbList.length}] databases`);
 
         console.log(`Executing Sync step: 2/X - Sync databases`);
+        await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
-        if (isFirstSync) {
-          console.log(`This is the first sync for this device! Downloading all databases...`);
+        switch (syncType) {
+          case SyncType.FIRST_SYNC:
+            console.log(`This is the first sync for this device! Downloading all databases...`);
  
-          for (let index = 0; index < dbList.length; index++) {
-            const dbInfo = dbList[index];
-            console.log(`Download DB ${index+1} of ${dbList.length}`);
-            const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
-            const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
-              ...opts,
-              dbInfo,
-            });
-            if (!rawDb.header.attributes.resDB) {
-              await cleanUpDb(rawDb as RawPdbDatabase);
+            for (let index = 0; index < dbList.length; index++) {
+              const dbInfo = dbList[index];
+              console.log(`Download DB ${index+1} of ${dbList.length}`);
+              const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
+              const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
+                ...opts,
+                dbInfo,
+              });
+              if (!rawDb.header.attributes.resDB) {
+                await cleanUpDb(rawDb as RawPdbDatabase);
+              }
+  
+              await writeRawDbToFile(rawDb, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
             }
+            break;
 
-            await writeRawDbToFile(rawDb, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
-          }
+          case SyncType.FAST_SYNC:
+            for (let index = 0; index < dbList.length; index++) {
+              const dbInfo = dbList[index];
+
+              // We only sync databases, so if it's a PRC, we skip
+              if (dbInfo.dbFlags.resDB) {
+                continue;
+              }
+
+              const fileName = `${dbInfo.name}.pdb`;
+
+              const resourceFile = await fs.readFile(`${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`);
+              const rawDb = RawPdbDatabase.from(resourceFile);
+
+              await fastSyncDb(
+                dlpConnection,
+                rawDb,
+                {cardNo: 0},
+                false
+              )
+            
+            }
+            break;
+
+          case SyncType.SLOW_SYNC:
+            break;
+
+
+        
+          default:
+            throw new Error(`Invalid sync type! This is an error, please report it to the maintener`);
         }
 
-        console.log(`Executing Sync step: 3/X - Install apps in the install dir`);
-
+        console.log(`Executing Sync step: X/X - Install apps in the install dir`);
+        await dlpConnection.execute(DlpOpenConduitReqType.with({}));
         let toInstallDir = fs.opendirSync(`${palmDir}/${TO_INSTALL_DIR}`);
 
         try {
           for await (const dirent of toInstallDir) {
           await writeDbFromFile(dlpConnection, `${palmDir}/${TO_INSTALL_DIR}/${dirent.name}`, {overwrite: true});
+          await fs.copyFile(`${palmDir}/${TO_INSTALL_DIR}/${dirent.name}`, `${palmDir}/${DATABASES_STORAGE_DIR}/${dirent.name}`);
           }
         } catch (err) {
           console.log(`Failed to install apps!`);
@@ -130,11 +172,13 @@ export async function syncDevice(
         }
 
         console.log(`Executing Sync step: X/X - Update date and time on Palm PDA`);
+        await dlpConnection.execute(DlpOpenConduitReqType.with({}));
         let setDateTimeReq = new DlpSetSysDateTimeReqType;
         setDateTimeReq.dateTime = new Date();
         await dlpConnection.execute(setDateTimeReq);
 
         console.log(`Executing Sync step: X/X - Writing update userInfo to Palm`);
+        await dlpConnection.execute(DlpOpenConduitReqType.with({}));
         writeUserInfoReq.lastSyncDate = new Date();
         writeUserInfoReq.modFlags.lastSyncDate = true;
         await dlpConnection.execute(writeUserInfoReq);

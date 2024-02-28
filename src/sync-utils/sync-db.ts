@@ -632,13 +632,15 @@ export async function fastSync(
 }
 
 /** Perform a fast sync for a database. */
-export async function syncDb(
+export async function fastSyncDb(
   dlpConnection: DlpConnection,
   desktopDb: RawPdbDatabase,
-  {cardNo = 0}: SyncDbOptions = {}
+  {cardNo = 0}: SyncDbOptions = {},
+  openConduit: Boolean = true
 ) {
-  log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
-  await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  console.log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
+  if (openConduit)
+    await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
