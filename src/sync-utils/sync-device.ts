@@ -204,7 +204,7 @@ export async function syncDevice(
         setDateTimeReq.dateTime = new Date();
         await dlpConnection.execute(setDateTimeReq);
 
-        console.log(`Executing Sync step: X/X - Writing update userInfo to Palm`);
+        console.log(`Executing Sync step: X/X - Writing updated userInfo to Palm`);
         await dlpConnection.execute(DlpOpenConduitReqType.with({}));
         writeUserInfoReq.lastSyncDate = new Date();
         writeUserInfoReq.modFlags.lastSyncDate = true;
