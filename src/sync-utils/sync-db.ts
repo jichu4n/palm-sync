@@ -62,17 +62,12 @@ function computeRecordState(record: RawPdbRecord | null, slowSync: Boolean = fal
     return RecordState.DELETED;
   }
 
-  if (!slowSync) {
+  if (!slowSync || otherRecord == null) {
     return attributes.dirty ? RecordState.CHANGED : RecordState.UNCHANGED;
-  }
-
-  if (otherRecord == null) {
-    throw new Error('SlowSync must have both records present');
   }
 
   /** This is a slowSync, thus we cannot trust the dirty flag and must compare it's content
    * byte by byte */
-
   return compareRec(record, otherRecord) != 0 ? RecordState.CHANGED : RecordState.UNCHANGED;
 }
 
@@ -407,7 +402,7 @@ export function computeRecordActions(
           .map(({type, record}) => `    ${type} ${record.entry.uniqueId},`)
           .join('\n') +
         '\n]';
-  log(`${deviceRecordString} <> ${desktopRecordString} => ${actionsString}`);
+  console.log(`${deviceRecordString} <> ${desktopRecordString} => ${actionsString}`);
   return actions;
 }
 
@@ -723,6 +718,12 @@ export async function slowSync(
       desktopRecord.entry.uniqueId === 0
         ? null
         : await device.readRecord(recordId);
+      
+    if (deviceRecord == null) {
+      console.log('No device record! Skipping...');
+      continue;
+    }
+
     recordActions.push(...computeRecordActions(deviceRecord, desktopRecord, true));
   }
 
