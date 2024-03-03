@@ -1,10 +1,10 @@
 import fs from 'fs-extra';
-import { DlpOpenConduitReqType, DlpSetSysDateTimeReqType, DlpWriteUserInfoReqType } from "../protocols/dlp-commands";
+import { DlpDBInfoType, DlpOpenConduitReqType, DlpSetSysDateTimeReqType, DlpWriteUserInfoReqType } from "../protocols/dlp-commands";
 import { DlpConnection } from "../protocols/sync-connections";
 import { writeDbFromFile } from "./write-db";
 import { ReadDbOptions, readDbList, readRawDb, writeRawDbToFile } from "./read-db";
 import { SObject, SStringNT, SUInt32BE, field } from "serio";
-import { cleanUpDb, fastSyncDb } from "./sync-db";
+import { cleanUpDb, fastSyncDb, slowSyncDb } from "./sync-db";
 import { RawPdbDatabase } from "palm-pdb";
 const crypto = require('crypto');
 
@@ -108,12 +108,9 @@ export async function syncDevice(
  
             for (let index = 0; index < dbList.length; index++) {
               const dbInfo = dbList[index];
-              console.log(`Download DB ${index+1} of ${dbList.length}`);
-              const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
-              const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
-                ...opts,
-                dbInfo,
-              });
+              console.log(`Download DB ${index + 1} of ${dbList.length}`);
+
+              const rawDb = await getRawDbFromDevice(dlpConnection, dbInfo);
               if (!rawDb.header.attributes.resDB) {
                 await cleanUpDb(rawDb as RawPdbDatabase);
               }
@@ -126,20 +123,11 @@ export async function syncDevice(
             for (let index = 0; index < dbList.length; index++) {
               const dbInfo = dbList[index];
 
-              // We only sync databases, so if it's a PRC, we skip
-              if (dbInfo.dbFlags.resDB) {
+              if (await shouldSkipRecord(dbInfo, palmDir)) {
                 continue;
               }
 
-              const fileName = `${dbInfo.name}.pdb`;
-
-              const resourceExistsOnPC = await fs.exists(`${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`);
-              if (!resourceExistsOnPC) {
-                console.log(`The databse [${fileName}] does not exists on PC, skipping...`);
-                continue;
-              }
-
-              const resourceFile = await fs.readFile(`${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`);
+              const resourceFile = await fs.readFile(`${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`);
               const rawDb = RawPdbDatabase.from(resourceFile);
 
               await fastSyncDb(
@@ -153,9 +141,25 @@ export async function syncDevice(
             break;
 
           case SyncType.SLOW_SYNC:
+            for (let index = 0; index < dbList.length; index++) {
+              const dbInfo = dbList[index];
+
+              if (await shouldSkipRecord(dbInfo, palmDir)) {
+                continue;
+              }
+
+              const resourceDesktopFile = await fs.readFile(`${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`);
+              const desktopRawDb = RawPdbDatabase.from(resourceDesktopFile);
+
+              await slowSyncDb(
+                dlpConnection,
+                desktopRawDb,
+                {cardNo: 0},
+                false
+              )
+            
+            }
             break;
-
-
         
           default:
             throw new Error(`Invalid sync type! This is an error, please report it to the maintener`);
@@ -213,3 +217,30 @@ export async function syncDevice(
 
         console.log(`Finished executing sync!`);
     }
+
+async function getRawDbFromDevice(dlpConnection: DlpConnection, dbInfo: DlpDBInfoType) {
+  const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
+  const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
+    ...opts,
+    dbInfo,
+  });
+
+  return rawDb;
+}
+
+async function shouldSkipRecord(dbInfo: DlpDBInfoType, palmDir: String): Promise<Boolean> {
+  // We only sync databases, so if it's a PRC, we skip
+  if (dbInfo.dbFlags.resDB) {
+    return true;
+  }
+
+  // We only sync databases that exists on Desktop
+  const fileName = `${dbInfo.name}.pdb`;
+  const resourceExistsOnPC = await fs.exists(`${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`);
+  if (!resourceExistsOnPC) {
+    console.log(`The databse [${fileName}] does not exists on PC, skipping...`);
+    return true;
+  }
+
+  return false;
+}
