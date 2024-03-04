@@ -131,7 +131,8 @@ export async function syncDevice(
  
             for (let index = 0; index < dbList.length; index++) {
               const dbInfo = dbList[index];
-              console.log(`Download DB ${index + 1} of ${dbList.length}`);
+
+              console.log(`Download DB [${index + 1}]/[${dbList.length}] - [${dbInfo.name}]`);
 
               const rawDb = await getRawDbFromDevice(dlpConnection, dbInfo);
               if (!rawDb.header.attributes.resDB) {
@@ -263,6 +264,11 @@ async function getRawDbFromDevice(dlpConnection: DlpConnection, dbInfo: DlpDBInf
 async function shouldSkipRecord(dbInfo: DlpDBInfoType, palmDir: String): Promise<Boolean> {
   // We only sync databases, so if it's a PRC, we skip
   if (dbInfo.dbFlags.resDB) {
+    return true;
+  }
+
+  // We only sync databases that has the backup flag set
+  if (!dbInfo.dbFlags.backup){
     return true;
   }
 
