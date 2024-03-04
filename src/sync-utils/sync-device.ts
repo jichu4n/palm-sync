@@ -5,7 +5,7 @@ import { writeDbFromFile } from "./write-db";
 import { ReadDbOptions, readDbList, readRawDb, writeRawDbToFile } from "./read-db";
 import { SObject, SStringNT, SUInt32BE, field } from "serio";
 import { cleanUpDb, fastSyncDb, slowSyncDb } from "./sync-db";
-import { RawPdbDatabase } from "palm-pdb";
+import { RawPdbDatabase, RawPdbRecord, RecordEntryType } from "palm-pdb";
 const crypto = require('crypto');
 
 
@@ -25,8 +25,11 @@ class PalmDeviceLocalIdentification extends SObject {
 }
 
 enum SyncType {
+  /** When a Palm already has an ID, and it's new to this PC */
   FIRST_SYNC = "FIRST SYNC",
+  /** When the last sync was not done on this PC */
   SLOW_SYNC = "SLOW SYNC",
+  /** When the last sync was done on this PC */
   FAST_SYNC = "FAST SYNC"
 }
 
@@ -50,6 +53,7 @@ export async function syncDevice(
         let syncType = SyncType.FAST_SYNC;
         let localID = new PalmDeviceLocalIdentification;
         let writeUserInfoReq = new DlpWriteUserInfoReqType;
+        let initialSync = false;
 
         if (dlpConnection.userInfo.userId == 0) {
           console.log(`The device does not have a userID! Setting one.`);
@@ -59,6 +63,7 @@ export async function syncDevice(
 
           writeUserInfoReq.userName = palmName;
           writeUserInfoReq.modFlags.userName = true;
+          initialSync = true;
         } else {
           localID.userId = dlpConnection.userInfo.userId;
           localID.userName = dlpConnection.userInfo.userName;
@@ -86,6 +91,24 @@ export async function syncDevice(
         }
 
         console.log(`Sync Type is [${syncType.valueOf()}]`);
+
+        if (initialSync) {
+          console.log('Initial sync!');
+          await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+          let toInstallDir = fs.opendirSync(`${palmDir}/${DATABASES_STORAGE_DIR}`);
+
+          for await (const dirent of toInstallDir) {
+            if (dirent.name.endsWith('.prc') || dirent.name.endsWith('.pdb')) {
+              try {
+                await writeDbFromFile(dlpConnection, `${palmDir}/${DATABASES_STORAGE_DIR}/${dirent.name}`, {overwrite: true});
+              } catch (error) {
+                console.error('Failed to restore backup', error);
+              }
+              
+            }
+          }
+        }
+
         console.log(`Executing Sync step: 1/X - Fetch all databases`);
 
         const dbList = await readDbList(dlpConnection,
@@ -119,6 +142,7 @@ export async function syncDevice(
             }
             break;
 
+          case SyncType.SLOW_SYNC:
           case SyncType.FAST_SYNC:
             for (let index = 0; index < dbList.length; index++) {
               const dbInfo = dbList[index];
@@ -128,35 +152,25 @@ export async function syncDevice(
               }
 
               const resourceFile = await fs.readFile(`${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`);
-              const rawDb = RawPdbDatabase.from(resourceFile);
+              var rawDb = RawPdbDatabase.from(resourceFile);
 
-              await fastSyncDb(
-                dlpConnection,
-                rawDb,
-                {cardNo: 0},
-                false
-              )
-            
-            }
-            break;
-
-          case SyncType.SLOW_SYNC:
-            for (let index = 0; index < dbList.length; index++) {
-              const dbInfo = dbList[index];
-
-              if (await shouldSkipRecord(dbInfo, palmDir)) {
-                continue;
+              if (syncType == SyncType.FAST_SYNC) {
+                await fastSyncDb(
+                  dlpConnection,
+                  rawDb,
+                  {cardNo: 0},
+                  false
+                )
+              } else {
+                await slowSyncDb(
+                  dlpConnection,
+                  rawDb,
+                  {cardNo: 0},
+                  false
+                )
               }
 
-              const resourceDesktopFile = await fs.readFile(`${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`);
-              const desktopRawDb = RawPdbDatabase.from(resourceDesktopFile);
-
-              await slowSyncDb(
-                dlpConnection,
-                desktopRawDb,
-                {cardNo: 0},
-                false
-              )
+              await writeRawDbToFile(rawDb, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
             
             }
             break;
@@ -183,7 +197,25 @@ export async function syncDevice(
               ...opts,
               dbInfo,
             });
-            await writeRawDbToFile(rawDb, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
+            
+            if (!dbInfo.dbFlags.resDB) {
+              // This logic already exists, clean up
+              const records: Array<RawPdbRecord> = [];
+              for (const record of rawDb.records) {
+                const {attributes} = record.entry as RecordEntryType;
+                if (attributes.delete || attributes.archive) {
+                  continue;
+                }
+                attributes.dirty = false;
+                attributes.busy = false;
+                records.push(record as RawPdbRecord);
+              }
+              var a = rawDb as RawPdbDatabase;
+              a.records.splice(0, a.records.length, ...records);
+              await writeRawDbToFile(a, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
+            } else {
+              await writeRawDbToFile(rawDb, dbInfo.name, `${palmDir}/${DATABASES_STORAGE_DIR}`);
+            }
           }
 
         }

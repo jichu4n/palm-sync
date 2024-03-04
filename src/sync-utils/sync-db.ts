@@ -62,38 +62,39 @@ function computeRecordState(record: RawPdbRecord | null, slowSync: Boolean = fal
     return RecordState.DELETED;
   }
 
-  if (!slowSync || otherRecord == null) {
-    return attributes.dirty ? RecordState.CHANGED : RecordState.UNCHANGED;
-  }
-
+  if (slowSync && otherRecord != null) {
   /** This is a slowSync, thus we cannot trust the dirty flag and must compare it's content
    * byte by byte */
   return compareRec(record, otherRecord) != 0 ? RecordState.CHANGED : RecordState.UNCHANGED;
+  }
+
+  return attributes.dirty ? RecordState.CHANGED : RecordState.UNCHANGED;
 }
 
 function compareRec(rec1: RawPdbRecord, rec2: RawPdbRecord) {
   /* Compare the category, since that's quick and easy */
   if (rec1.entry.attributes.category < rec2.entry.attributes.category) {
-    console.log(`compare_rec: ${rec1.entry.uniqueId} < ${rec1.entry.uniqueId} (category)`);
+    console.log(`SS compare_rec: ${rec1.entry.uniqueId} < ${rec1.entry.uniqueId} (category)`);
     return -1;
   } else if (rec1.entry.attributes.category > rec2.entry.attributes.category) {
-    console.log(`compare_rec: ${rec1.entry.uniqueId} > ${rec2.entry.uniqueId} (category)`);
+    console.log(`SS compare_rec: ${rec1.entry.uniqueId} > ${rec2.entry.uniqueId} (category)`);
     return 1;
   }
 
   /* Check if data is the same */
   const cmp = rec1.data.compare(rec2.data);
   if (cmp != 0) {
+    console.log(`SS cmp: ${cmp}`);
     return cmp;
   }
 
   /* The two records are equal over the entire length of rec1 */
   if (rec1.data.byteLength < rec2.data.byteLength) {
-    console.log(`compare_rec: ${rec1.entry.uniqueId} < ${rec2.entry.uniqueId}`);
+    console.log(`SS compare_rec: ${rec1.entry.uniqueId} < ${rec2.entry.uniqueId}`);
     return -1;
   }
 
-  console.log(`compare_rec: ${rec1.entry.uniqueId} == ${rec2.entry.uniqueId}`);
+  console.log(`SS compare_rec: ${rec1.entry.uniqueId} == ${rec2.entry.uniqueId}`);
   return 0; /* Length is the same and data is the same */
 }
 
@@ -376,6 +377,7 @@ export function computeRecordActions(
 ): Array<RecordAction> {
   const deviceRecordState = computeRecordState(deviceRecord, slowSync, desktopRecord);
   const desktopRecordState = computeRecordState(desktopRecord, slowSync, deviceRecord);
+  console.log(`${deviceRecordState} <> ${desktopRecordState}`);
   const actionTuples = RECORD_SYNC_LOGIC[deviceRecordState][desktopRecordState](
     deviceRecord,
     desktopRecord,
@@ -402,7 +404,7 @@ export function computeRecordActions(
           .map(({type, record}) => `    ${type} ${record.entry.uniqueId},`)
           .join('\n') +
         '\n]';
-  console.log(`${deviceRecordString} <> ${desktopRecordString} => ${actionsString}`);
+  log(`${deviceRecordString} <> ${desktopRecordString} => ${actionsString}`);
   return actions;
 }
 
@@ -681,13 +683,13 @@ export async function fastSync(
     desktop,
     archiveDb: new RawPdbDatabase(),
   };
-  log(`Executing ${recordActions.length} record actions`);
+  console.log(`Executing ${recordActions.length} record actions`);
   for (const {type, record} of recordActions) {
-    log(`    ${type} ${record.entry.uniqueId} (${record.data.length})`);
+    console.log(`    ${type} ${record.entry.uniqueId} (${record.data.length})`);
     await RECORD_ACTION_FNS[type](ctx, record);
   }
 
-  log('Cleaning up database');
+  console.log('Cleaning up database');
   await device.cleanUp();
   await desktop.cleanUp();
 }
