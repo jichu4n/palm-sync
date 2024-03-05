@@ -1,10 +1,14 @@
+import { SyncType } from '../sync-utils/sync-device';
 import {DlpDBInfoType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 
-interface Conduit {
+export interface ConduitInterface {
+  getName(): String;
+
   execute(
     dlpConnection: DlpConnection,
-    dbList: DlpDBInfoType[],
-    palmDir: String
+    dbList: DlpDBInfoType[] | null,
+    palmDir: String | null,
+    syncType: SyncType | null
   ): Promise<void>;
 }

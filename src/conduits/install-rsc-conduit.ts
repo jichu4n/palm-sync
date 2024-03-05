@@ -1,0 +1,37 @@
+import fs from 'fs-extra';
+import { DlpDBInfoType, DlpOpenConduitReqType } from "../protocols/dlp-commands";
+import { DlpConnection } from "../protocols/sync-connections";
+import { DATABASES_STORAGE_DIR, SyncType, TO_INSTALL_DIR } from "../sync-utils/sync-device";
+import { ConduitInterface } from "./conduit-interface";
+import { writeDbFromFile } from '../sync-utils/write-db';
+
+export class InstallNewResourcesConduit implements ConduitInterface {
+    getName(): String {
+        return "Install resources that are present in the install dir";
+    }
+    async execute(dlpConnection: DlpConnection, dbList: DlpDBInfoType[] | null, palmDir: String | null, syncType: SyncType | null): Promise<void> {
+        await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+        let toInstallDir = fs.opendirSync(`${palmDir}/${TO_INSTALL_DIR}`);
+      
+        try {
+          for await (const dirent of toInstallDir) {
+            
+            await writeDbFromFile(
+              dlpConnection,
+              `${palmDir}/${TO_INSTALL_DIR}/${dirent.name}`,
+              {overwrite: true}
+            );
+            
+            await fs.copyFile(
+              `${palmDir}/${TO_INSTALL_DIR}/${dirent.name}`,
+              `${palmDir}/${DATABASES_STORAGE_DIR}/${dirent.name}`
+            );
+            
+            await fs.remove(`${palmDir}/${TO_INSTALL_DIR}/${dirent.name}`)
+          }
+        } catch (err) {
+          console.log(`Failed to install apps!`);
+          console.error(err);
+        }
+    }
+}
