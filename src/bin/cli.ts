@@ -268,7 +268,7 @@ if (require.main === module) {
           // console.log(command);
         await runSyncForCommand(command, async (dlpConnection) => {
           try {
-            await syncDevice(dlpConnection, '/Users/opinheiro/Palm', 'Z71')
+            await syncDevice(dlpConnection, '/Users/opinheiro/Palm', 'TaviscoVisor')
           } catch (error) {
             console.error(error);
           }

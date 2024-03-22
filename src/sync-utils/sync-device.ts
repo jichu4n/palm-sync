@@ -115,7 +115,7 @@ export async function syncDevice(
 
   if (initialSync) {
     console.log('Initial sync!');
-    new InitialSyncConduit().execute(dlpConnection, null, palmDir, syncType);
+    await new InitialSyncConduit().execute(dlpConnection, null, palmDir, syncType);
   }
 
   console.log(`Fetching all databases...`);

@@ -41,26 +41,26 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
                 // This logic already exists, clean up
                 const records: Array<RawPdbRecord> = [];
                 for (const record of rawDb.records) {
-                const {attributes} = record.entry as RecordEntryType;
-                if (attributes.delete || attributes.archive) {
-                    continue;
-                }
-                attributes.dirty = false;
-                attributes.busy = false;
-                records.push(record as RawPdbRecord);
+                    const {attributes} = record.entry as RecordEntryType;
+                    if (attributes.delete || attributes.archive) {
+                        continue;
+                    }
+                    attributes.dirty = false;
+                    attributes.busy = false;
+                    records.push(record as RawPdbRecord);
                 }
                 var a = rawDb as RawPdbDatabase;
                 a.records.splice(0, a.records.length, ...records);
                 await writeRawDbToFile(
-                a,
-                dbInfo.name,
-                `${palmDir}/${DATABASES_STORAGE_DIR}`
+                    a,
+                    dbInfo.name,
+                    `${palmDir}/${DATABASES_STORAGE_DIR}`
                 );
             } else {
                 await writeRawDbToFile(
-                rawDb,
-                dbInfo.name,
-                `${palmDir}/${DATABASES_STORAGE_DIR}`
+                    rawDb,
+                    dbInfo.name,
+                    `${palmDir}/${DATABASES_STORAGE_DIR}`
                 );
             }
             }
