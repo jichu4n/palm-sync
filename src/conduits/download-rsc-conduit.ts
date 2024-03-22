@@ -6,6 +6,9 @@ import { ConduitInterface } from "./conduit-interface";
 import { RawPdbDatabase, RawPdbRecord, RecordEntryType } from 'palm-pdb';
 import { writeRawDbToFile, ReadDbOptions, readRawDb } from '../sync-utils/read-db';
 
+/**
+ * This conduit download resources that exists on the Palm, but not on PC.
+ */
 export class DownloadNewResourcesConduit implements ConduitInterface {
     getName(): String {
         return "Download resources that exists on Palm but not on PC";
@@ -28,41 +31,45 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             );
 
             if (!resourceExists) {
-            console.log(
-                `The resource [${fileName}] exists on Palm but on on PC! Downloading it...`
-            );
-            const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
-            const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
-                ...opts,
-                dbInfo,
-            });
-
-            if (!dbInfo.dbFlags.resDB) {
-                // This logic already exists, clean up
-                const records: Array<RawPdbRecord> = [];
-                for (const record of rawDb.records) {
-                    const {attributes} = record.entry as RecordEntryType;
-                    if (attributes.delete || attributes.archive) {
-                        continue;
+                try {
+                    console.log(
+                        `The resource [${fileName}] exists on Palm but on on PC! Downloading it...`
+                    );
+                    const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
+                    const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
+                        ...opts,
+                        dbInfo,
+                    });
+                    if (!dbInfo.dbFlags.resDB) {
+                        // This logic already exists, clean up
+                        const records: Array<RawPdbRecord> = [];
+                        for (const record of rawDb.records) {
+                            const {attributes} = record.entry as RecordEntryType;
+                            if (attributes.delete || attributes.archive) {
+                                continue;
+                            }
+                            attributes.dirty = false;
+                            attributes.busy = false;
+                            records.push(record as RawPdbRecord);
+                        }
+                        var a = rawDb as RawPdbDatabase;
+                        a.records.splice(0, a.records.length, ...records);
+                        await writeRawDbToFile(
+                            a,
+                            dbInfo.name,
+                            `${palmDir}/${DATABASES_STORAGE_DIR}`
+                        );
+                    } else {
+                        await writeRawDbToFile(
+                            rawDb,
+                            dbInfo.name,
+                            `${palmDir}/${DATABASES_STORAGE_DIR}`
+                        );
                     }
-                    attributes.dirty = false;
-                    attributes.busy = false;
-                    records.push(record as RawPdbRecord);
+                } catch (error) {
+                    console.error(`Could not download resource [${fileName}]! Skipping... `, error);
                 }
-                var a = rawDb as RawPdbDatabase;
-                a.records.splice(0, a.records.length, ...records);
-                await writeRawDbToFile(
-                    a,
-                    dbInfo.name,
-                    `${palmDir}/${DATABASES_STORAGE_DIR}`
-                );
-            } else {
-                await writeRawDbToFile(
-                    rawDb,
-                    dbInfo.name,
-                    `${palmDir}/${DATABASES_STORAGE_DIR}`
-                );
-            }
+            
             }
         }
     }

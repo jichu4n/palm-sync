@@ -5,6 +5,11 @@ import { DATABASES_STORAGE_DIR, SyncType } from "../sync-utils/sync-device";
 import { ConduitInterface } from "./conduit-interface";
 import { writeDbFromFile } from "../sync-utils/write-db";
 
+/**
+ * InitialSyncConduit is run when the palm ID exists on PC, but the Palm device is fresh.
+ * 
+ * It restores all it's content's from the last backup.
+ */
 export class InitialSyncConduit implements ConduitInterface {
     getName(): String {
         return "Initial Sync";

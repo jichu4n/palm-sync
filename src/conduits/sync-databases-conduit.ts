@@ -7,6 +7,10 @@ import { RawPdbDatabase } from 'palm-pdb';
 import { writeRawDbToFile, ReadDbOptions, readRawDb } from '../sync-utils/read-db';
 import { cleanUpDb, fastSyncDb, slowSyncDb } from '../sync-utils/sync-db';
 
+/**
+ * This is the main conduit. It synchronises the database that exists on PC with the one
+ * that is in the PDA.
+ */
 export class SyncDatabasesConduit implements ConduitInterface {
     getName(): String {
         return "Sync Databases";
@@ -61,18 +65,22 @@ export class SyncDatabasesConduit implements ConduitInterface {
                 `${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`
               );
               var rawDb = RawPdbDatabase.from(resourceFile);
-      
-              if (syncType == SyncType.FAST_SYNC) {
-                await fastSyncDb(dlpConnection, rawDb, {cardNo: 0}, false);
-              } else {
-                await slowSyncDb(dlpConnection, rawDb, {cardNo: 0}, false);
-              }
-      
-              await writeRawDbToFile(
-                rawDb,
-                dbInfo.name,
-                `${palmDir}/${DATABASES_STORAGE_DIR}`
-              );
+              // try {
+                if (syncType == SyncType.FAST_SYNC) {
+                  await fastSyncDb(dlpConnection, rawDb, {cardNo: 0}, false);
+                } else {
+                  await slowSyncDb(dlpConnection, rawDb, {cardNo: 0}, false);
+                }
+        
+                await writeRawDbToFile(
+                  rawDb,
+                  dbInfo.name,
+                  `${palmDir}/${DATABASES_STORAGE_DIR}`
+                );
+              // } catch (error) {
+              //   console.error(`Failed to sync resource [${dbInfo.name}], skipping...`, error);
+              // }
+              
             }
             break;
       
