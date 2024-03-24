@@ -103,12 +103,12 @@ export async function readDbToFile(
 
 /** Write a raw database to a PDB / PRC file */
 export async function writeRawDbToFile(
-   /** The raw database to be written */
-   rawDb: RawPdbDatabase | RawPrcDatabase,
-   /** Database name to read. */
-   name: string,
-   /** Output directory. Defaults to current working directory. */
-   outputDir?: string
+  /** The raw database to be written */
+  rawDb: RawPdbDatabase | RawPrcDatabase,
+  /** Database name to read. */
+  name: string,
+  /** Output directory. Defaults to current working directory. */
+  outputDir?: string
 ) {
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;

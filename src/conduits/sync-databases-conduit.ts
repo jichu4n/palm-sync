@@ -1,11 +1,15 @@
 import fs from 'fs-extra';
-import { DlpDBInfoType, DlpOpenConduitReqType } from "../protocols/dlp-commands";
-import { DlpConnection } from "../protocols/sync-connections";
-import { DATABASES_STORAGE_DIR, SyncType } from "../sync-utils/sync-device";
-import { ConduitInterface } from "./conduit-interface";
-import { RawPdbDatabase } from 'palm-pdb';
-import { writeRawDbToFile, ReadDbOptions, readRawDb } from '../sync-utils/read-db';
-import { cleanUpDb, fastSyncDb, slowSyncDb } from '../sync-utils/sync-db';
+import {DlpDBInfoType, DlpOpenConduitReqType} from '../protocols/dlp-commands';
+import {DlpConnection} from '../protocols/sync-connections';
+import {DATABASES_STORAGE_DIR, SyncType} from '../sync-utils/sync-device';
+import {ConduitInterface} from './conduit-interface';
+import {RawPdbDatabase} from 'palm-pdb';
+import {
+  writeRawDbToFile,
+  ReadDbOptions,
+  readRawDb,
+} from '../sync-utils/read-db';
+import {cleanUpDb, fastSyncDb, slowSyncDb} from '../sync-utils/sync-db';
 import debug from 'debug';
 
 const log = debug('palm-sync').extend('conduit').extend('sync-dbs');
@@ -15,86 +19,98 @@ const log = debug('palm-sync').extend('conduit').extend('sync-dbs');
  * that is in the PDA.
  */
 export class SyncDatabasesConduit implements ConduitInterface {
-    getName(): String {
-        return "sync databases";
+  getName(): String {
+    return 'sync databases';
+  }
+  async execute(
+    dlpConnection: DlpConnection,
+    dbList: DlpDBInfoType[] | null,
+    palmDir: String | null,
+    syncType: SyncType | null
+  ): Promise<void> {
+    if (palmDir == null) {
+      throw new Error('palmDir is mandatory for this Conduit');
     }
-    async execute(dlpConnection: DlpConnection, dbList: DlpDBInfoType[] | null, palmDir: String | null, syncType: SyncType | null): Promise<void> {
-        if (palmDir == null) {
-            throw new Error('palmDir is mandatory for this Conduit');
+
+    if (dbList == null) {
+      throw new Error('dbList is mandatory for this Conduit');
+    }
+
+    await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+
+    switch (syncType) {
+      case SyncType.FIRST_SYNC:
+        log(
+          `This is the first sync for this device! Downloading all databases...`
+        );
+
+        for (let index = 0; index < dbList.length; index++) {
+          const dbInfo = dbList[index];
+
+          log(
+            `Download DB [${index + 1}]/[${dbList.length}] - [${dbInfo.name}]`
+          );
+
+          const rawDb = await getRawDbFromDevice(dlpConnection, dbInfo);
+          if (!rawDb.header.attributes.resDB) {
+            await cleanUpDb(rawDb as RawPdbDatabase);
+          }
+
+          await writeRawDbToFile(
+            rawDb,
+            dbInfo.name,
+            `${palmDir}/${DATABASES_STORAGE_DIR}`
+          );
         }
+        break;
 
-        if (dbList == null) {
-            throw new Error('dbList is mandatory for this Conduit');
-        }
+      case SyncType.SLOW_SYNC:
+      case SyncType.FAST_SYNC:
+        for (let index = 0; index < dbList.length; index++) {
+          const dbInfo = dbList[index];
 
-        await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+          if (await shouldSkipRecord(dbInfo, palmDir)) {
+            continue;
+          }
 
-        switch (syncType) {
-          case SyncType.FIRST_SYNC:
+          const desktopDbFile = await fs.readFile(
+            `${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`
+          );
+          var rawDekstopDb = RawPdbDatabase.from(desktopDbFile);
+
+          try {
+            if (syncType == SyncType.FAST_SYNC) {
+              await fastSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
+            } else {
+              await slowSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
+            }
+
             log(
-              `This is the first sync for this device! Downloading all databases...`
+              `Finished syncing DB [${index + 1}]/[${dbList.length}]: ${
+                dbInfo.name
+              }.pdb`
             );
-      
-            for (let index = 0; index < dbList.length; index++) {
-              const dbInfo = dbList[index];
-      
-              log(
-                `Download DB [${index + 1}]/[${dbList.length}] - [${dbInfo.name}]`
-              );
-      
-              const rawDb = await getRawDbFromDevice(dlpConnection, dbInfo);
-              if (!rawDb.header.attributes.resDB) {
-                await cleanUpDb(rawDb as RawPdbDatabase);
-              }
-      
-              await writeRawDbToFile(
-                rawDb,
-                dbInfo.name,
-                `${palmDir}/${DATABASES_STORAGE_DIR}`
-              );
-            }
-            break;
-      
-          case SyncType.SLOW_SYNC:
-          case SyncType.FAST_SYNC:
-            for (let index = 0; index < dbList.length; index++) {
-              const dbInfo = dbList[index];
-      
-              if (await shouldSkipRecord(dbInfo, palmDir)) {
-                continue;
-              }
-      
-              const desktopDbFile = await fs.readFile(
-                `${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`
-              );
-              var rawDekstopDb = RawPdbDatabase.from(desktopDbFile);
 
-              try {
-                if (syncType == SyncType.FAST_SYNC) {
-                  await fastSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
-                } else {
-                  await slowSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
-                }
-
-                log(`Finished syncing DB [${index + 1}]/[${dbList.length}]: ${dbInfo.name}.pdb`);
-        
-                await writeRawDbToFile(
-                  rawDekstopDb,
-                  dbInfo.name,
-                  `${palmDir}/${DATABASES_STORAGE_DIR}`
-                );
-              } catch (error) {
-                console.error(`Failed to sync resource [${dbInfo.name}], skipping...`, error);
-              }
-            }
-            break;
-      
-          default:
-            throw new Error(
-              `Invalid sync type! This is an error, please report it to the maintener`
+            await writeRawDbToFile(
+              rawDekstopDb,
+              dbInfo.name,
+              `${palmDir}/${DATABASES_STORAGE_DIR}`
             );
+          } catch (error) {
+            console.error(
+              `Failed to sync resource [${dbInfo.name}], skipping...`,
+              error
+            );
+          }
         }
+        break;
+
+      default:
+        throw new Error(
+          `Invalid sync type! This is an error, please report it to the maintener`
+        );
     }
+  }
 }
 
 async function getRawDbFromDevice(
@@ -136,5 +152,3 @@ async function shouldSkipRecord(
 
   return false;
 }
-
-  

@@ -1,5 +1,8 @@
 import fs from 'fs-extra';
-import {DlpAddSyncLogEntryReqType, DlpWriteUserInfoReqType} from '../protocols/dlp-commands';
+import {
+  DlpAddSyncLogEntryReqType,
+  DlpWriteUserInfoReqType,
+} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
 import {SObject, SStringNT, SUInt32BE, field} from 'serio';
@@ -59,9 +62,7 @@ export async function syncDevice(
     await fs.ensureDir(`${palmDir}/${DATABASES_STORAGE_DIR}`);
   } catch (e) {
     console.error(`Failed to create necessary directories to sync device`, e);
-    throw new Error(
-      `Failed to create necessary directories to sync device`
-    );
+    throw new Error(`Failed to create necessary directories to sync device`);
   }
 
   let syncType = SyncType.FAST_SYNC;
@@ -93,15 +94,11 @@ export async function syncDevice(
   }
 
   if (!fs.existsSync(`${palmDir}/${JSON_PALM_ID}`)) {
-    log(
-      `The username [${userName}] is new. Creating new local-id file.`
-    );
+    log(`The username [${userName}] is new. Creating new local-id file.`);
     fs.writeJSONSync(`${palmDir}/${JSON_PALM_ID}`, localID);
     syncType = SyncType.FIRST_SYNC;
   } else {
-    log(
-      `The username [${userName}] was synced before. Loading local-id file.`
-    );
+    log(`The username [${userName}] was synced before. Loading local-id file.`);
     localID = fs.readJSONSync(`${palmDir}/${JSON_PALM_ID}`);
   }
 
@@ -118,11 +115,19 @@ export async function syncDevice(
   }
 
   log(`Sync Type is [${syncType.valueOf()}]`);
-  await appendToHotsyncLog(dlpConnection, `Starting a ${syncType.valueOf().toLowerCase()}...`);
+  await appendToHotsyncLog(
+    dlpConnection,
+    `Starting a ${syncType.valueOf().toLowerCase()}...`
+  );
 
   if (restoreAllResources) {
     log('Initial sync! ');
-    await new RestoreResourcesConduit().execute(dlpConnection, null, palmDir, syncType);
+    await new RestoreResourcesConduit().execute(
+      dlpConnection,
+      null,
+      palmDir,
+      syncType
+    );
   }
 
   log(`Fetching all databases...`);
@@ -142,11 +147,16 @@ export async function syncDevice(
     const conduit = conduits[i];
 
     log(
-      `Executing conduit [${i + 1}] of [${conduits.length}]: ${conduit.getName()}`
+      `Executing conduit [${i + 1}] of [${
+        conduits.length
+      }]: ${conduit.getName()}`
     );
     await conduit.execute(dlpConnection, dbList, palmDir, syncType);
 
-    await appendToHotsyncLog(dlpConnection, `Conduit '${conduit.getName()}' successfully executed!`);
+    await appendToHotsyncLog(
+      dlpConnection,
+      `Conduit '${conduit.getName()}' successfully executed!`
+    );
   }
 
   log(`Updating sync info...`);
@@ -159,7 +169,10 @@ export async function syncDevice(
   log(`Finished executing sync!`);
 }
 
-async function appendToHotsyncLog(dlpConnection: DlpConnection, message: String) {
+async function appendToHotsyncLog(
+  dlpConnection: DlpConnection,
+  message: String
+) {
   let logEntry = new DlpAddSyncLogEntryReqType();
   logEntry.text = `${message}\n\n`;
   await dlpConnection.execute(logEntry);

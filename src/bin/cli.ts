@@ -20,7 +20,7 @@ import {
   readDbToFile,
 } from '../sync-utils/read-db';
 import {writeDbFromFile} from '../sync-utils/write-db';
-import { syncDevice } from '../sync-utils/sync-device';
+import {syncDevice} from '../sync-utils/sync-device';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -60,7 +60,9 @@ async function runSyncForCommand(command: Command, syncFn: SyncFn) {
   } else if (process.env.PALM_SYNC_CONNECTION) {
     connectionString = process.env.PALM_SYNC_CONNECTION;
   } else {
-    log('Please specify one of --usb, --net, or --serial. Falling back to USB.');
+    log(
+      'Please specify one of --usb, --net, or --serial. Falling back to USB.'
+    );
     connectionString = 'usb';
   }
 
@@ -287,7 +289,6 @@ if (require.main === module) {
           });
           process.exit(1);
         }
-      
       );
 
     await program.parseAsync();

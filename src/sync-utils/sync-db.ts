@@ -48,7 +48,11 @@ enum RecordState {
 }
 
 /** Computes record state for a record. */
-function computeRecordState(record: RawPdbRecord | null, slowSync: Boolean = false, otherRecord: RawPdbRecord | null = null) {
+function computeRecordState(
+  record: RawPdbRecord | null,
+  slowSync: Boolean = false,
+  otherRecord: RawPdbRecord | null = null
+) {
   if (!record) {
     return RecordState.NOT_FOUND;
   }
@@ -63,9 +67,11 @@ function computeRecordState(record: RawPdbRecord | null, slowSync: Boolean = fal
   }
 
   if (slowSync && otherRecord != null) {
-  /** This is a slowSync, thus we cannot trust the dirty flag and must compare it's content
-   * byte by byte */
-  return compareRec(record, otherRecord) != 0 ? RecordState.CHANGED : RecordState.UNCHANGED;
+    /** This is a slowSync, thus we cannot trust the dirty flag and must compare it's content
+     * byte by byte */
+    return compareRec(record, otherRecord) != 0
+      ? RecordState.CHANGED
+      : RecordState.UNCHANGED;
   }
 
   return attributes.dirty ? RecordState.CHANGED : RecordState.UNCHANGED;
@@ -74,10 +80,14 @@ function computeRecordState(record: RawPdbRecord | null, slowSync: Boolean = fal
 function compareRec(rec1: RawPdbRecord, rec2: RawPdbRecord) {
   /* Compare the category, since that's quick and easy */
   if (rec1.entry.attributes.category < rec2.entry.attributes.category) {
-    log(`SS compare_rec: ${rec1.entry.uniqueId} < ${rec1.entry.uniqueId} (category)`);
+    log(
+      `SS compare_rec: ${rec1.entry.uniqueId} < ${rec1.entry.uniqueId} (category)`
+    );
     return -1;
   } else if (rec1.entry.attributes.category > rec2.entry.attributes.category) {
-    log(`SS compare_rec: ${rec1.entry.uniqueId} > ${rec2.entry.uniqueId} (category)`);
+    log(
+      `SS compare_rec: ${rec1.entry.uniqueId} > ${rec2.entry.uniqueId} (category)`
+    );
     return 1;
   }
 
@@ -372,11 +382,19 @@ const RECORD_SYNC_LOGIC: {
 
 export function computeRecordActions(
   deviceRecord: RawPdbRecord | null,
-  desktopRecord: RawPdbRecord | null, 
+  desktopRecord: RawPdbRecord | null,
   slowSync: Boolean = false
 ): Array<RecordAction> {
-  const deviceRecordState = computeRecordState(deviceRecord, slowSync, desktopRecord);
-  const desktopRecordState = computeRecordState(desktopRecord, slowSync, deviceRecord);
+  const deviceRecordState = computeRecordState(
+    deviceRecord,
+    slowSync,
+    desktopRecord
+  );
+  const desktopRecordState = computeRecordState(
+    desktopRecord,
+    slowSync,
+    deviceRecord
+  );
   log(`${deviceRecordState} <> ${desktopRecordState}`);
   const actionTuples = RECORD_SYNC_LOGIC[deviceRecordState][desktopRecordState](
     deviceRecord,
@@ -504,8 +522,7 @@ class RawPdbDatabaseSyncInterface implements DbSyncInterface {
   }
 
   async readAllRecords(): Promise<Array<RawPdbRecord>> {
-    return this.db.records
-      .map(cloneRecord);
+    return this.db.records.map(cloneRecord);
   }
 
   async writeRecord(record: RawPdbRecord): Promise<number> {
@@ -582,9 +599,11 @@ class DeviceSyncInterface implements DbSyncInterface {
   async readAllRecords(): Promise<Array<RawPdbRecord>> {
     const records: Array<RawPdbRecord> = [];
 
-    const numRecords =
-      (await this.dlpConnection.execute(DlpReadOpenDBInfoReqType.with({dbId: this.dbId})))
-      .numRec
+    const numRecords = (
+      await this.dlpConnection.execute(
+        DlpReadOpenDBInfoReqType.with({dbId: this.dbId})
+      )
+    ).numRec;
 
     for (let i = 0; i < numRecords; ++i) {
       const readRecordResp = await this.dlpConnection.execute(
@@ -706,7 +725,9 @@ export async function slowSync(
   for (const deviceRecord of await device.readAllRecords()) {
     const {uniqueId: recordId} = deviceRecord.entry;
     const desktopRecord = await desktop.readRecord(recordId);
-    recordActions.push(...computeRecordActions(deviceRecord, desktopRecord, true));
+    recordActions.push(
+      ...computeRecordActions(deviceRecord, desktopRecord, true)
+    );
     recordIdsModifiedOnDevice.add(recordId);
   }
 
@@ -720,13 +741,15 @@ export async function slowSync(
       desktopRecord.entry.uniqueId === 0
         ? null
         : await device.readRecord(recordId);
-      
+
     if (deviceRecord == null) {
       log('No device record! Skipping...');
       continue;
     }
 
-    recordActions.push(...computeRecordActions(deviceRecord, desktopRecord, true));
+    recordActions.push(
+      ...computeRecordActions(deviceRecord, desktopRecord, true)
+    );
   }
 
   // 3. Execute record actions.
@@ -746,7 +769,6 @@ export async function slowSync(
   await desktop.cleanUp();
 }
 
-
 /** Perform a fast sync for a database. */
 export async function fastSyncDb(
   dlpConnection: DlpConnection,
@@ -755,8 +777,7 @@ export async function fastSyncDb(
   openConduit: Boolean = true
 ) {
   log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
-  if (openConduit)
-    await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
@@ -773,7 +794,7 @@ export async function fastSyncDb(
 
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
-  log('DB Closed')
+  log('DB Closed');
 }
 
 /** Perform a slow sync for a database. */
@@ -784,8 +805,7 @@ export async function slowSyncDb(
   openConduit: Boolean = true
 ) {
   log(`Slow sync database ${desktopDb.header.name} on card ${cardNo}`);
-  if (openConduit)
-    await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
@@ -802,12 +822,10 @@ export async function slowSyncDb(
 
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
-  log('DB Closed')
+  log('DB Closed');
 }
 
-export async function cleanUpDb(
-  rawDb: RawPdbDatabase,
-) {
-  log(`Cleaning up database [${rawDb.header.name}]`)
+export async function cleanUpDb(rawDb: RawPdbDatabase) {
+  log(`Cleaning up database [${rawDb.header.name}]`);
   await new RawPdbDatabaseSyncInterface(rawDb).cleanUp();
 }
