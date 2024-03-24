@@ -198,7 +198,7 @@ if (require.main === module) {
             syncFn = async (dlpConnection) => {
               await readAllDbsToFile(
                 dlpConnection,
-                {ram: true, rom: false},
+                {ram: !!ram, rom: !!rom},
                 outputDir
               );
             };

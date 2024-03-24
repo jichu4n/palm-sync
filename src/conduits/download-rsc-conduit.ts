@@ -33,7 +33,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             if (!resourceExists) {
                 try {
                     console.log(
-                        `The resource [${fileName}] exists on Palm but on on PC! Downloading it...`
+                        `The resource [${fileName}] exists on Palm but not on PC! Downloading it...`
                     );
                     const opts: Omit<ReadDbOptions, 'dbInfo'> = {};
                     const rawDb = await readRawDb(dlpConnection, dbInfo.name, {
