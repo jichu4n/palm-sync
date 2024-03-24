@@ -755,7 +755,7 @@ export async function fastSyncDb(
   {cardNo = 0}: SyncDbOptions = {},
   openConduit: Boolean = true
 ) {
-  console.log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
+  log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
   if (openConduit)
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
@@ -784,7 +784,7 @@ export async function slowSyncDb(
   {cardNo = 0}: SyncDbOptions = {},
   openConduit: Boolean = true
 ) {
-  console.log(`Slow sync database ${desktopDb.header.name} on card ${cardNo}`);
+  log(`Slow sync database ${desktopDb.header.name} on card ${cardNo}`);
   if (openConduit)
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 

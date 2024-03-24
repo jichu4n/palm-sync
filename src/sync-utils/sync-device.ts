@@ -3,12 +3,15 @@ import {DlpAddSyncLogEntryReqType, DlpWriteUserInfoReqType} from '../protocols/d
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
 import {SObject, SStringNT, SUInt32BE, field} from 'serio';
-import {InitialSyncConduit} from '../conduits/initial-sync-conduit';
+import {RestoreResourcesConduit} from '../conduits/initial-sync-conduit';
 import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
 import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
 import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
 import {UpdateClockConduit} from '../conduits/update-clock-conduit';
 import crypto from 'crypto';
+import debug from 'debug';
+
+const log = debug('palm-sync').extend('sync-device');
 
 // const log = debug('palm-sync').extend('sync-db');
 const THIS_SYNC_PC_ID = 6789;
@@ -48,23 +51,26 @@ export async function syncDevice(
     new UpdateClockConduit(),
   ];
 
-  console.log(`Start syncing device! There are [${conduits.length}] conduits.`);
+  log(`Start syncing device! There are [${conduits.length}] conduits.`);
 
   try {
     await fs.ensureDir(palmDir);
     await fs.ensureDir(`${palmDir}/${TO_INSTALL_DIR}`);
     await fs.ensureDir(`${palmDir}/${DATABASES_STORAGE_DIR}`);
   } catch (e) {
-    console.log(e);
+    console.error(`Failed to create necessary directories to sync device`, e);
+    throw new Error(
+      `Failed to create necessary directories to sync device`
+    );
   }
 
   let syncType = SyncType.FAST_SYNC;
   let localID = new PalmDeviceLocalIdentification();
   let writeUserInfoReq = new DlpWriteUserInfoReqType();
-  let initialSync = false;
+  let restoreAllResources = false;
 
   if (dlpConnection.userInfo.userId == 0) {
-    console.log(`The device does not have a userID! Setting one.`);
+    log(`The device does not have a userID! Setting one.`);
 
     writeUserInfoReq.userId = crypto.randomBytes(4).readUInt32BE();
     writeUserInfoReq.modFlags.userId = true;
@@ -74,7 +80,7 @@ export async function syncDevice(
     localID.userId = writeUserInfoReq.userId;
     localID.userName = writeUserInfoReq.userName;
 
-    initialSync = true;
+    restoreAllResources = true;
   } else {
     localID.userId = dlpConnection.userInfo.userId;
     localID.userName = dlpConnection.userInfo.userName;
@@ -87,39 +93,39 @@ export async function syncDevice(
   }
 
   if (!fs.existsSync(`${palmDir}/${JSON_PALM_ID}`)) {
-    console.log(
+    log(
       `The username [${userName}] is new. Creating new local-id file.`
     );
     fs.writeJSONSync(`${palmDir}/${JSON_PALM_ID}`, localID);
     syncType = SyncType.FIRST_SYNC;
   } else {
-    console.log(
+    log(
       `The username [${userName}] was synced before. Loading local-id file.`
     );
     localID = fs.readJSONSync(`${palmDir}/${JSON_PALM_ID}`);
   }
 
   if (dlpConnection.userInfo.lastSyncPc != THIS_SYNC_PC_ID) {
-    console.log(
+    log(
       `Updating last Sync PC from 0x${dlpConnection.userInfo.lastSyncPc} to 0x${THIS_SYNC_PC_ID}.`
     );
     writeUserInfoReq.lastSyncPc = THIS_SYNC_PC_ID;
     writeUserInfoReq.modFlags.lastSyncPc = true;
-    console.log(
+    log(
       `We also need a Slow Sync because the last sync PC doesn't match. Setting the flag.`
     );
     syncType = SyncType.SLOW_SYNC;
   }
 
-  console.log(`Sync Type is [${syncType.valueOf()}]`);
+  log(`Sync Type is [${syncType.valueOf()}]`);
   await appendToHotsyncLog(dlpConnection, `Starting a ${syncType.valueOf().toLowerCase()}...`);
 
-  if (initialSync) {
-    console.log('Initial sync!');
-    await new InitialSyncConduit().execute(dlpConnection, null, palmDir, syncType);
+  if (restoreAllResources) {
+    log('Initial sync! ');
+    await new RestoreResourcesConduit().execute(dlpConnection, null, palmDir, syncType);
   }
 
-  console.log(`Fetching all databases...`);
+  log(`Fetching all databases...`);
   const dbList = await readDbList(
     dlpConnection,
     {
@@ -130,12 +136,12 @@ export async function syncDevice(
       cardNo: CARD_ZERO,
     }
   );
-  console.log(`Fetched [${dbList.length}] databases! Starting conduits!`);
+  log(`Fetched [${dbList.length}] databases! Starting conduits!`);
 
   for (let i = 0; i < conduits.length; i++) {
     const conduit = conduits[i];
 
-    console.log(
+    log(
       `Executing conduit [${i + 1}] of [${conduits.length}]: ${conduit.getName()}`
     );
     await conduit.execute(dlpConnection, dbList, palmDir, syncType);
@@ -143,14 +149,14 @@ export async function syncDevice(
     await appendToHotsyncLog(dlpConnection, `Conduit '${conduit.getName()}' successfully executed!`);
   }
 
-  console.log(`Updating sync info...`);
+  log(`Updating sync info...`);
   writeUserInfoReq.lastSyncDate = new Date();
   writeUserInfoReq.modFlags.lastSyncDate = true;
   await dlpConnection.execute(writeUserInfoReq);
 
   await appendToHotsyncLog(dlpConnection, `Thanks for using palm-sync!`);
 
-  console.log(`Finished executing sync!`);
+  log(`Finished executing sync!`);
 }
 
 async function appendToHotsyncLog(dlpConnection: DlpConnection, message: String) {

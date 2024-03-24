@@ -5,6 +5,9 @@ import { DATABASES_STORAGE_DIR, SyncType } from "../sync-utils/sync-device";
 import { ConduitInterface } from "./conduit-interface";
 import { RawPdbDatabase, RawPdbRecord, RecordEntryType } from 'palm-pdb';
 import { writeRawDbToFile, ReadDbOptions, readRawDb } from '../sync-utils/read-db';
+import debug from 'debug';
+
+const log = debug('palm-sync').extend('conduit').extend('download-new');
 
 /**
  * This conduit download resources that exists on the Palm, but not on PC.
@@ -32,7 +35,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
 
             if (!resourceExists) {
                 try {
-                    console.log(
+                    log(
                         `The resource [${fileName}] exists on Palm but not on PC! Downloading it...`
                     );
                     const opts: Omit<ReadDbOptions, 'dbInfo'> = {};

@@ -8,7 +8,7 @@ import { writeRawDbToFile, ReadDbOptions, readRawDb } from '../sync-utils/read-d
 import { cleanUpDb, fastSyncDb, slowSyncDb } from '../sync-utils/sync-db';
 import debug from 'debug';
 
-const log = debug('palm-sync').extend('sync-dbs-conduit');
+const log = debug('palm-sync').extend('conduit').extend('sync-dbs');
 
 /**
  * This is the main conduit. It synchronises the database that exists on PC with the one
@@ -31,14 +31,14 @@ export class SyncDatabasesConduit implements ConduitInterface {
 
         switch (syncType) {
           case SyncType.FIRST_SYNC:
-            console.log(
+            log(
               `This is the first sync for this device! Downloading all databases...`
             );
       
             for (let index = 0; index < dbList.length; index++) {
               const dbInfo = dbList[index];
       
-              console.log(
+              log(
                 `Download DB [${index + 1}]/[${dbList.length}] - [${dbInfo.name}]`
               );
       
@@ -76,7 +76,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
                   await slowSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
                 }
 
-                log(`Finished syncing ${dbInfo.name}.pdb`);
+                log(`Finished syncing DB [${index + 1}]/[${dbList.length}]: ${dbInfo.name}.pdb`);
         
                 await writeRawDbToFile(
                   rawDekstopDb,
@@ -130,7 +130,7 @@ async function shouldSkipRecord(
     `${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`
   );
   if (!resourceExistsOnPC) {
-    console.log(`The databse [${fileName}] does not exists on PC, skipping...`);
+    log(`The databse [${fileName}] does not exists on PC, skipping...`);
     return true;
   }
 
