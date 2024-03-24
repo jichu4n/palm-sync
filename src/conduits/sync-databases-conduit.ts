@@ -6,6 +6,9 @@ import { ConduitInterface } from "./conduit-interface";
 import { RawPdbDatabase } from 'palm-pdb';
 import { writeRawDbToFile, ReadDbOptions, readRawDb } from '../sync-utils/read-db';
 import { cleanUpDb, fastSyncDb, slowSyncDb } from '../sync-utils/sync-db';
+import debug from 'debug';
+
+const log = debug('palm-sync').extend('sync-dbs-conduit');
 
 /**
  * This is the main conduit. It synchronises the database that exists on PC with the one
@@ -71,6 +74,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
                 } else {
                   await slowSyncDb(dlpConnection, rawDb, {cardNo: 0}, false);
                 }
+                log(`Finished syncing ${dbInfo.name}.pdb`);
         
                 await writeRawDbToFile(
                   rawDb,

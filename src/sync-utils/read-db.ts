@@ -113,8 +113,11 @@ export async function writeRawDbToFile(
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
   const filePath = outputDir ? path.join(outputDir, fileName) : fileName;
+  log(`Serializing`);
+  const serializedDB  = rawDb.serialize();
+  log(`Writing ${ext} to ${filePath}/${fileName}`);
   await fs.ensureFile(filePath);
-  await fs.writeFile(filePath, rawDb.serialize());
+  await fs.writeFile(filePath, serializedDB);
 }
 
 /** Read list of all databases from a Palm OS device. */
