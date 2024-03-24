@@ -16,7 +16,7 @@ const log = debug('palm-sync').extend('sync-dbs-conduit');
  */
 export class SyncDatabasesConduit implements ConduitInterface {
     getName(): String {
-        return "Sync Databases";
+        return "sync databases";
     }
     async execute(dlpConnection: DlpConnection, dbList: DlpDBInfoType[] | null, palmDir: String | null, syncType: SyncType | null): Promise<void> {
         if (palmDir == null) {
@@ -64,27 +64,28 @@ export class SyncDatabasesConduit implements ConduitInterface {
                 continue;
               }
       
-              const resourceFile = await fs.readFile(
+              const desktopDbFile = await fs.readFile(
                 `${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`
               );
-              var rawDb = RawPdbDatabase.from(resourceFile);
-              // try {
+              var rawDekstopDb = RawPdbDatabase.from(desktopDbFile);
+
+              try {
                 if (syncType == SyncType.FAST_SYNC) {
-                  await fastSyncDb(dlpConnection, rawDb, {cardNo: 0}, false);
+                  await fastSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
                 } else {
-                  await slowSyncDb(dlpConnection, rawDb, {cardNo: 0}, false);
+                  await slowSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
                 }
+
                 log(`Finished syncing ${dbInfo.name}.pdb`);
         
                 await writeRawDbToFile(
-                  rawDb,
+                  rawDekstopDb,
                   dbInfo.name,
                   `${palmDir}/${DATABASES_STORAGE_DIR}`
                 );
-              // } catch (error) {
-              //   console.error(`Failed to sync resource [${dbInfo.name}], skipping...`, error);
-              // }
-              
+              } catch (error) {
+                console.error(`Failed to sync resource [${dbInfo.name}], skipping...`, error);
+              }
             }
             break;
       

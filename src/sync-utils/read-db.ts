@@ -113,7 +113,7 @@ export async function writeRawDbToFile(
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
   const filePath = outputDir ? path.join(outputDir, fileName) : fileName;
-  log(`Serializing`);
+  log(`Serializing ${fileName}`);
   const serializedDB  = rawDb.serialize();
   log(`Writing ${ext} to ${filePath}/${fileName}`);
   await fs.ensureFile(filePath);

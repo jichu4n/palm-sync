@@ -1,5 +1,5 @@
 import fs from 'fs-extra';
-import {DlpWriteUserInfoReqType} from '../protocols/dlp-commands';
+import {DlpAddSyncLogEntryReqType, DlpWriteUserInfoReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
 import {SObject, SStringNT, SUInt32BE, field} from 'serio';
@@ -112,6 +112,7 @@ export async function syncDevice(
   }
 
   console.log(`Sync Type is [${syncType.valueOf()}]`);
+  await appendToHotsyncLog(dlpConnection, `Starting a ${syncType.valueOf().toLowerCase()}...`);
 
   if (initialSync) {
     console.log('Initial sync!');
@@ -138,6 +139,8 @@ export async function syncDevice(
       `Executing conduit [${i + 1}] of [${conduits.length}]: ${conduit.getName()}`
     );
     await conduit.execute(dlpConnection, dbList, palmDir, syncType);
+
+    await appendToHotsyncLog(dlpConnection, `Conduit '${conduit.getName()}' successfully executed!`);
   }
 
   console.log(`Updating sync info...`);
@@ -145,5 +148,13 @@ export async function syncDevice(
   writeUserInfoReq.modFlags.lastSyncDate = true;
   await dlpConnection.execute(writeUserInfoReq);
 
+  await appendToHotsyncLog(dlpConnection, `Thanks for using palm-sync!`);
+
   console.log(`Finished executing sync!`);
+}
+
+async function appendToHotsyncLog(dlpConnection: DlpConnection, message: String) {
+  let logEntry = new DlpAddSyncLogEntryReqType();
+  logEntry.text = `${message}\n\n`;
+  await dlpConnection.execute(logEntry);
 }

@@ -5,9 +5,13 @@ import { DATABASES_STORAGE_DIR, SyncType, TO_INSTALL_DIR } from "../sync-utils/s
 import { ConduitInterface } from "./conduit-interface";
 import { writeDbFromFile } from '../sync-utils/write-db';
 
+/**
+ * This conduit installs every resource that is present in the Palm's
+ * install dir
+ */
 export class InstallNewResourcesConduit implements ConduitInterface {
     getName(): String {
-        return "Install resources that are present in the install dir";
+        return "install new resources from PC";
     }
     async execute(dlpConnection: DlpConnection, dbList: DlpDBInfoType[] | null, palmDir: String | null, syncType: SyncType | null): Promise<void> {
         await dlpConnection.execute(DlpOpenConduitReqType.with({}));

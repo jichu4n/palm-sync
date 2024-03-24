@@ -12,7 +12,7 @@ import { writeDbFromFile } from "../sync-utils/write-db";
  */
 export class InitialSyncConduit implements ConduitInterface {
     getName(): String {
-        return "Initial Sync";
+        return "restore backup";
     }
 
     async execute(dlpConnection: DlpConnection, dbList: DlpDBInfoType[] | null, palmDir: String | null, syncType: SyncType | null): Promise<void> {

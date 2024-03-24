@@ -11,7 +11,7 @@ import { writeRawDbToFile, ReadDbOptions, readRawDb } from '../sync-utils/read-d
  */
 export class DownloadNewResourcesConduit implements ConduitInterface {
     getName(): String {
-        return "Download resources that exists on Palm but not on PC";
+        return "download new resources from Palm";
     }
     async execute(dlpConnection: DlpConnection, dbList: DlpDBInfoType[] | null, palmDir: String | null, syncType: SyncType | null): Promise<void> {
         if (dbList == null) {
