@@ -60,8 +60,8 @@ async function runSyncForCommand(command: Command, syncFn: SyncFn) {
   } else if (process.env.PALM_SYNC_CONNECTION) {
     connectionString = process.env.PALM_SYNC_CONNECTION;
   } else {
-    log('Please specify one of --usb, --net, or --serial');
-    process.exit(1);
+    log('Please specify one of --usb, --net, or --serial. Falling back to USB.');
+    connectionString = 'usb';
   }
 
   const syncConnectionOptions: SyncConnectionOptions = encoding
@@ -285,6 +285,7 @@ if (require.main === module) {
               console.error(error);
             }
           });
+          process.exit(1);
         }
       
       );
