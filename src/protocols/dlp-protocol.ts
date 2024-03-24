@@ -277,8 +277,8 @@ function parseDlpArgs(
           `expected ${arg.dlpArgSpecs.length}, got ${arg.value.value.length}`
       );
     }
-    dlpRequestOrResponse.assignFromSerializable(
-      _.fromPairs(
+    dlpRequestOrResponse.assignSerializableMap(
+      Object.fromEntries(
         arg.dlpArgSpecs.map(({propertyKey}, j) => [
           propertyKey.toString(),
           arg.value.value[j],
@@ -382,7 +382,7 @@ function getDlpArgSpecs(targetInstance: any) {
 
 /** Constructs DlpArg's on a DlpRequest or DlpResponse. */
 function getDlpArgs(targetInstance: SObject) {
-  const values = targetInstance.mapValuesToSerializable();
+  const values = targetInstance.toSerializableMap();
   return _(getDlpArgSpecs(targetInstance))
     .groupBy('argId')
     .entries()

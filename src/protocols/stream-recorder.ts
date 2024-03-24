@@ -154,7 +154,7 @@ class PlaybackStream extends Duplex {
     if (!chunk.equals(expectedData)) {
       callback(
         new Error(
-          `Attempting to write data that  does not match the recorded data: \n` +
+          `Attempting to write data that does not match the recorded data: \n` +
             `  expected: ${expectedData.toString('hex')}\n` +
             `  actual:   ${chunk.toString('hex')}`
         )
