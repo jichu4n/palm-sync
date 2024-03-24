@@ -184,17 +184,17 @@ if (require.main === module) {
           command: Command
         ) => {
           let syncFn: (dlpConnection: any) => Promise<void>;
-          // if (names.length > 0) {
-          //   if (ram || rom) {
-          //     log('Cannot specify both database names and --ram/--rom');
-          //     process.exit(1);
-          //   }
-          //   syncFn = async (dlpConnection) => {
-          //     for (const name of names) {
-          //       await readDbToFile(dlpConnection, name, outputDir);
-          //     }
-          //   };
-          // } else if (ram || rom) {
+          if (names.length > 0) {
+            if (ram || rom) {
+              log('Cannot specify both database names and --ram/--rom');
+              process.exit(1);
+            }
+            syncFn = async (dlpConnection) => {
+              for (const name of names) {
+                await readDbToFile(dlpConnection, name, outputDir);
+              }
+            };
+          } else if (ram || rom) {
             syncFn = async (dlpConnection) => {
               await readAllDbsToFile(
                 dlpConnection,
@@ -202,10 +202,10 @@ if (require.main === module) {
                 outputDir
               );
             };
-          // } else {
-          //   log('Must specify either database names or --ram/--rom');
-          //   process.exit(1);
-          // }
+          } else {
+            log('Must specify either database names or --ram/--rom');
+            process.exit(1);
+          }
           await runSyncForCommand(command, syncFn);
         }
       );
@@ -263,17 +263,29 @@ if (require.main === module) {
     program
       .command('sync')
       .description('HotSync a Palm OS device')
-      .action(async (opts: {}, command: Command) => {
-          // console.log(palmDir);
-          // console.log(command);
-        await runSyncForCommand(command, async (dlpConnection) => {
-          try {
-            await syncDevice(dlpConnection, '/Users/opinheiro/Palm', 'TC')
-          } catch (error) {
-            console.error(error);
-          }
-        });
-      }
+      .argument(
+        '<storageDir>',
+        'The directory where every palm user folder will be created'
+      )
+      .argument(
+        '<userName>',
+        'The username of the PDA to be syncd. It will be set as the hotsync name.'
+      )
+      .action(
+        async (
+          storageDir: string,
+          userName: string,
+          opts: {},
+          command: Command
+        ) => {
+          await runSyncForCommand(command, async (dlpConnection) => {
+            try {
+              await syncDevice(dlpConnection, storageDir, userName);
+            } catch (error) {
+              console.error(error);
+            }
+          });
+        }
       
       );
 

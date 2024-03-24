@@ -37,9 +37,9 @@ export enum SyncType {
 export async function syncDevice(
   dlpConnection: DlpConnection,
   palmDir: string,
-  palmName: string
+  userName: string
 ) {
-  palmDir = `${palmDir}/${palmName}`;
+  palmDir = `${palmDir}/${userName}`;
 
   let conduits = [
     new SyncDatabasesConduit(),
@@ -68,7 +68,7 @@ export async function syncDevice(
 
     writeUserInfoReq.userId = crypto.randomBytes(4).readUInt32BE();
     writeUserInfoReq.modFlags.userId = true;
-    writeUserInfoReq.userName = palmName;
+    writeUserInfoReq.userName = userName;
     writeUserInfoReq.modFlags.userName = true;
 
     localID.userId = writeUserInfoReq.userId;
@@ -79,22 +79,22 @@ export async function syncDevice(
     localID.userId = dlpConnection.userInfo.userId;
     localID.userName = dlpConnection.userInfo.userName;
 
-    if (dlpConnection.userInfo.userName != palmName) {
+    if (dlpConnection.userInfo.userName != userName) {
       throw new Error(
-        `Expected a palm with user name [${palmName}] but instead it is named [${localID.userName}]`
+        `Expected a palm with user name [${userName}] but instead it is named [${localID.userName}]`
       );
     }
   }
 
   if (!fs.existsSync(`${palmDir}/${JSON_PALM_ID}`)) {
     console.log(
-      `The username [${palmName}] is new. Creating new local-id file.`
+      `The username [${userName}] is new. Creating new local-id file.`
     );
     fs.writeJSONSync(`${palmDir}/${JSON_PALM_ID}`, localID);
     syncType = SyncType.FIRST_SYNC;
   } else {
     console.log(
-      `The username [${palmName}] was synced before. Loading local-id file.`
+      `The username [${userName}] was synced before. Loading local-id file.`
     );
     localID = fs.readJSONSync(`${palmDir}/${JSON_PALM_ID}`);
   }
