@@ -10,7 +10,7 @@
  */
 
 import debug from 'debug';
-import {RawPdbDatabase, RawPdbRecord, RawPrcDatabase} from 'palm-pdb';
+import {RawPdbDatabase, RawPdbRecord} from 'palm-pdb';
 import {
   DlpCleanUpDatabaseReqType,
   DlpCloseDBReqType,
@@ -692,7 +692,6 @@ export async function fastSync(
   log('Cleaning up database');
   await device.cleanUp();
   await desktop.cleanUp();
-  log('Cleaning up DONE');
 }
 
 /** Perform a slow sync for a database. */
