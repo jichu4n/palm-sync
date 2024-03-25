@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
-import {DlpDBInfoType, DlpOpenConduitReqType} from '../protocols/dlp-commands';
+import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DATABASES_STORAGE_DIR, SyncType} from '../sync-utils/sync-device';
+import {DATABASES_STORAGE_DIR} from '../sync-utils/sync-device';
 import {ConduitData, ConduitInterface} from './conduit-interface';
 import {writeDbFromFile} from '../sync-utils/write-db';
 import debug from 'debug';
@@ -27,6 +27,8 @@ export class RestoreResourcesConduit implements ConduitInterface {
       throw new Error('palmDir is mandatory for this Conduit');
     }
 
+    let installCount = 0;
+
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
     let toInstallDir = fs.opendirSync(`${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`);
 
@@ -45,7 +47,11 @@ export class RestoreResourcesConduit implements ConduitInterface {
             error
           );
         }
+
+        installCount++;
       }
     }
+
+    log(`Done! Successfully restored ${installCount} resources`);
   }
 }

@@ -47,5 +47,6 @@ export class UpdateSyncInfoConduit implements ConduitInterface {
     writeUserInfoReq.modFlags.lastSyncDate = true;
 
     await dlpConnection.execute(writeUserInfoReq);
+    log(`Done! Successfully updated sync info`);
   }
 }

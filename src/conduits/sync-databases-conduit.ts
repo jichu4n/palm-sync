@@ -68,6 +68,11 @@ export class SyncDatabasesConduit implements ConduitInterface {
           const dbInfo = conduitData.dbList[index];
 
           if (await shouldSkipRecord(dbInfo, conduitData.palmDir)) {
+            log(
+              `[${index + 1}]/[${conduitData.dbList.length}]: ${
+                dbInfo.name
+              } skipped.`
+            );
             continue;
           }
 
@@ -84,9 +89,9 @@ export class SyncDatabasesConduit implements ConduitInterface {
             }
 
             log(
-              `Finished syncing DB [${index + 1}]/[${conduitData.dbList.length}]: ${
+              `[${index + 1}]/[${conduitData.dbList.length}]: ${
                 dbInfo.name
-              }.pdb`
+              }.pdb successfully synced.`
             );
 
             await writeRawDbToFile(

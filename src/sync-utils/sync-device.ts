@@ -4,7 +4,7 @@ import {
 } from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
-import {RestoreResourcesConduit} from '../conduits/initial-sync-conduit';
+import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
 import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
 import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
 import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';

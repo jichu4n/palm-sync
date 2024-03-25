@@ -28,6 +28,8 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
       throw new Error('dbList is mandatory for this Conduit');
     }
 
+    let downloadCount = 0;
+
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
     for (let index = 0; index < conduitData.dbList.length; index++) {
@@ -76,6 +78,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
               `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
             );
           }
+          downloadCount++;
         } catch (error) {
           console.error(
             `Could not download resource [${fileName}]! Skipping... `,
@@ -83,6 +86,12 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
           );
         }
       }
+    }
+    
+    if (downloadCount == 0) {
+      log(`No new resources to download`);
+    } else {
+      log(`Done! Successfully downloaded ${downloadCount} resoruces`);
     }
   }
 }
