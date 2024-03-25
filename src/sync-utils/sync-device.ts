@@ -1,11 +1,9 @@
 import fs from 'fs-extra';
 import {
   DlpAddSyncLogEntryReqType,
-  DlpWriteUserInfoReqType,
 } from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
-import {SObject, SStringNT, SUInt32BE, field} from 'serio';
 import {RestoreResourcesConduit} from '../conduits/initial-sync-conduit';
 import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
 import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
@@ -13,7 +11,8 @@ import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
 import {UpdateClockConduit} from '../conduits/update-clock-conduit';
 import crypto from 'crypto';
 import debug from 'debug';
-import { UpdateSyncInfoConduit } from 'src/conduits/update-sync-info-conduit';
+import { UpdateSyncInfoConduit } from '../conduits/update-sync-info-conduit';
+import { ConduitData } from '../conduits/conduit-interface';
 
 const log = debug('palm-sync').extend('sync-device');
 
@@ -27,6 +26,7 @@ export class PalmDeviceLocalIdentification {
   userId = 0;
   userName = '';
   newlySet = false;
+  thisPcId = 6789;
 }
 
 /**
@@ -57,7 +57,7 @@ export async function syncDevice(
   ];
 
   log(`Start syncing device! There are [${conduits.length}] conduits.`);
-  await assertDirectiores(storageDir, palmDir);
+  await assertMandatoryDirectiores(storageDir, palmDir);
 
   let syncType = getDefaultSyncType();
   let localID = getLocalID(dlpConnection, requestedUserName);
@@ -81,7 +81,7 @@ export async function syncDevice(
     }
   }
 
-  if (dlpConnection.userInfo.lastSyncPc != THIS_SYNC_PC_ID) {
+  if (dlpConnection.userInfo.lastSyncPc != localID.thisPcId) {
     syncType = SyncType.SLOW_SYNC;
   }
 
@@ -95,9 +95,7 @@ export async function syncDevice(
     log('Restoring backup!');
     await new RestoreResourcesConduit().execute(
       dlpConnection,
-      null,
-      palmDir,
-      syncType
+      new ConduitData(localID, null, palmDir, syncType)
     );
     await appendToHotsyncLog(
       dlpConnection,
@@ -118,6 +116,8 @@ export async function syncDevice(
   );
   log(`Fetched [${dbList.length}] databases! Starting conduits!`);
 
+  const conduitData = new ConduitData(localID, dbList, palmDir, syncType)
+
   for (let i = 0; i < conduits.length; i++) {
     const conduit = conduits[i];
 
@@ -126,21 +126,22 @@ export async function syncDevice(
         conduits.length
       }]: ${conduit.getName()}`
     );
-    await conduit.execute(dlpConnection, dbList, palmDir, syncType);
+    await conduit.execute(dlpConnection, conduitData);
 
     await appendToHotsyncLog(
       dlpConnection,
       `Conduit '${conduit.getName()}' successfully executed!`
     );
+
+    log(`Conduit '${conduit.getName()}' successfully executed!`);
   }
 
-  
   await appendToHotsyncLog(dlpConnection, `Thanks for using palm-sync!`);
 
-  log(`Finished executing sync!`);
+  log(`Finished sync!`);
 }
 
-async function assertDirectiores(storageDir: string, palmDir: string) {
+async function assertMandatoryDirectiores(storageDir: string, palmDir: string) {
   try {
     await fs.ensureDir(storageDir);
     await fs.ensureDir(palmDir);

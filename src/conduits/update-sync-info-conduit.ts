@@ -5,8 +5,6 @@ import debug from 'debug';
 
 const log = debug('palm-sync').extend('conduit').extend('update-sync-info');
 
-const THIS_SYNC_PC_ID = 6789;
-
 /**
  * This conduit updates all information related to the syncing.
  *
@@ -26,11 +24,11 @@ export class UpdateSyncInfoConduit implements ConduitInterface {
   ): Promise<void> {
     let writeUserInfoReq = new DlpWriteUserInfoReqType();
 
-    if (dlpConnection.userInfo.lastSyncPc != THIS_SYNC_PC_ID) {
+    if (dlpConnection.userInfo.lastSyncPc != conduitData.localID.thisPcId) {
       log(
-        `Updating last Sync PC from 0x${dlpConnection.userInfo.lastSyncPc} to 0x${THIS_SYNC_PC_ID}.`
+        `Updating last Sync PC from 0x${dlpConnection.userInfo.lastSyncPc} to 0x${conduitData.localID.thisPcId}.`
       );
-      writeUserInfoReq.lastSyncPc = THIS_SYNC_PC_ID;
+      writeUserInfoReq.lastSyncPc = conduitData.localID.thisPcId;
       writeUserInfoReq.modFlags.lastSyncPc = true;
       log(
         `We also need a Slow Sync because the last sync PC doesn't match. Setting the flag.`
