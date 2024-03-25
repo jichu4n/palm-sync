@@ -88,7 +88,7 @@ export async function syncDevice(
   log(`Sync Type is [${syncType.valueOf()}]`);
   await appendToHotsyncLog(
     dlpConnection,
-    `Starting a ${syncType.valueOf().toLowerCase()}...`
+    `Sync type is ${syncType.valueOf().toLowerCase()}`
   );
 
   if (shoudRestoreAllResources) {
@@ -130,7 +130,7 @@ export async function syncDevice(
 
     await appendToHotsyncLog(
       dlpConnection,
-      `Conduit '${conduit.getName()}' successfully executed!`
+      `- '${conduit.getName()}' OK!`
     );
 
     log(`Conduit '${conduit.getName()}' successfully executed!`);
@@ -182,6 +182,6 @@ async function appendToHotsyncLog(
   message: String
 ) {
   let logEntry = new DlpAddSyncLogEntryReqType();
-  logEntry.text = `${message}\n\n`;
+  logEntry.text = `${message}\n`;
   await dlpConnection.execute(logEntry);
 }
