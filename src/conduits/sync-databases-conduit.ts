@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import {DlpDBInfoType, DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {DATABASES_STORAGE_DIR, SyncType} from '../sync-utils/sync-device';
-import {ConduitInterface} from './conduit-interface';
+import {ConduitData, ConduitInterface} from './conduit-interface';
 import {RawPdbDatabase} from 'palm-pdb';
 import {
   writeRawDbToFile,
@@ -24,31 +24,29 @@ export class SyncDatabasesConduit implements ConduitInterface {
   }
   async execute(
     dlpConnection: DlpConnection,
-    dbList: DlpDBInfoType[] | null,
-    palmDir: String | null,
-    syncType: SyncType | null
+    conduitData: ConduitData
   ): Promise<void> {
-    if (palmDir == null) {
-      throw new Error('palmDir is mandatory for this Conduit');
+    if (conduitData.palmDir == null) {
+      throw new Error('conduitData.palmDir is mandatory for this Conduit');
     }
 
-    if (dbList == null) {
-      throw new Error('dbList is mandatory for this Conduit');
+    if (conduitData.dbList == null) {
+      throw new Error('conduitData.dbList is mandatory for this Conduit');
     }
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
-    switch (syncType) {
+    switch (conduitData.syncType) {
       case SyncType.FIRST_SYNC:
         log(
           `This is the first sync for this device! Downloading all databases...`
         );
 
-        for (let index = 0; index < dbList.length; index++) {
-          const dbInfo = dbList[index];
+        for (let index = 0; index < conduitData.dbList.length; index++) {
+          const dbInfo = conduitData.dbList[index];
 
           log(
-            `Download DB [${index + 1}]/[${dbList.length}] - [${dbInfo.name}]`
+            `Download DB [${index + 1}]/[${conduitData.dbList.length}] - [${dbInfo.name}]`
           );
 
           const rawDb = await getRawDbFromDevice(dlpConnection, dbInfo);
@@ -59,34 +57,34 @@ export class SyncDatabasesConduit implements ConduitInterface {
           await writeRawDbToFile(
             rawDb,
             dbInfo.name,
-            `${palmDir}/${DATABASES_STORAGE_DIR}`
+            `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
           );
         }
         break;
 
       case SyncType.SLOW_SYNC:
       case SyncType.FAST_SYNC:
-        for (let index = 0; index < dbList.length; index++) {
-          const dbInfo = dbList[index];
+        for (let index = 0; index < conduitData.dbList.length; index++) {
+          const dbInfo = conduitData.dbList[index];
 
-          if (await shouldSkipRecord(dbInfo, palmDir)) {
+          if (await shouldSkipRecord(dbInfo, conduitData.palmDir)) {
             continue;
           }
 
           const desktopDbFile = await fs.readFile(
-            `${palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`
+            `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`
           );
           var rawDekstopDb = RawPdbDatabase.from(desktopDbFile);
 
           try {
-            if (syncType == SyncType.FAST_SYNC) {
+            if (conduitData.syncType == SyncType.FAST_SYNC) {
               await fastSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
             } else {
               await slowSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
             }
 
             log(
-              `Finished syncing DB [${index + 1}]/[${dbList.length}]: ${
+              `Finished syncing DB [${index + 1}]/[${conduitData.dbList.length}]: ${
                 dbInfo.name
               }.pdb`
             );
@@ -94,7 +92,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
             await writeRawDbToFile(
               rawDekstopDb,
               dbInfo.name,
-              `${palmDir}/${DATABASES_STORAGE_DIR}`
+              `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
             );
           } catch (error) {
             console.error(

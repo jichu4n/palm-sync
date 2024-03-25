@@ -1,4 +1,7 @@
-import {SyncType} from '../sync-utils/sync-device';
+import {
+  PalmDeviceLocalIdentification,
+  SyncType,
+} from '../sync-utils/sync-device';
 import {DlpDBInfoType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 
@@ -11,8 +14,28 @@ export interface ConduitInterface {
 
   execute(
     dlpConnection: DlpConnection,
+    conduitData: ConduitData
+  ): Promise<void>;
+}
+
+/**
+ * Incapsulates data related to syncing
+ */
+export class ConduitData {
+  constructor(
+    localID: PalmDeviceLocalIdentification,
     dbList: DlpDBInfoType[] | null,
     palmDir: String | null,
     syncType: SyncType | null
-  ): Promise<void>;
+  ) {
+    this.localID = localID;
+    this.dbList = dbList;
+    this.palmDir = palmDir;
+    this.syncType = syncType;
+  }
+
+  localID: PalmDeviceLocalIdentification;
+  dbList: DlpDBInfoType[] | null;
+  palmDir: String | null;
+  syncType: SyncType | null;
 }

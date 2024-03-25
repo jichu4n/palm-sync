@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import {DlpDBInfoType, DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {DATABASES_STORAGE_DIR, SyncType} from '../sync-utils/sync-device';
-import {ConduitInterface} from './conduit-interface';
+import {ConduitData, ConduitInterface} from './conduit-interface';
 import {RawPdbDatabase, RawPdbRecord, RecordEntryType} from 'palm-pdb';
 import {
   writeRawDbToFile,
@@ -22,24 +22,22 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
   }
   async execute(
     dlpConnection: DlpConnection,
-    dbList: DlpDBInfoType[] | null,
-    palmDir: String | null,
-    syncType: SyncType | null
+    conduitData: ConduitData
   ): Promise<void> {
-    if (dbList == null) {
+    if (conduitData.dbList == null) {
       throw new Error('dbList is mandatory for this Conduit');
     }
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
-    for (let index = 0; index < dbList.length; index++) {
-      const dbInfo = dbList[index];
+    for (let index = 0; index < conduitData.dbList.length; index++) {
+      const dbInfo = conduitData.dbList[index];
 
       const ext = dbInfo.dbFlags.resDB ? 'prc' : 'pdb';
       const fileName = `${dbInfo.name}.${ext}`;
 
       const resourceExists = await fs.exists(
-        `${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`
+        `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`
       );
 
       if (!resourceExists) {
@@ -69,13 +67,13 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             await writeRawDbToFile(
               a,
               dbInfo.name,
-              `${palmDir}/${DATABASES_STORAGE_DIR}`
+              `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
             );
           } else {
             await writeRawDbToFile(
               rawDb,
               dbInfo.name,
-              `${palmDir}/${DATABASES_STORAGE_DIR}`
+              `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
             );
           }
         } catch (error) {

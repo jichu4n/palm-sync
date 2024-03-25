@@ -5,7 +5,7 @@ import {
 } from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {SyncType} from '../sync-utils/sync-device';
-import {ConduitInterface} from './conduit-interface';
+import {ConduitData, ConduitInterface} from './conduit-interface';
 
 /**
  * This conduit sets the PDA's clock to the same date and time
@@ -17,9 +17,7 @@ export class UpdateClockConduit implements ConduitInterface {
   }
   async execute(
     dlpConnection: DlpConnection,
-    dbList: DlpDBInfoType[] | null,
-    palmDir: String | null,
-    syncType: SyncType | null
+    conduitData: ConduitData
   ): Promise<void> {
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
     let setDateTimeReq = new DlpSetSysDateTimeReqType();

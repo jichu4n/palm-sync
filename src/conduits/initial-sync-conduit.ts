@@ -2,7 +2,7 @@ import fs from 'fs-extra';
 import {DlpDBInfoType, DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {DATABASES_STORAGE_DIR, SyncType} from '../sync-utils/sync-device';
-import {ConduitInterface} from './conduit-interface';
+import {ConduitData, ConduitInterface} from './conduit-interface';
 import {writeDbFromFile} from '../sync-utils/write-db';
 import debug from 'debug';
 
@@ -21,16 +21,14 @@ export class RestoreResourcesConduit implements ConduitInterface {
 
   async execute(
     dlpConnection: DlpConnection,
-    dbList: DlpDBInfoType[] | null,
-    palmDir: String | null,
-    syncType: SyncType | null
+    conduitData: ConduitData
   ): Promise<void> {
-    if (palmDir == null) {
+    if (conduitData.palmDir == null) {
       throw new Error('palmDir is mandatory for this Conduit');
     }
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
-    let toInstallDir = fs.opendirSync(`${palmDir}/${DATABASES_STORAGE_DIR}`);
+    let toInstallDir = fs.opendirSync(`${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`);
 
     for await (const dirent of toInstallDir) {
       if (dirent.name.endsWith('.prc') || dirent.name.endsWith('.pdb')) {
@@ -38,7 +36,7 @@ export class RestoreResourcesConduit implements ConduitInterface {
         try {
           await writeDbFromFile(
             dlpConnection,
-            `${palmDir}/${DATABASES_STORAGE_DIR}/${dirent.name}`,
+            `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}/${dirent.name}`,
             {overwrite: true}
           );
         } catch (error) {
