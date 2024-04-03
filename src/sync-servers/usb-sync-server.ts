@@ -385,9 +385,8 @@ export class UsbSyncServer extends SyncServer {
     let connectionConfigFromInitFn: UsbConnectionConfig | null = null;
     let connectionConfigFromUsbDeviceInfo: UsbConnectionConfig | null = null;
     try {
-      connectionConfigFromInitFn = await this.USB_INIT_FNS[
-        deviceConfig.initType
-      ](device);
+      connectionConfigFromInitFn =
+        await this.USB_INIT_FNS[deviceConfig.initType](device);
       connectionConfigFromUsbDeviceInfo =
         await this.getConnectionConfigFromUsbDeviceInfo(device);
     } catch (e) {

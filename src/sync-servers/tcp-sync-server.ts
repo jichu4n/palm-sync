@@ -10,7 +10,7 @@ import {SyncServer} from './sync-server';
 
 /** Base class  sync servers that communicate over TCP/IP. */
 export abstract class TcpSyncServer<
-  SyncConnectionT extends SyncConnection
+  SyncConnectionT extends SyncConnection,
 > extends SyncServer {
   /** Constructor for the corresponding connection type. */
   protected abstract connectionType: new (

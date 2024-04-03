@@ -23,7 +23,7 @@ import {SmartBuffer} from 'smart-buffer';
 
 /** Base class for DLP requests. */
 export abstract class DlpRequest<
-  DlpResponseT extends DlpResponse
+  DlpResponseT extends DlpResponse,
 > extends SObject {
   /** DLP function ID. */
   abstract funcId: number;
@@ -82,9 +82,8 @@ export abstract class DlpRequest<
 }
 
 /** Extract the DlpResponse type corresponding to a DlpRequest type. */
-export type DlpResponseType<T> = T extends DlpRequest<infer DlpResponseT>
-  ? DlpResponseT
-  : never;
+export type DlpResponseType<T> =
+  T extends DlpRequest<infer DlpResponseT> ? DlpResponseT : never;
 
 /** DLP response status codes.
  *
