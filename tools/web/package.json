@@ -10,9 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@fontsource/inter": "^5.0.17",
+    "@mui/material": "^5.15.15",
+    "mobx": "^6.12.3",
+    "mobx-react": "^9.1.1",
+    "palm-sync": "file:../../",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "palm-sync": "file:../../"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
