@@ -13,6 +13,7 @@
   },
   "homepage": "https://github.com/jichu4n/palm-sync#readme",
   "main": "./dist/index.js",
+  "browser": "./dist/index-browser.js",
   "types": "./dist/index.d.ts",
   "bin": "./dist/bin/cli.js",
   "scripts": {
