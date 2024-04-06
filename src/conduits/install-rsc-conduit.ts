@@ -13,15 +13,14 @@ const log = debug('palm-sync').extend('conduit').extend('install-rsc');
  * install dir
  */
 export class InstallNewResourcesConduit implements ConduitInterface {
-  getName(): String {
-    return 'install new resources from PC';
-  }
+  name = 'install new resources from PC';
+
   async execute(
     dlpConnection: DlpConnection,
     conduitData: ConduitData
   ): Promise<void> {
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
-    let toInstallDir = fs.opendirSync(
+    let toInstallDir = await fs.opendir(
       `${conduitData.palmDir}/${TO_INSTALL_DIR}`
     );
 

@@ -50,7 +50,7 @@ enum RecordState {
 /** Computes record state for a record. */
 function computeRecordState(
   record: RawPdbRecord | null,
-  slowSync: Boolean = false,
+  slowSync = false,
   otherRecord: RawPdbRecord | null = null
 ) {
   if (!record) {
@@ -383,7 +383,7 @@ const RECORD_SYNC_LOGIC: {
 export function computeRecordActions(
   deviceRecord: RawPdbRecord | null,
   desktopRecord: RawPdbRecord | null,
-  slowSync: Boolean = false
+  slowSync = false
 ): Array<RecordAction> {
   const deviceRecordState = computeRecordState(
     deviceRecord,
@@ -774,7 +774,7 @@ export async function fastSyncDb(
   dlpConnection: DlpConnection,
   desktopDb: RawPdbDatabase,
   {cardNo = 0}: SyncDbOptions = {},
-  openConduit: Boolean = true
+  openConduit = true
 ) {
   log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
   if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));
@@ -802,7 +802,7 @@ export async function slowSyncDb(
   dlpConnection: DlpConnection,
   desktopDb: RawPdbDatabase,
   {cardNo = 0}: SyncDbOptions = {},
-  openConduit: Boolean = true
+  openConduit = true
 ) {
   log(`Slow sync database ${desktopDb.header.name} on card ${cardNo}`);
   if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));

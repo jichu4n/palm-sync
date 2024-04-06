@@ -15,9 +15,7 @@ const log = debug('palm-sync').extend('conduit').extend('restore-rsc');
  * It restores all it's content's from the last backup.
  */
 export class RestoreResourcesConduit implements ConduitInterface {
-  getName(): String {
-    return 'restore backup';
-  }
+  name = 'restore backup';
 
   async execute(
     dlpConnection: DlpConnection,

@@ -10,7 +10,7 @@ import {DlpConnection} from '../protocols/sync-connections';
  * to be properly used in sync functions
  */
 export interface ConduitInterface {
-  getName(): String;
+  name: string;
 
   execute(
     dlpConnection: DlpConnection,
@@ -21,21 +21,9 @@ export interface ConduitInterface {
 /**
  * Incapsulates data related to syncing
  */
-export class ConduitData {
-  constructor(
-    localID: PalmDeviceLocalIdentification,
-    dbList: DlpDBInfoType[] | null,
-    palmDir: String | null,
-    syncType: SyncType | null
-  ) {
-    this.localID = localID;
-    this.dbList = dbList;
-    this.palmDir = palmDir;
-    this.syncType = syncType;
-  }
-
+export interface ConduitData {
   localID: PalmDeviceLocalIdentification;
   dbList: DlpDBInfoType[] | null;
-  palmDir: String | null;
+  palmDir: string | null;
   syncType: SyncType | null;
 }

@@ -61,7 +61,7 @@ async function runSyncForCommand(command: Command, syncFn: SyncFn) {
     connectionString = process.env.PALM_SYNC_CONNECTION;
   } else {
     log(
-      'Please specify one of --usb, --net, or --serial. Falling back to USB.'
+      'No connection specified, falling back to USB.'
     );
     connectionString = 'usb';
   }

@@ -19,9 +19,8 @@ const log = debug('palm-sync').extend('conduit').extend('sync-dbs');
  * that is in the PDA.
  */
 export class SyncDatabasesConduit implements ConduitInterface {
-  getName(): String {
-    return 'sync databases';
-  }
+  name = 'sync databases';
+
   async execute(
     dlpConnection: DlpConnection,
     conduitData: ConduitData

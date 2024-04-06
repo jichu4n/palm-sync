@@ -15,9 +15,8 @@ const log = debug('palm-sync').extend('conduit').extend('update-sync-info');
  * - Hotsync User ID
  */
 export class UpdateSyncInfoConduit implements ConduitInterface {
-  getName(): String {
-    return 'update last sync data';
-  }
+  name = 'update last sync data';
+
   async execute(
     dlpConnection: DlpConnection,
     conduitData: ConduitData

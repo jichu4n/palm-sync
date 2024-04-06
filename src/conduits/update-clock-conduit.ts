@@ -13,9 +13,8 @@ const log = debug('palm-sync').extend('conduit').extend('update-clock');
  * of the machine that palm-sync is running
  */
 export class UpdateClockConduit implements ConduitInterface {
-  getName(): String {
-    return 'update clock';
-  }
+  name = 'update clock';
+
   async execute(
     dlpConnection: DlpConnection,
     conduitData: ConduitData

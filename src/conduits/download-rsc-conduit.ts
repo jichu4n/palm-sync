@@ -10,6 +10,7 @@ import {
   readRawDb,
 } from '../sync-utils/read-db';
 import debug from 'debug';
+import path from 'path';
 
 const log = debug('palm-sync').extend('conduit').extend('download-new');
 
@@ -17,15 +18,17 @@ const log = debug('palm-sync').extend('conduit').extend('download-new');
  * This conduit download resources that exists on the Palm, but not on PC.
  */
 export class DownloadNewResourcesConduit implements ConduitInterface {
-  getName(): String {
-    return 'download new resources from Palm';
-  }
+  name = 'download new resources from Palm';
+
   async execute(
     dlpConnection: DlpConnection,
     conduitData: ConduitData
   ): Promise<void> {
     if (conduitData.dbList == null) {
       throw new Error('dbList is mandatory for this Conduit');
+    }
+    if (conduitData.palmDir == null) {
+      throw new Error('palmDir is mandatory for this Conduit');
     }
 
     let downloadCount = 0;
@@ -39,7 +42,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
       const fileName = `${dbInfo.name}.${ext}`;
 
       const resourceExists = await fs.exists(
-        `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`
+        path.join(conduitData.palmDir, DATABASES_STORAGE_DIR, fileName)
       );
 
       if (!resourceExists) {
@@ -69,13 +72,13 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             await writeRawDbToFile(
               a,
               dbInfo.name,
-              `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
+              path.join(conduitData.palmDir, DATABASES_STORAGE_DIR)
             );
           } else {
             await writeRawDbToFile(
               rawDb,
               dbInfo.name,
-              `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
+              path.join(conduitData.palmDir, DATABASES_STORAGE_DIR)
             );
           }
           downloadCount++;
