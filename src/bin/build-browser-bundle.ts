@@ -11,9 +11,6 @@ export function buildBrowserBundle() {
     browserField: 'browserify',
     standalone: 'palm-sync',
   });
-  b.on('dep', ({file, deps}: any) => {
-    console.error(`${file}: ${Object.keys(deps).join(', ')}`);
-  });
   b.bundle().pipe(process.stdout);
 }
 
