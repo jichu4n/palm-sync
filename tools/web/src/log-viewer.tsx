@@ -1,5 +1,4 @@
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import {observer} from 'mobx-react';
 import {useEffect, useRef} from 'react';
 import {logStore} from './log-store';

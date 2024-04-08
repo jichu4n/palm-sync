@@ -35,7 +35,6 @@ class LogStore {
     let module;
     if (match) {
       [module, message] = [match[1], match[2]];
-      console.log({module, message});
     } else {
       module = '';
     }
