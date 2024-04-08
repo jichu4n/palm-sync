@@ -20,7 +20,7 @@ function ControlPanel() {
   ];
 
   return (
-    <Paper elevation={3} sx={{height: '100%'}}>
+    <Paper elevation={3} sx={{height: 1}}>
       <Tabs value={activeTab} onChange={onTabChange}>
         {tabs.map(({title}) => (
           <Tab key={title} label={title} />

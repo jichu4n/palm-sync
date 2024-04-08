@@ -1,27 +1,39 @@
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
-import {createSyncServerAndRunSync} from 'palm-sync';
 import {useCallback} from 'react';
+import {runSync} from './run-sync';
+import {readDbList, debug} from 'palm-sync';
 
-function ListDatabases() {
+const log = debug('result');
+
+function ListDb() {
+  const handleClick = useCallback(async () => {
+    await runSync(async (dlpConnection) => {
+      const dbInfoList = await readDbList(dlpConnection, {
+        ram: true,
+        rom: true,
+      });
+      log(dbInfoList.map(({name}) => `=> ${name}`).join('\n'));
+    });
+  }, []);
   return (
     <>
-      <Button variant="contained" fullWidth>
-        List databases
+      <Button variant="contained" fullWidth onClick={handleClick}>
+        List DB
       </Button>
     </>
   );
 }
 
-function NoOpSync() {
+function NoOp() {
   const handleClick = useCallback(async () => {
-    await createSyncServerAndRunSync('usb', async () => {});
+    await runSync(async () => {});
   }, []);
 
   return (
     <>
       <Button variant="contained" fullWidth onClick={handleClick}>
-        No-op sync
+        No-op
       </Button>
     </>
   );
@@ -29,8 +41,8 @@ function NoOpSync() {
 
 function ControlPanelGeneralTab() {
   const controls = [
-    {width: 4, component: <NoOpSync />},
-    {width: 4, component: <ListDatabases />},
+    {width: 4, component: <NoOp />},
+    {width: 4, component: <ListDb />},
   ];
   return (
     <>

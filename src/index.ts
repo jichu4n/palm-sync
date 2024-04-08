@@ -1,3 +1,4 @@
+export const debug = require('debug');
 export * from './protocols/dlp-protocol';
 export * from './protocols/dlp-commands';
 export * from './protocols/slp-protocol';
