@@ -258,7 +258,7 @@ export class UsbSyncServer extends SyncServer {
           await this.closeDevice(device);
         }
       } catch (e) {
-        this.log('Error syncing with device');
+        this.log('Error syncing with device: ', e);
       }
 
       this.log('Waiting for device to disconnect');
@@ -326,12 +326,14 @@ export class UsbSyncServer extends SyncServer {
       for (const rawDevice of rawDevices) {
         const usbId = toUsbId(rawDevice.deviceDescriptor);
         if (usbId in USB_DEVICE_CONFIGS_BY_ID) {
+          this.log(`Found device ${usbId}`);
           return {
             rawDevice,
             deviceConfig: USB_DEVICE_CONFIGS_BY_ID[usbId],
           };
         }
       }
+      this.log(`No supported devices found, waiting...`);
       await new Promise((resolve) =>
         setTimeout(resolve, USB_DEVICE_POLLING_INTERVAL_MS)
       );

@@ -135,7 +135,8 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
     protected readonly rawStream: Duplex,
     protected readonly opts: SyncConnectionOptions = {}
   ) {
-    if (this.rawStream instanceof Socket) {
+    // Socket is undefined in the browser.
+    if (Socket && this.rawStream instanceof Socket) {
       this.log = this.log.extend(this.rawStream.remoteAddress ?? 'UNKNOWN');
     }
 
@@ -146,7 +147,7 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
 
     this.log(`Connection established`);
 
-    if (this.rawStream instanceof Socket) {
+    if (Socket && this.rawStream instanceof Socket) {
       this.rawStream.setNoDelay(true);
     }
 

@@ -1,13 +1,7 @@
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
-import {USB_DEVICE_FILTERS} from 'palm-sync';
+import {createSyncServerAndRunSync} from 'palm-sync';
 import {useCallback} from 'react';
-
-console.log('palmSync', USB_DEVICE_FILTERS);
-
-async function runSync() {
-  await navigator.usb.requestDevice({filters: USB_DEVICE_FILTERS});
-}
 
 function ListDatabases() {
   return (
@@ -21,7 +15,7 @@ function ListDatabases() {
 
 function NoOpSync() {
   const handleClick = useCallback(async () => {
-    await runSync();
+    await createSyncServerAndRunSync('usb', async () => {});
   }, []);
 
   return (

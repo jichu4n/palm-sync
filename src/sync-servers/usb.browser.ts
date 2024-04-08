@@ -1,11 +1,18 @@
 /** @file Browser shim for the usb module. */
 
-export const {usb} = navigator;
+import {USB_DEVICE_FILTERS} from './usb-device-configs';
+import debug from 'debug';
 
-// Shim for legacy API getDeviceList(). Only functionality used by palm-sync is implemented.
+const log = debug('palm-sync:usb');
+
+export const {usb} = navigator;
 async function getDeviceList() {
-  console.log('Running shim for getDeviceList()');
-  const devices = await usb.getDevices();
+  let devices = await usb.getDevices();
+  if (devices.length === 0) {
+    log('No USB devices found, prompting user');
+    await usb.requestDevice({filters: USB_DEVICE_FILTERS});
+    devices = await usb.getDevices();
+  }
   return devices.map((device) => {
     const {vendorId, productId, productName, serialNumber} = device;
     (device as any).deviceDescriptor = {
@@ -24,3 +31,9 @@ async function getDeviceList() {
   });
 }
 (usb as any).getDeviceList = getDeviceList;
+
+export const WebUSBDevice = {
+  createInstance(device: USBDevice) {
+    return device;
+  },
+};

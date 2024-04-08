@@ -31,7 +31,11 @@
   },
   "browserify": {
     "fs-extra": false,
-    "usb": "./src/sync-servers/usb.browser.ts"
+    "net": false,
+    "usb": "./src/sync-servers/usb.browser.ts",
+    "./src/sync-servers/network-sync-server.ts": false,
+    "./src/sync-servers/serial-network-sync-server.ts": false,
+    "./src/sync-servers/serial-sync-server.ts": false
   },
   "devDependencies": {
     "@types/browserify": "^12.0.40",
