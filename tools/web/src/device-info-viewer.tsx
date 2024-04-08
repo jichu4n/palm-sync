@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 export const DeviceInfoViewer = observer(function DeviceInfoViewer() {
   const {sysInfo, userInfo, sysDateTime} = deviceInfoStore;
   return (
-    <Paper elevation={3} sx={{padding: 1}}>
+    <Paper elevation={3} sx={{padding: 2, paddingTop: 1}}>
       <Typography variant="h6" mb={1}>
         Device Info
       </Typography>

@@ -70,7 +70,7 @@ function SetSysTime() {
   );
 }
 
-function ControlPanel() {
+export function ActionPanel() {
   const controls = [
     {width: 5, component: <NoOp />},
     {width: 5, component: <ListDb />},
@@ -78,7 +78,7 @@ function ControlPanel() {
   ];
 
   return (
-    <Paper elevation={3} sx={{height: 1, padding: 1}}>
+    <Paper elevation={3} sx={{padding: 2, paddingTop: 1}}>
       <Typography variant="h6" mb={1}>
         Sync
       </Typography>
@@ -92,5 +92,3 @@ function ControlPanel() {
     </Paper>
   );
 }
-
-export default ControlPanel;

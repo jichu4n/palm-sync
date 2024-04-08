@@ -51,7 +51,7 @@ export const LogViewer = observer(function LogViewer() {
               </code>
             </>
           ) : (
-            <hr />
+            <hr style={{margin: '1em 0'}} />
           )}
         </div>
       ))}

@@ -4,7 +4,7 @@ import {createTheme, ThemeProvider} from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import React, {useMemo} from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './app';
+import {App} from './app';
 
 function AppWrapper() {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
