@@ -5,11 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16, 18]
+        node-version: [18, 20]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
@@ -17,3 +17,6 @@ jobs:
       - run: DEBUG='palm-sync:*' npm test
       - run: npm run build
       - run: npm run build:udev-rules new.rules && diff 60-palm-os-devices.rules new.rules
+      - run: npm --prefix=./tools/web-demo install
+      - run: npm --prefix=./tools/web-demo run lint
+      - run: npm --prefix=./tools/web-demo run build
