@@ -2,15 +2,9 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import {
-  DlpGetSysDateTimeReqType,
-  DlpSetSysDateTimeReqType,
-  debug,
-  readDbList,
-} from 'palm-sync';
+import {debug, readDbList} from 'palm-sync';
 import {useCallback} from 'react';
 import {runSync} from './run-sync';
-import {deviceInfoStore} from './device-info-store';
 
 const log = debug('result');
 
@@ -47,34 +41,10 @@ function ListDb() {
   );
 }
 
-function SetSysTime() {
-  const handleClick = useCallback(async () => {
-    await runSync(async (dlpConnection) => {
-      await dlpConnection.execute(
-        DlpSetSysDateTimeReqType.with({
-          dateTime: new Date(),
-        })
-      );
-      const sysDateTime = await dlpConnection.execute(
-        DlpGetSysDateTimeReqType.with({})
-      );
-      deviceInfoStore.update({sysDateTime});
-    });
-  }, []);
-  return (
-    <>
-      <Button variant="contained" fullWidth onClick={handleClick}>
-        Set Sys Time
-      </Button>
-    </>
-  );
-}
-
 export function ActionPanel() {
   const controls = [
     {width: 5, component: <NoOp />},
     {width: 5, component: <ListDb />},
-    {width: 5, component: <SetSysTime />},
   ];
 
   return (

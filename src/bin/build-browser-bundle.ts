@@ -6,6 +6,7 @@ export function buildBrowserBundle() {
   const b = browserify('./src/index-browser.ts', {
     basedir: path.join(__dirname, '..', '..'),
     debug: true,
+    fullPaths: true,
     plugin: [tsify],
     browserField: 'browserify',
     standalone: 'palm-sync',
