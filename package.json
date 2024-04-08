@@ -13,11 +13,13 @@
   },
   "homepage": "https://github.com/jichu4n/palm-sync#readme",
   "main": "./dist/index.js",
-  "browser": "./dist/index-browser.js",
+  "browser": "./dist/browser-bundle.js",
   "types": "./dist/index.d.ts",
   "bin": "./dist/bin/cli.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:tsc && npm run build:browser-bundle",
+    "build:tsc": "tsc",
+    "build:browser-bundle": "node ./dist/bin/build-browser-bundle.js > ./dist/browser-bundle.js",
     "build:docs": "rm -rf ./docs/ && typedoc",
     "build:udev-rules": "ts-node ./src/bin/generate-udev-rules.ts",
     "lint": "prettier --check .",
@@ -27,17 +29,24 @@
     "prepack": "npm run lint && npm run build && npm test && rm -r ./dist/tests",
     "prepublishOnly": "./src/tests/package-test.sh"
   },
+  "browserify": {
+    "fs-extra": false,
+    "usb": "./src/sync-servers/usb.browser.ts"
+  },
   "devDependencies": {
+    "@types/browserify": "^12.0.40",
     "@types/debug": "^4.1.12",
     "@types/duplexify": "^3.6.4",
     "@types/fs-extra": "^11.0.4",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.0",
     "@types/node": "^20.12.5",
+    "browserify": "^17.0.0",
     "commander": "^12.0.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
+    "tsify": "^5.0.4",
     "typedoc": "^0.25.12",
     "typescript": "^5.4.4"
   },

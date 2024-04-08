@@ -8,5 +8,4 @@ export * from './protocols/sync-connections';
 export * from './protocols/stream-recorder';
 export * from './sync-servers/sync-server';
 export * from './sync-servers/usb-sync-server';
-export * from './sync-utils/read-db';
-export * from './sync-utils/write-db';
+export * from './sync-servers/usb-device-configs';
