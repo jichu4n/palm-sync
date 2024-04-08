@@ -30,6 +30,7 @@ class LogStore {
   readonly logs: Array<LogEntry> = [];
 
   addLog(message: string) {
+    // eslint-disable-next-line prefer-rest-params
     console.log(...arguments);
     const match = message.match(/^%c([^%]*) %c(.*)/s);
     let module;

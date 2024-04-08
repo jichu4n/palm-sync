@@ -6,7 +6,7 @@ import React, {useMemo} from 'react';
 import ReactDOM from 'react-dom/client';
 import {App} from './app';
 
-function AppWrapper() {
+export function AppWrapper() {
   const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const theme = useMemo(
     () =>
