@@ -19,7 +19,9 @@ import {
   DlpOpenDBMode,
   DlpOpenDBReqType,
   DlpReadNextModifiedRecReqType,
+  DlpReadOpenDBInfoReqType,
   DlpReadRecordByIDReqType,
+  DlpReadRecordByIndexReqType,
   DlpResetSyncFlagsReqType,
 } from '../protocols/dlp-commands';
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
@@ -46,7 +48,11 @@ enum RecordState {
 }
 
 /** Computes record state for a record. */
-function computeRecordState(record: RawPdbRecord | null) {
+function computeRecordState(
+  record: RawPdbRecord | null,
+  slowSync = false,
+  otherRecord: RawPdbRecord | null = null
+) {
   if (!record) {
     return RecordState.NOT_FOUND;
   }
@@ -59,7 +65,47 @@ function computeRecordState(record: RawPdbRecord | null) {
   if (attributes.delete) {
     return RecordState.DELETED;
   }
+
+  if (slowSync && otherRecord != null) {
+    /** This is a slowSync, thus we cannot trust the dirty flag and must compare it's content
+     * byte by byte */
+    return compareRec(record, otherRecord) != 0
+      ? RecordState.CHANGED
+      : RecordState.UNCHANGED;
+  }
+
   return attributes.dirty ? RecordState.CHANGED : RecordState.UNCHANGED;
+}
+
+function compareRec(rec1: RawPdbRecord, rec2: RawPdbRecord) {
+  /* Compare the category, since that's quick and easy */
+  if (rec1.entry.attributes.category < rec2.entry.attributes.category) {
+    log(
+      `SS compare_rec: ${rec1.entry.uniqueId} < ${rec1.entry.uniqueId} (category)`
+    );
+    return -1;
+  } else if (rec1.entry.attributes.category > rec2.entry.attributes.category) {
+    log(
+      `SS compare_rec: ${rec1.entry.uniqueId} > ${rec2.entry.uniqueId} (category)`
+    );
+    return 1;
+  }
+
+  /* Check if data is the same */
+  const cmp = rec1.data.compare(rec2.data);
+  if (cmp != 0) {
+    log(`SS cmp: ${cmp}`);
+    return cmp;
+  }
+
+  /* The two records are equal over the entire length of rec1 */
+  if (rec1.data.byteLength < rec2.data.byteLength) {
+    log(`SS compare_rec: ${rec1.entry.uniqueId} < ${rec2.entry.uniqueId}`);
+    return -1;
+  }
+
+  log(`SS compare_rec: ${rec1.entry.uniqueId} == ${rec2.entry.uniqueId}`);
+  return 0; /* Length is the same and data is the same */
 }
 
 /** Type of sync action to be performed on a record. */
@@ -336,10 +382,20 @@ const RECORD_SYNC_LOGIC: {
 
 export function computeRecordActions(
   deviceRecord: RawPdbRecord | null,
-  desktopRecord: RawPdbRecord | null
+  desktopRecord: RawPdbRecord | null,
+  slowSync = false
 ): Array<RecordAction> {
-  const deviceRecordState = computeRecordState(deviceRecord);
-  const desktopRecordState = computeRecordState(desktopRecord);
+  const deviceRecordState = computeRecordState(
+    deviceRecord,
+    slowSync,
+    desktopRecord
+  );
+  const desktopRecordState = computeRecordState(
+    desktopRecord,
+    slowSync,
+    deviceRecord
+  );
+  log(`${deviceRecordState} <> ${desktopRecordState}`);
   const actionTuples = RECORD_SYNC_LOGIC[deviceRecordState][desktopRecordState](
     deviceRecord,
     desktopRecord,
@@ -437,6 +493,8 @@ export function clearRecordAttrs(record: RawPdbRecord) {
 interface DbSyncInterface {
   /** Return all modified records. */
   readModifiedRecords(): Promise<Array<RawPdbRecord>>;
+  /** Return all records */
+  readAllRecords(): Promise<Array<RawPdbRecord>>;
   /** Write a record. */
   writeRecord(record: RawPdbRecord): Promise<number>;
   /** Read a record by ID. */
@@ -461,6 +519,10 @@ class RawPdbDatabaseSyncInterface implements DbSyncInterface {
     return this.db.records
       .filter((record) => computeRecordState(record) !== RecordState.UNCHANGED)
       .map(cloneRecord);
+  }
+
+  async readAllRecords(): Promise<Array<RawPdbRecord>> {
+    return this.db.records.map(cloneRecord);
   }
 
   async writeRecord(record: RawPdbRecord): Promise<number> {
@@ -531,6 +593,26 @@ class DeviceSyncInterface implements DbSyncInterface {
       }
       records.push(createRawPdbRecordFromReadRecordResp(readRecordResp));
     }
+    return records;
+  }
+
+  async readAllRecords(): Promise<Array<RawPdbRecord>> {
+    const records: Array<RawPdbRecord> = [];
+
+    const numRecords = (
+      await this.dlpConnection.execute(
+        DlpReadOpenDBInfoReqType.with({dbId: this.dbId})
+      )
+    ).numRec;
+
+    for (let i = 0; i < numRecords; ++i) {
+      const readRecordResp = await this.dlpConnection.execute(
+        DlpReadRecordByIndexReqType.with({dbId: this.dbId, index: i})
+      );
+
+      records.push(createRawPdbRecordFromReadRecordResp(readRecordResp));
+    }
+
     return records;
   }
 
@@ -631,14 +713,71 @@ export async function fastSync(
   await desktop.cleanUp();
 }
 
+/** Perform a slow sync for a database. */
+export async function slowSync(
+  device: DbSyncInterface,
+  desktop: DbSyncInterface
+) {
+  const recordIdsModifiedOnDevice = new Set<number>();
+  const recordActions: Array<RecordAction> = [];
+
+  // 1. Sync records modified on device.
+  for (const deviceRecord of await device.readAllRecords()) {
+    const {uniqueId: recordId} = deviceRecord.entry;
+    const desktopRecord = await desktop.readRecord(recordId);
+    recordActions.push(
+      ...computeRecordActions(deviceRecord, desktopRecord, true)
+    );
+    recordIdsModifiedOnDevice.add(recordId);
+  }
+
+  // 2. Sync records modified on the desktop.
+  for (const desktopRecord of await desktop.readAllRecords()) {
+    const {uniqueId: recordId} = desktopRecord.entry;
+    if (recordId !== 0 && recordIdsModifiedOnDevice.has(recordId)) {
+      continue;
+    }
+    const deviceRecord =
+      desktopRecord.entry.uniqueId === 0
+        ? null
+        : await device.readRecord(recordId);
+
+    if (deviceRecord == null) {
+      log('No device record! Skipping...');
+      continue;
+    }
+
+    recordActions.push(
+      ...computeRecordActions(deviceRecord, desktopRecord, true)
+    );
+  }
+
+  // 3. Execute record actions.
+  const ctx: RecordActionContext = {
+    device,
+    desktop,
+    archiveDb: new RawPdbDatabase(),
+  };
+  log(`Executing ${recordActions.length} record actions`);
+  for (const {type, record} of recordActions) {
+    log(`    ${type} ${record.entry.uniqueId} (${record.data.length})`);
+    await RECORD_ACTION_FNS[type](ctx, record);
+  }
+
+  log('Cleaning up database');
+  await device.cleanUp();
+  await desktop.cleanUp();
+}
+
 /** Perform a fast sync for a database. */
-export async function syncDb(
+export async function fastSyncDb(
   dlpConnection: DlpConnection,
   desktopDb: RawPdbDatabase,
-  {cardNo = 0}: SyncDbOptions = {}
+  {cardNo = 0}: SyncDbOptions = {},
+  openConduit = true
 ) {
   log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
-  await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
@@ -655,4 +794,38 @@ export async function syncDb(
 
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
+  log('DB Closed');
+}
+
+/** Perform a slow sync for a database. */
+export async function slowSyncDb(
+  dlpConnection: DlpConnection,
+  desktopDb: RawPdbDatabase,
+  {cardNo = 0}: SyncDbOptions = {},
+  openConduit = true
+) {
+  log(`Slow sync database ${desktopDb.header.name} on card ${cardNo}`);
+  if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+
+  const {dbId} = await dlpConnection.execute(
+    DlpOpenDBReqType.with({
+      cardNo,
+      name: desktopDb.header.name,
+      mode: DlpOpenDBMode.with({read: true, write: true, secret: true}),
+    })
+  );
+
+  await slowSync(
+    new DeviceSyncInterface(dlpConnection, dbId),
+    new RawPdbDatabaseSyncInterface(desktopDb)
+  );
+
+  log('Closing database');
+  await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
+  log('DB Closed');
+}
+
+export async function cleanUpDb(rawDb: RawPdbDatabase) {
+  log(`Cleaning up database [${rawDb.header.name}]`);
+  await new RawPdbDatabaseSyncInterface(rawDb).cleanUp();
 }

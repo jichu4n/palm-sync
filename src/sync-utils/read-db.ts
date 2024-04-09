@@ -98,6 +98,18 @@ export async function readDbToFile(
 ) {
   logFile(`=> ${name}`);
   const rawDb = await readRawDb(dlpConnection, name, opts);
+  await writeRawDbToFile(rawDb, name, outputDir);
+}
+
+/** Write a raw database to a PDB / PRC file */
+export async function writeRawDbToFile(
+  /** The raw database to be written */
+  rawDb: RawPdbDatabase | RawPrcDatabase,
+  /** Database name to read. */
+  name: string,
+  /** Output directory. Defaults to current working directory. */
+  outputDir?: string
+) {
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
   const filePath = outputDir ? path.join(outputDir, fileName) : fileName;

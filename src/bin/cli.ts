@@ -20,6 +20,7 @@ import {
   readDbToFile,
 } from '../sync-utils/read-db';
 import {writeDbFromFile} from '../sync-utils/write-db';
+import {syncDevice} from '../sync-utils/sync-device';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -59,8 +60,10 @@ async function runSyncForCommand(command: Command, syncFn: SyncFn) {
   } else if (process.env.PALM_SYNC_CONNECTION) {
     connectionString = process.env.PALM_SYNC_CONNECTION;
   } else {
-    log('Please specify one of --usb, --net, or --serial');
-    process.exit(1);
+    log(
+      'No connection specified, falling back to USB.'
+    );
+    connectionString = 'usb';
   }
 
   const syncConnectionOptions: SyncConnectionOptions = encoding
@@ -256,6 +259,37 @@ if (require.main === module) {
             log(`Running function "${fn}" in ${syncFnModule}`);
             await syncFn(connection);
           });
+        }
+      );
+
+    program
+      .command('sync')
+      .description('HotSync a Palm OS device')
+      .argument(
+        '<userName>',
+        'The username of the PDA to be syncd. It will be set as the hotsync name.'
+      )
+      .option('-d, --sync-dir <syncDir>', 'The directory where every palm user folder will be created')
+      .action(
+        async (
+          userName: string,
+          {
+            syncDir
+          }: {
+            syncDir?: string
+          },
+          command: Command
+        ) => {
+          const storageDir = syncDir === undefined? process.cwd() : syncDir;
+
+          await runSyncForCommand(command, async (dlpConnection) => {
+            try {
+              await syncDevice(dlpConnection, storageDir, userName);
+            } catch (error) {
+              console.error(error);
+            }
+          });
+          process.exit(0);
         }
       );
 

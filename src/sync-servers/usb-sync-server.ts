@@ -194,7 +194,7 @@ export class UsbConnectionStream extends Duplex {
   async _read(size: number) {
     let result: USBInTransferResult;
     try {
-      result = await this.device.transferIn(this.config.inEndpoint, size);
+      result = await this.device.transferIn(this.config.inEndpoint, 64);
     } catch (e) {
       this.destroy(
         new Error(
