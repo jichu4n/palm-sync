@@ -266,20 +266,22 @@ if (require.main === module) {
       .command('sync')
       .description('HotSync a Palm OS device')
       .argument(
-        '<storageDir>',
-        'The directory where every palm user folder will be created'
-      )
-      .argument(
         '<userName>',
         'The username of the PDA to be syncd. It will be set as the hotsync name.'
       )
+      .option('-d, --sync-dir <syncDir>', 'The directory where every palm user folder will be created')
       .action(
         async (
-          storageDir: string,
           userName: string,
-          opts: {},
+          {
+            syncDir
+          }: {
+            syncDir?: string
+          },
           command: Command
         ) => {
+          const storageDir = syncDir === undefined? process.cwd() : syncDir;
+
           await runSyncForCommand(command, async (dlpConnection) => {
             try {
               await syncDevice(dlpConnection, storageDir, userName);
