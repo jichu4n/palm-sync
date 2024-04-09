@@ -6,7 +6,9 @@
  *
  * @module
  */
-import _ from 'lodash';
+import groupBy from 'lodash/groupBy';
+import sortBy from 'lodash/sortBy';
+import sum from 'lodash/sum';
 import {PDB_EPOCH} from 'palm-pdb';
 import {
   DeserializeOptions,
@@ -69,7 +71,7 @@ export abstract class DlpRequest<
 
   getSerializedLength(opts?: SerializeOptions): number {
     return (
-      2 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
+      2 + sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
     );
   }
 
@@ -237,13 +239,16 @@ export abstract class DlpResponse extends SObject {
 
   getSerializedLength(opts?: SerializeOptions): number {
     return (
-      4 + _.sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
+      4 + sum(getDlpArgs(this).map((arg) => arg.getSerializedLength(opts)))
     );
   }
 
   toJSON(): Object {
+    const {funcId, errorCode, errorMessage} = this;
     return {
-      ..._.pick(this, 'funcId', 'errorCode', 'errorMessage'),
+      funcId,
+      errorCode,
+      errorMessage,
       args: getDlpArgsAsJson(this),
     };
   }
@@ -258,7 +263,7 @@ function parseDlpArgs(
 ): number {
   const args = getDlpArgs(dlpRequestOrResponse);
   const numRequiredDlpArgs =
-    args.length - _(args).map('isOptional').filter().size();
+    args.length - args.filter(({isOptional}) => isOptional).length;
   if (numDlpArgs < numRequiredDlpArgs) {
     throw new Error(
       `Argument count mismatch in ${dlpRequestOrResponse.constructor.name}: ` +
@@ -292,17 +297,21 @@ function parseDlpArgs(
 function getDlpArgsAsJson(
   dlpRequestOrResponse: DlpRequest<DlpResponse> | DlpResponse
 ) {
-  return _(getDlpArgSpecs(dlpRequestOrResponse))
-    .groupBy('argId')
-    .mapValues((dlpArgSpecs) =>
-      _.fromPairs(
+  const dlpArgSpecsByArgId = groupBy(
+    getDlpArgSpecs(dlpRequestOrResponse),
+    'argId'
+  );
+  return Object.fromEntries(
+    Object.entries(dlpArgSpecsByArgId).map(([argIdString, dlpArgSpecs]) => [
+      argIdString,
+      Object.fromEntries(
         dlpArgSpecs.map(({propertyKey}) => [
           propertyKey,
           (dlpRequestOrResponse as any)[propertyKey],
         ])
-      )
-    )
-    .value();
+      ),
+    ])
+  );
 }
 
 /** Key for storing DLP argument information on a DlpRequest / DlpResponse. */
@@ -382,15 +391,16 @@ function getDlpArgSpecs(targetInstance: any) {
 /** Constructs DlpArg's on a DlpRequest or DlpResponse. */
 function getDlpArgs(targetInstance: SObject) {
   const values = targetInstance.toSerializableMap();
-  return _(getDlpArgSpecs(targetInstance))
-    .groupBy('argId')
-    .entries()
-    .map(([argIdString, dlpArgSpecs]) => {
+  const dlpArgSpecsByArgId = groupBy(getDlpArgSpecs(targetInstance), 'argId');
+  return Object.entries(dlpArgSpecsByArgId).map(
+    ([argIdString, dlpArgSpecs]) => {
       const valueArray = SArray.of(
         dlpArgSpecs.map(({propertyKey}) => values[propertyKey.toString()])
       );
-      const isOptionalArray = _(dlpArgSpecs).map('isOptional').uniq().value();
-      if (isOptionalArray.length !== 1) {
+      const isOptionalSet = new Set(
+        dlpArgSpecs.map(({isOptional}) => isOptional)
+      );
+      if (isOptionalSet.size !== 1) {
         throw new Error(
           `Found conflicting definitions for DLP argument ID ${argIdString} ` +
             `in class ${targetInstance.constructor.name}`
@@ -399,11 +409,11 @@ function getDlpArgs(targetInstance: SObject) {
       return DlpArg.with({
         argId: dlpArgSpecs[0].argId,
         value: valueArray,
-        isOptional: isOptionalArray[0],
+        isOptional: isOptionalSet.values().next().value,
         dlpArgSpecs,
       });
-    })
-    .value();
+    }
+  );
 }
 
 /** DLP argument type, as determined by the payload size. */
@@ -496,7 +506,7 @@ const DlpArgTypes: {[K in DlpArgType]: DlpArgTypeSpec} = {
 };
 
 /** DlpArgTypes as an array. */
-const DlpArgTypesEntries = _.sortBy(
+const DlpArgTypesEntries = sortBy(
   Object.entries(DlpArgTypes),
   ([_, {maxLength}]) => maxLength
 ) as Array<[DlpArgType, DlpArgTypeSpec]>;

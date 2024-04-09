@@ -258,7 +258,7 @@ export class UsbSyncServer extends SyncServer {
           await this.closeDevice(device);
         }
       } catch (e) {
-        this.log('Error syncing with device');
+        this.log('Error syncing with device: ', e);
       }
 
       this.log('Waiting for device to disconnect');
@@ -306,7 +306,7 @@ export class UsbSyncServer extends SyncServer {
    *
    * Returns device and matching config if found, or null if stop() was called.
    *
-   * We use the usb package's legacy API because
+   * In Node.js, we use the usb package's legacy API because
    *
    *   1. The WebUSB API (with allowAllDevices = true) only returns devices the
    *      current user has permission to access, whereas the legacy API returns
@@ -317,19 +317,23 @@ export class UsbSyncServer extends SyncServer {
    *   2. We may need to detach the kernal driver on the device, which is only
    *      supported by the legacy API, so we need the legacy device object
    *      anyway.
+   *
+   * In the browser we obviously just use the WebUSB API.
    */
   private async waitForDevice() {
     while (!this.shouldStop) {
-      const rawDevices = usb.getDeviceList();
+      const rawDevices = await Promise.resolve(usb.getDeviceList());
       for (const rawDevice of rawDevices) {
         const usbId = toUsbId(rawDevice.deviceDescriptor);
         if (usbId in USB_DEVICE_CONFIGS_BY_ID) {
+          this.log(`Found device ${usbId}`);
           return {
             rawDevice,
             deviceConfig: USB_DEVICE_CONFIGS_BY_ID[usbId],
           };
         }
       }
+      this.log(`No supported devices found, waiting...`);
       await new Promise((resolve) =>
         setTimeout(resolve, USB_DEVICE_POLLING_INTERVAL_MS)
       );
@@ -443,10 +447,10 @@ export class UsbSyncServer extends SyncServer {
     }
   }
 
-  private async waitForDeviceToDisconnect(rawDeviceToWait: Device) {
-    const {idVendor, idProduct} = rawDeviceToWait.deviceDescriptor;
+  private async waitForDeviceToDisconnect(rawDevice: Device) {
+    const {idVendor, idProduct} = rawDevice.deviceDescriptor;
     while (!this.shouldStop) {
-      const rawDevices = usb.getDeviceList();
+      const rawDevices = await Promise.resolve(usb.getDeviceList());
       if (
         !rawDevices.find(
           ({deviceDescriptor: d}) =>
