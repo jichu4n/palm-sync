@@ -23,21 +23,18 @@ export class UpdateSyncInfoConduit implements ConduitInterface {
   ): Promise<void> {
     let writeUserInfoReq = new DlpWriteUserInfoReqType();
 
-    if (dlpConnection.userInfo.lastSyncPc != conduitData.localID.thisPcId) {
+    if (dlpConnection.userInfo.lastSyncPc != conduitData.palmID.thisPcId) {
       log(
-        `Updating last Sync PC from 0x${dlpConnection.userInfo.lastSyncPc} to 0x${conduitData.localID.thisPcId}.`
+        `Updating last Sync PC from 0x${dlpConnection.userInfo.lastSyncPc} to 0x${conduitData.palmID.thisPcId}.`
       );
-      writeUserInfoReq.lastSyncPc = conduitData.localID.thisPcId;
+      writeUserInfoReq.lastSyncPc = conduitData.palmID.thisPcId;
       writeUserInfoReq.modFlags.lastSyncPc = true;
-      log(
-        `We also need a Slow Sync because the last sync PC doesn't match. Setting the flag.`
-      );
     }
 
-    if (conduitData.localID.newlySet) {
+    if (conduitData.palmID.newlySet) {
       log(`Updating sync info...`);
-      writeUserInfoReq.userId = conduitData.localID.userId;
-      writeUserInfoReq.userName = conduitData.localID.userName;
+      writeUserInfoReq.userId = conduitData.palmID.userId;
+      writeUserInfoReq.userName = conduitData.palmID.userName;
       writeUserInfoReq.modFlags.userId = true;
       writeUserInfoReq.modFlags.userName = true;
     }

@@ -1,5 +1,5 @@
 import {
-  PalmDeviceLocalIdentification,
+  PalmDeviceIdentification,
   SyncType,
 } from '../sync-utils/sync-device';
 import {DlpDBInfoType} from '../protocols/dlp-commands';
@@ -22,7 +22,7 @@ export interface ConduitInterface {
  * Incapsulates data related to syncing
  */
 export interface ConduitData {
-  localID: PalmDeviceLocalIdentification;
+  palmID: PalmDeviceIdentification;
   dbList: DlpDBInfoType[] | null;
   palmDir: string | null;
   syncType: SyncType | null;
