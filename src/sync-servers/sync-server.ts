@@ -26,7 +26,7 @@ export abstract class SyncServer extends EventEmitter {
   }
 
   /** Start listening for HotSync connections. */
-  abstract start(): void;
+  abstract start(): Promise<void>;
 
   /** Stop listening for HotSync connections.
    *

@@ -51,7 +51,7 @@ export function createSyncServer(
  * then stop the server.
  */
 export async function runSync(syncServer: SyncServer) {
-  syncServer.start();
+  await syncServer.start();
 
   log('Waiting for connection...');
   const connection: SyncConnection = await pEvent(syncServer, 'connect');

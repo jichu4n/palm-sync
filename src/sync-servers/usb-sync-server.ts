@@ -27,6 +27,7 @@ import {
 import {SyncServer} from './sync-server';
 import {
   USB_DEVICE_CONFIGS_BY_ID,
+  USB_DEVICE_FILTERS,
   UsbDeviceConfig,
   UsbInitType,
   UsbProtocolStackType,
@@ -217,9 +218,13 @@ export class UsbConnectionStream extends Duplex {
 const USB_DEVICE_POLLING_INTERVAL_MS = 200;
 
 export class UsbSyncServer extends SyncServer {
-  override start() {
+  override async start() {
     if (this.runPromise) {
       throw new Error('Server already started');
+    }
+    // requestDevice is only provided by our browser shim module.
+    if ('requestDevice' in usb && typeof usb.requestDevice === 'function') {
+      await usb.requestDevice({filters: USB_DEVICE_FILTERS});
     }
     this.runPromise = this.run();
   }
@@ -708,6 +713,6 @@ if (require.main === module) {
       );
       console.log(readDbListResp.dbInfo.map(({name}) => name).join('\n'));
     });
-    syncServer.start();
+    await syncServer.start();
   })();
 }

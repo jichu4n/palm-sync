@@ -21,7 +21,7 @@ export abstract class TcpSyncServer<
   /** Port to listen on. */
   protected abstract port: number;
 
-  override start() {
+  override async start() {
     if (this.server) {
       throw new Error('Server already started');
     }

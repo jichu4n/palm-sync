@@ -76,8 +76,11 @@ export class DlpConnection {
         encoding: DEFAULT_ENCODING,
         ...this.opts.responseDeserializeOptions,
       });
-    } catch (e: any) {
-      this.log(`    Error parsing ${request.responseType.name}: ${e.message}`);
+    } catch (e) {
+      this.log(
+        `    Error parsing ${request.responseType.name}: ` +
+          (e instanceof Error ? e.stack || e.message : `${e}`)
+      );
       throw e;
     }
 
@@ -154,7 +157,7 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
     // The DLP stream should propagate errors through, so we only need to listen
     // for errors at the DLP stream level.
     const errorListener = (e: Error) => {
-      this.log('Connection error: ' + (e.stack ? `${e.stack}` : e.message));
+      this.log('Connection error: ' + (e.stack || e.message));
     };
     this.dlpTransportStream.on('error', errorListener);
 

@@ -26,7 +26,6 @@ export async function runSync(syncFn: SyncFn, opts?: SyncConnectionOptions) {
     );
   } catch (e) {
     console.error(e);
-    logStore.addLog(`Error: ${(e as Error).message ?? e}`);
     throw e;
   }
 }

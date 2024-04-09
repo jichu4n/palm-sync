@@ -26,7 +26,7 @@ export class SerialSyncServer extends SyncServer {
     this.device = device;
   }
 
-  override start() {
+  override async start() {
     if (this.serialPort) {
       throw new Error('Server already started');
     }

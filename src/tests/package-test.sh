@@ -17,7 +17,7 @@ import {createSyncServer} from 'palm-sync';
     'serial:net',
   ]) {
     const server = await createSyncServer(connectionString, async () => {});
-    server.start();
+    await server.start();
     await new Promise(resolve => setTimeout(resolve, 1000));
     await server.stop();
   }
