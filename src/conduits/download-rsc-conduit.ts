@@ -1,17 +1,17 @@
+import debug from 'debug';
 import fs from 'fs-extra';
+import {RawPdbDatabase} from 'palm-pdb';
+import path from 'path';
 import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DATABASES_STORAGE_DIR} from '../sync-utils/sync-device';
-import {ConduitData, ConduitInterface} from './conduit-interface';
-import {RawPdbDatabase} from 'palm-pdb';
 import {
-  writeRawDbToFile,
   ReadDbOptions,
   readRawDb,
+  writeRawDbToFile,
 } from '../sync-utils/read-db';
-import debug from 'debug';
-import path from 'path';
-import { cleanUpDb } from '../sync-utils/sync-db';
+import {cleanUpDb} from '../sync-utils/sync-db';
+import {DATABASES_STORAGE_DIR} from '../sync-utils/sync-device';
+import {ConduitData, ConduitInterface} from './conduit-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('download-new');
 
@@ -75,7 +75,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
         }
       }
     }
-    
+
     if (downloadCount == 0) {
       log(`No new resources to download`);
     } else {

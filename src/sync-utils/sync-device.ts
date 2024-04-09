@@ -1,18 +1,18 @@
+import crypto from 'crypto';
+import debug from 'debug';
 import fs from 'fs-extra';
+import os from 'os';
+import path from 'path';
+import {ConduitData} from '../conduits/conduit-interface';
+import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
+import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
+import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
+import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
+import {UpdateClockConduit} from '../conduits/update-clock-conduit';
+import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
 import {DlpAddSyncLogEntryReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
-import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
-import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
-import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
-import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
-import {UpdateClockConduit} from '../conduits/update-clock-conduit';
-import crypto from 'crypto';
-import debug from 'debug';
-import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
-import {ConduitData} from '../conduits/conduit-interface';
-import path from 'path';
-import os from 'os';
 
 const log = debug('palm-sync').extend('sync-device');
 
@@ -71,7 +71,7 @@ export async function syncDevice(
     );
   }
 
-  if (!await fs.exists(path.join(palmDir, JSON_PALM_ID))) {
+  if (!(await fs.exists(path.join(palmDir, JSON_PALM_ID)))) {
     log(
       `The username [${requestedUserName}] is new. Creating new local-id file.`
     );
@@ -190,12 +190,15 @@ async function appendToHotsyncLog(
 /**
  * Generates a UInt32 using computer's hostname, CPU and memory information
  * used for identifying if the PDA was syncd with another computer.
- * 
+ *
  * @returns A UInt32 that roughly uniquely identifies a computer
  */
 function getComputerID() {
   const hostname = os.hostname();
-  const cpus = os.cpus().map(cpu => cpu.model).join(';');
+  const cpus = os
+    .cpus()
+    .map((cpu) => cpu.model)
+    .join(';');
   const totalMemory = os.totalmem();
 
   const combinedInfo = `${hostname}:${cpus}:${totalMemory}`;

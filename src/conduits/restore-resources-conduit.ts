@@ -1,10 +1,10 @@
+import debug from 'debug';
 import fs from 'fs-extra';
 import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {DATABASES_STORAGE_DIR} from '../sync-utils/sync-device';
-import {ConduitData, ConduitInterface} from './conduit-interface';
 import {writeDbFromFile} from '../sync-utils/write-db';
-import debug from 'debug';
+import {ConduitData, ConduitInterface} from './conduit-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('restore-rsc');
 
@@ -28,7 +28,9 @@ export class RestoreResourcesConduit implements ConduitInterface {
     let installCount = 0;
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
-    let toInstallDir = fs.opendirSync(`${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`);
+    let toInstallDir = fs.opendirSync(
+      `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
+    );
 
     for await (const dirent of toInstallDir) {
       if (dirent.name.endsWith('.prc') || dirent.name.endsWith('.pdb')) {
