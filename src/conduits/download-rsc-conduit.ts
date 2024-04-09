@@ -1,9 +1,9 @@
 import fs from 'fs-extra';
-import {DlpDBInfoType, DlpOpenConduitReqType} from '../protocols/dlp-commands';
+import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DATABASES_STORAGE_DIR, SyncType} from '../sync-utils/sync-device';
+import {DATABASES_STORAGE_DIR} from '../sync-utils/sync-device';
 import {ConduitData, ConduitInterface} from './conduit-interface';
-import {RawPdbDatabase, RawPdbRecord, RecordEntryType} from 'palm-pdb';
+import {RawPdbDatabase} from 'palm-pdb';
 import {
   writeRawDbToFile,
   ReadDbOptions,
@@ -11,6 +11,7 @@ import {
 } from '../sync-utils/read-db';
 import debug from 'debug';
 import path from 'path';
+import { cleanUpDb } from '../sync-utils/sync-db';
 
 const log = debug('palm-sync').extend('conduit').extend('download-new');
 
@@ -55,32 +56,16 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             ...opts,
             dbInfo,
           });
+
           if (!dbInfo.dbFlags.resDB) {
-            // This logic already exists, clean up
-            const records: Array<RawPdbRecord> = [];
-            for (const record of rawDb.records) {
-              const {attributes} = record.entry as RecordEntryType;
-              if (attributes.delete || attributes.archive) {
-                continue;
-              }
-              attributes.dirty = false;
-              attributes.busy = false;
-              records.push(record as RawPdbRecord);
-            }
-            var a = rawDb as RawPdbDatabase;
-            a.records.splice(0, a.records.length, ...records);
-            await writeRawDbToFile(
-              a,
-              dbInfo.name,
-              path.join(conduitData.palmDir, DATABASES_STORAGE_DIR)
-            );
-          } else {
-            await writeRawDbToFile(
-              rawDb,
-              dbInfo.name,
-              path.join(conduitData.palmDir, DATABASES_STORAGE_DIR)
-            );
+            await cleanUpDb(rawDb as RawPdbDatabase);
           }
+
+          await writeRawDbToFile(
+            rawDb,
+            dbInfo.name,
+            path.join(conduitData.palmDir, DATABASES_STORAGE_DIR)
+          );
           downloadCount++;
         } catch (error) {
           console.error(
