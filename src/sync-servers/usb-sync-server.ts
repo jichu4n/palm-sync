@@ -1,5 +1,6 @@
 import debug from 'debug';
-import isEqual from 'lodash/isEqual';
+import pick from 'lodash/pick';
+import uniq from 'lodash/uniq';
 import {TypeId} from 'palm-pdb';
 import {
   SArray,
@@ -331,7 +332,6 @@ export class UsbSyncServer extends SyncServer {
       for (const rawDevice of rawDevices) {
         const usbId = toUsbId(rawDevice.deviceDescriptor);
         if (usbId in USB_DEVICE_CONFIGS_BY_ID) {
-          this.log(`Found device ${usbId}`);
           return {
             rawDevice,
             deviceConfig: USB_DEVICE_CONFIGS_BY_ID[usbId],
@@ -377,7 +377,30 @@ export class UsbSyncServer extends SyncServer {
       );
       return {device, stream: null};
     }
+    for (const {interfaceNumber, alternate} of device.configuration
+      .interfaces) {
+      this.log(
+        `Found ${alternate.endpoints.length} endpoints on interface ${interfaceNumber}:`
+      );
+      for (const endpoint of alternate.endpoints) {
+        this.log(
+          '    ' +
+            JSON.stringify(
+              pick(
+                endpoint,
+                'endpointNumber',
+                'direction',
+                'type',
+                'packetSize'
+              )
+            )
+        );
+      }
+    }
     const {interfaceNumber} = device.configuration.interfaces[0];
+    // On Linux, the visor module will typically claim the device interface as
+    // soon as the Palm OS device is connected unless explicitly blacklisted. So
+    // if we detect the interface is already claimed, we'll try to detach it.
     const rawInterface = rawDevice.interface(interfaceNumber);
     if (rawInterface.isKernelDriverActive()) {
       this.log(`Detaching kernel driver for interface ${interfaceNumber}`);
@@ -389,40 +412,37 @@ export class UsbSyncServer extends SyncServer {
       this.log(`Could not claim interface ${interfaceNumber}: ${e}`);
       return {device, stream: null};
     }
+    this.log(`Claimed interface ${interfaceNumber}`);
 
-    // 2. Get device config.
-    let connectionConfigFromInitFn: UsbConnectionConfig | null = null;
-    let connectionConfigFromUsbDeviceInfo: UsbConnectionConfig | null = null;
+    // 3. Get device config.
+    let connectionConfig: UsbConnectionConfig | null = null;
     try {
-      connectionConfigFromInitFn =
-        await this.USB_INIT_FNS[deviceConfig.initType](device);
-      connectionConfigFromUsbDeviceInfo =
-        await this.getConnectionConfigFromUsbDeviceInfo(device);
+      connectionConfig = await this.USB_INIT_FNS[deviceConfig.initType](device);
     } catch (e) {
-      this.log(`Could not identify connection configuration: ${e}`);
-      return {device, stream: null};
-    }
-    if (
-      connectionConfigFromInitFn &&
-      connectionConfigFromUsbDeviceInfo &&
-      !isEqual(connectionConfigFromInitFn, connectionConfigFromUsbDeviceInfo)
-    ) {
       this.log(
-        'Connection config from init fn and from USB device info do not match: ' +
-          JSON.stringify(connectionConfigFromInitFn) +
-          ' vs ' +
-          JSON.stringify(connectionConfigFromUsbDeviceInfo)
+        'Could not identify connection configuration from init fn: ' +
+          (e instanceof Error ? e.stack || e.message : `${e}`)
       );
     }
-    const connectionConfig =
-      connectionConfigFromInitFn || connectionConfigFromUsbDeviceInfo;
+    if (!connectionConfig) {
+      try {
+        connectionConfig =
+          await this.getConnectionConfigFromUsbDeviceInfo(device);
+      } catch (e) {
+        this.log(
+          'Could not identify connection configuration from device info: ' +
+            (e instanceof Error ? e.stack || e.message : `${e}`)
+        );
+      }
+    }
     if (!connectionConfig) {
       this.log('Could not identify connection configuration');
       return {device, stream: null};
     }
+
     this.log(`Connection configuration: ${JSON.stringify(connectionConfig)}`);
 
-    // 3. Create stream.
+    // 4. Create stream.
     return {
       device,
       stream: new UsbConnectionStream(device, connectionConfig, this.log),
@@ -476,14 +496,22 @@ export class UsbSyncServer extends SyncServer {
     setup: USBControlTransferParameters,
     responseT: new () => ResponseT
   ): Promise<ResponseT> {
-    const response = new responseT();
-    const requestName = response.constructor.name.replace(/Response$/, '');
+    const requestName = this.getUsbControlRequestName(responseT);
     this.log(`>>> ${requestName}`);
+    this.log(`--- ${JSON.stringify(setup)}`);
 
-    const result = await device.controlTransferIn(
-      setup,
-      response.getSerializedLength()
-    );
+    const response = new responseT();
+    let result: USBInTransferResult;
+    try {
+      result = await device.controlTransferIn(
+        setup,
+        response.getSerializedLength()
+      );
+    } catch (e) {
+      const message = e instanceof Error ? e.message : `${e}`;
+      this.log(`--- ${message}`);
+      throw e instanceof Error ? e : new Error(message);
+    }
     if (result.status !== 'ok') {
       const message = `${requestName} failed with status ${result.status}`;
       this.log(`--- ${message}`);
@@ -507,18 +535,58 @@ export class UsbSyncServer extends SyncServer {
     return response;
   }
 
+  /** Try sending a USB control read request to the first endpoint that returns success. */
+  private async sendUsbControlRequestToFirstSuccessfulEndpoint<
+    ResponseT extends Serializable,
+  >(
+    device: WebUSBDevice,
+    setup: Omit<USBControlTransferParameters, 'index' | 'recipient'>,
+    responseT: new () => ResponseT
+  ): Promise<ResponseT> {
+    const requestName = this.getUsbControlRequestName(responseT);
+    const endpoints =
+      uniq(
+        device.configuration?.interfaces[0].alternate.endpoints
+          .filter(({direction}) => direction === 'out')
+          .map(({endpointNumber}) => endpointNumber)
+      ) || [];
+    if (endpoints.length === 0) {
+      const message = `No out endpoints available to send ${requestName}`;
+      this.log(message);
+      throw new Error(message);
+    }
+    this.log(
+      `Sending USB control request ${requestName} to endpoints ` +
+        endpoints.join(', ')
+    );
+    for (const endpoint of endpoints) {
+      try {
+        return await this.sendUsbControlRequest(
+          device,
+          {
+            ...setup,
+            recipient: 'endpoint',
+            index: endpoint,
+          },
+          responseT
+        );
+      } catch (e) {}
+    }
+    const message = `Failed to send ${requestName} to any endpoint`;
+    this.log(message);
+    throw new Error(message);
+  }
+
   private async getConnectionConfigUsingGetConnectionInfo(
     device: WebUSBDevice
   ): Promise<UsbConnectionConfig | null> {
     let response: GetConnectionInfoResponse;
     try {
-      response = await this.sendUsbControlRequest(
+      response = await this.sendUsbControlRequestToFirstSuccessfulEndpoint(
         device,
         {
           requestType: 'vendor',
-          recipient: 'endpoint',
           request: UsbControlRequestType.GET_CONNECTION_INFO,
-          index: 0,
           value: 0,
         },
         GetConnectionInfoResponse
@@ -543,13 +611,11 @@ export class UsbSyncServer extends SyncServer {
   ): Promise<UsbConnectionConfig | null> {
     let response: GetExtConnectionInfoResponse;
     try {
-      response = await this.sendUsbControlRequest(
+      response = await this.sendUsbControlRequestToFirstSuccessfulEndpoint(
         device,
         {
           requestType: 'vendor',
-          recipient: 'endpoint',
           request: UsbControlRequestType.GET_EXT_CONNECTION_INFO,
-          index: 0,
           value: 0,
         },
         GetExtConnectionInfoResponse
@@ -603,16 +669,17 @@ export class UsbSyncServer extends SyncServer {
       (endpoint) => endpoint.direction === 'out'
     );
     if (!inEndpoint || !outEndpoint) {
-      this.log(
-        'Could not find HotSync endpoints in USB device interface: ' +
-          JSON.stringify(alternate.endpoints)
-      );
+      this.log('Could not find HotSync endpoints in USB device interface');
       return null;
     }
     return {
       inEndpoint: inEndpoint.endpointNumber,
       outEndpoint: outEndpoint.endpointNumber,
     };
+  }
+
+  private getUsbControlRequestName(responseType: new () => Serializable) {
+    return responseType.name.replace(/Response.?$/, '');
   }
 
   /** USB device initialization routines. */
@@ -640,13 +707,11 @@ export class UsbSyncServer extends SyncServer {
         // Query the number of bytes available. We ignore the response because
         // we don't actually need it, but older devices may expect this call
         // before sending data.
-        await this.sendUsbControlRequest(
+        await this.sendUsbControlRequestToFirstSuccessfulEndpoint(
           device,
           {
             requestType: 'vendor',
-            recipient: 'endpoint',
             request: UsbControlRequestType.GET_NUM_BYTES_AVAILABLE,
-            index: 0,
             value: 0,
           },
           GetNumBytesAvailableResponse
