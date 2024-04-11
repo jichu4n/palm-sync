@@ -424,7 +424,7 @@ export class DlpRomVersion extends SBitmask.of(SUInt32BE) {
 
   toString(): string {
     return [
-      `${this.major}.${this.minor}${this.fix}`,
+      `${this.major}.${this.minor}.${this.fix}`,
       this.stage === DlpRomStage.RELEASE
         ? ''
         : DlpRomStage[this.stage][0].toLowerCase() +
