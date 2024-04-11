@@ -16,4 +16,9 @@ export default defineConfig({
       include: [/palm-sync/, /node_modules/],
     },
   },
+  // Preserve identifiers such as DLP request / response class names for better logging.
+  esbuild: {
+    minifyIdentifiers: false,
+    keepNames: true,
+  },
 });
