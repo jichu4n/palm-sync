@@ -445,7 +445,7 @@ export class UsbSyncServer extends SyncServer {
     // 4. Create stream.
     return {
       device,
-      stream: new UsbConnectionStream(device, connectionConfig, this.log),
+      stream: new UsbConnectionStream(device, connectionConfig),
     };
   }
 
