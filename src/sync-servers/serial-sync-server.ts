@@ -61,14 +61,18 @@ export class SerialSyncServer extends SyncServer {
    * @ignore
    */
   public async onConnection(rawStream: Duplex) {
+    if (!this.serialPort) {
+      throw new Error('Server not started');
+    }
+
     const connection = new SerialSyncConnection(rawStream, this.opts);
     this.emit('connect', connection);
 
-    this.serialPort?.update({baudRate: 9600});
+    this.serialPort.update({baudRate: connection.baudRate});
     this.log('Starting handshake');
     await connection.doHandshake();
     this.log('Handshake complete');
-    this.serialPort?.update({baudRate: 115200});
+    this.serialPort.update({baudRate: connection.baudRate});
 
     await connection.start();
 
@@ -88,7 +92,7 @@ export class SerialSyncServer extends SyncServer {
     while (this.serialPort && this.serialPort.isOpen) {
       try {
         await this.onConnection(this.serialPort);
-      } catch (e: any) {
+      } catch (e) {
         // Ignore
       }
     }

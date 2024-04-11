@@ -2,7 +2,7 @@ import debug from 'debug';
 import {Socket} from 'net';
 import pEvent from 'p-event';
 import {Duplex, Readable} from 'stream';
-import {doCmpHandshake} from './cmp-protocol';
+import {CMP_INITIAL_BAUD_RATE, doCmpHandshake} from './cmp-protocol';
 import {
   DlpEndOfSyncReqType,
   DlpReadSysInfoReqType,
@@ -212,9 +212,16 @@ export class SerialSyncConnection extends SyncConnection<PadpStream> {
   protected override createDlpTransportStream(rawStream: Duplex): PadpStream {
     return new PadpStream(rawStream);
   }
-  override async doHandshake(): Promise<void> {
-    await doCmpHandshake(this.dlpTransportStream, 115200);
+  override async doHandshake() {
+    const {baudRate} = await doCmpHandshake(this.dlpTransportStream);
+    this.baudRate = baudRate;
   }
+  /** Current baud rate.
+   *
+   * Initially set to CMP_INITIAL_BAUD_RATE, and updated to negotiated baud rate
+   * after handshake.
+   */
+  baudRate = CMP_INITIAL_BAUD_RATE;
 }
 
 /** NetSync protocol stack - NetSync. */

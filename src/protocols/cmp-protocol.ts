@@ -13,6 +13,12 @@ import {
 } from 'serio';
 import {PadpStream} from './padp-protocol';
 
+/** Initial baud rate for serial connections. */
+export const CMP_INITIAL_BAUD_RATE = 9600;
+
+/** Maximum baud rate supported. */
+export const CMP_MAX_BAUD_RATE = 115200;
+
 /** SLP transaction ID used for CMP datagrams. */
 export const CMP_XID = 0xff;
 
@@ -121,14 +127,18 @@ export class CmpDatagram extends SObject {
   }
 }
 
-/** Performs a CMP negotiation using the provided PADP stream.
- *
- * If provided, will set the baud rate to the provided value.
- */
+/** Performs a CMP negotiation using the provided PADP stream. */
 export async function doCmpHandshake(
   stream: PadpStream,
-  suggestedBaudRate?: number
-) {
+  suggestedBaudRate = CMP_MAX_BAUD_RATE
+): Promise<{
+  /** Baud rate after negotiation.
+   *
+   * This will be the smaller of `suggestedBaudRate` and the highest baud rate
+   * supported by the Palm device.
+   */
+  baudRate: number;
+}> {
   const log = debug('palm-sync').extend('cmp');
 
   // Read initial WAKEUP.
@@ -141,17 +151,19 @@ export async function doCmpHandshake(
   }
   log(`<<< CMP WAKEUP: ${JSON.stringify(wakeupDatagram)}`);
 
+  const baudRate = Math.min(wakeupDatagram.baudRate, suggestedBaudRate);
+  const shouldChangeBaudRate = baudRate !== CMP_INITIAL_BAUD_RATE;
+  log(`Negotiated baud rate: ${baudRate}`);
+
   // Send reply.
   const initDatagram = CmpDatagram.with({
     type: CmpDatagramType.INIT,
     attrs: CmpInitDatagramAttrs.with({
-      shouldChangeBaudRate: !!suggestedBaudRate,
+      shouldChangeBaudRate,
       isLongFormPadpHeaderSupported: true,
     }),
+    baudRate: shouldChangeBaudRate ? baudRate : 0,
   });
-  if (suggestedBaudRate) {
-    initDatagram.baudRate = suggestedBaudRate;
-  }
   log(`>>> CMP INIT: ${JSON.stringify(initDatagram)}`);
   const ackPromise = new Promise<null>((resolve, reject) => {
     stream.setNextXid(CMP_XID);
@@ -183,4 +195,6 @@ export async function doCmpHandshake(
     }
   }
   log(`--- Received ACK on CMP INIT, CMP handshake complete`);
+
+  return {baudRate};
 }
