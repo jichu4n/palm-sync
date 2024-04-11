@@ -189,7 +189,9 @@ export class UsbConnectionStream extends Duplex {
     if (result.status === 'ok') {
       callback(null);
     } else {
-      callback(new Error(`USB write failed with status ${result.status}`));
+      const message = `USB write failed with status ${result.status}`;
+      this.log(message);
+      callback(new Error(message));
     }
   }
 
@@ -198,11 +200,15 @@ export class UsbConnectionStream extends Duplex {
     try {
       result = await this.device.transferIn(this.config.inEndpoint, 64);
     } catch (e) {
-      this.destroy(
-        new Error(
-          'USB read error: ' + (e instanceof Error ? e.message : `${e}`)
-        )
-      );
+      // If we're expecting the connection to close, we also expect any pending
+      // reads to fail.
+      if (this.shouldClose) {
+        return;
+      }
+      const message =
+        'USB read error: ' + (e instanceof Error ? e.message : `${e}`);
+      this.log(message);
+      this.destroy(new Error(message));
       return;
     }
     if (result.status === 'ok') {
@@ -210,9 +216,19 @@ export class UsbConnectionStream extends Duplex {
         result.data ? Buffer.from(result.data.buffer) : Buffer.alloc(0)
       );
     } else {
-      this.destroy(new Error(`USB read failed with status ${result.status}`));
+      const message = `USB read failed with status ${result.status}`;
+      this.log(message);
+      this.destroy(new Error(message));
     }
   }
+
+  _final() {
+    this.shouldClose = true;
+  }
+
+  private log = debug('palm-sync').extend('usb');
+  /** Indicates that the connection is expected to close. */
+  private shouldClose = false;
 }
 
 /** USB device polling interval used in waitForDevice(). */
@@ -261,16 +277,25 @@ export class UsbSyncServer extends SyncServer {
         }
         if (device) {
           this.log('Closing device');
-          await this.closeDevice(device);
+          await this.closeDevice(device, stream);
         }
       } catch (e) {
-        this.log('Error syncing with device: ', e);
+        this.log(
+          'Error syncing with device: ' +
+            (e instanceof Error ? e.stack || e.message : `${e}`)
+        );
       }
 
       this.log('Waiting for device to disconnect');
       try {
         await this.waitForDeviceToDisconnect(rawDevice);
-      } catch (e) {}
+        this.log('Device disconnected');
+      } catch (e) {
+        this.log(
+          'Error waiting for device to disconnect: ' +
+            (e instanceof Error ? e.stack || e.message : `${e}`)
+        );
+      }
     }
   }
 
@@ -450,7 +475,14 @@ export class UsbSyncServer extends SyncServer {
   }
 
   /** Clean up a device opened by openDevice(). */
-  private async closeDevice(device: WebUSBDevice) {
+  private async closeDevice(
+    device: WebUSBDevice,
+    stream: UsbConnectionStream | null
+  ) {
+    // Tell the stream that we're about to close, so that when the pending read
+    // fails it won't be treated as an error.
+    stream?.end();
+
     // Release interface.
     try {
       if (device.configuration?.interfaces[0]?.claimed) {
@@ -468,7 +500,7 @@ export class UsbSyncServer extends SyncServer {
     try {
       await device.close();
     } catch (e) {
-      this.log(`Could not close device: ${e}`);
+      // this.log(`Could not close device: ${e}`);
     }
   }
 
