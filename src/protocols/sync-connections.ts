@@ -1,8 +1,14 @@
 import debug from 'debug';
 import {Socket} from 'net';
 import pEvent from 'p-event';
+import {DEFAULT_ENCODING} from 'palm-pdb';
+import {DeserializeOptions, SerializeOptions} from 'serio';
 import {Duplex, Readable} from 'stream';
-import {CMP_INITIAL_BAUD_RATE, doCmpHandshake} from './cmp-protocol';
+import {
+  CMP_INITIAL_BAUD_RATE,
+  CMP_MAX_BAUD_RATE,
+  doCmpHandshake,
+} from './cmp-protocol';
 import {
   DlpEndOfSyncReqType,
   DlpReadSysInfoReqType,
@@ -10,15 +16,13 @@ import {
   DlpReadUserInfoReqType,
   DlpReadUserInfoRespType,
 } from './dlp-commands';
+import {DlpRequest, DlpRespErrorCode, DlpResponseType} from './dlp-protocol';
 import {
   NetSyncDatagramStream,
   createNetSyncDatagramStream,
 } from './net-sync-protocol';
 import {PadpStream} from './padp-protocol';
 import {StreamRecorder} from './stream-recorder';
-import {DEFAULT_ENCODING} from 'palm-pdb';
-import {SerializeOptions, DeserializeOptions} from 'serio';
-import {DlpRequest, DlpRespErrorCode, DlpResponseType} from './dlp-protocol';
 
 /** Options for DlpConnection. */
 export interface DlpConnectionOptions {
@@ -207,15 +211,35 @@ export abstract class SyncConnection<DlpStreamT extends Duplex = Duplex> {
   protected readonly dlpTransportStream: DlpStreamT;
 }
 
+/** Coneection options for SerialSyncConnection. */
+export interface SerialSyncConnectionOptions extends SyncConnectionOptions {
+  /** Maximum baud rate supported by the server. */
+  maxBaudRate?: number;
+}
+
 /** Serial protocol stack - SLP, PADP, CMP. */
 export class SerialSyncConnection extends SyncConnection<PadpStream> {
+  constructor(
+    /** Raw data stream underlying the DLP stream. */
+    rawStream: Duplex,
+    opts: SerialSyncConnectionOptions = {}
+  ) {
+    super(rawStream, opts);
+    this.maxBaudRate = opts.maxBaudRate || CMP_MAX_BAUD_RATE;
+  }
+
   protected override createDlpTransportStream(rawStream: Duplex): PadpStream {
     return new PadpStream(rawStream);
   }
   override async doHandshake() {
-    const {baudRate} = await doCmpHandshake(this.dlpTransportStream);
+    const {baudRate} = await doCmpHandshake(
+      this.dlpTransportStream,
+      this.maxBaudRate
+    );
     this.baudRate = baudRate;
   }
+  /** Maximum baud rate supported by the server. */
+  private readonly maxBaudRate: number;
   /** Current baud rate.
    *
    * Initially set to CMP_INITIAL_BAUD_RATE, and updated to negotiated baud rate

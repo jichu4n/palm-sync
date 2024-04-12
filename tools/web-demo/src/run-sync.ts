@@ -11,9 +11,10 @@ export async function runSync(syncFn: SyncFn, opts?: SyncConnectionOptions) {
   if (logStore.logs.length > 0) {
     logStore.addDivider();
   }
+  const connectionString = localStorage.getItem('connectionString') || 'usb';
   try {
     return await createSyncServerAndRunSync(
-      'usb',
+      connectionString,
       async (dlpConnection) => {
         const {sysInfo, userInfo} = dlpConnection;
         const sysDateTime = await dlpConnection.execute(

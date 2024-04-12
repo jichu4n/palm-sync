@@ -10,6 +10,7 @@ export * from './protocols/stream-recorder';
 export * from './sync-servers/sync-server';
 export * from './sync-servers/usb-sync-server';
 export * from './sync-servers/usb-device-configs';
+export * from './sync-servers/web-serial-sync-server';
 export * from './sync-servers/sync-server-utils';
 export * from './sync-utils/read-db';
 export * from './sync-utils/write-db';

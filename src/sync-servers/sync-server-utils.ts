@@ -9,6 +9,7 @@ import {SerialOverNetworkSyncServer} from './serial-network-sync-server';
 import {SerialSyncServer} from './serial-sync-server';
 import {SyncFn, SyncServer} from './sync-server';
 import {UsbSyncServer} from './usb-sync-server';
+import {WebSerialSyncServer} from './web-serial-sync-server';
 
 const log = debug('palm-sync').extend('sync-server');
 
@@ -21,6 +22,7 @@ export function createSyncServer(
    *   - net or network
    *   - serial:/dev/ttyXXX or serial:COMXXX
    *   - serial-over-net or serial-over-network
+   *   - web-serial
    */
   connection: string,
   /** Sync function to run for new connections. */
@@ -41,6 +43,9 @@ export function createSyncServer(
     } else {
       return new SerialSyncServer(device, syncFn, opts);
     }
+  }
+  if (connection === 'web-serial') {
+    return new WebSerialSyncServer(syncFn, opts);
   }
   throw new Error(`Invalid connection type: ${connection}`);
 }
