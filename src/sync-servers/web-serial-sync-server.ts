@@ -1,6 +1,9 @@
 import debug from 'debug';
 import {Duplex, DuplexOptions} from 'stream';
-import {CMP_INITIAL_BAUD_RATE} from '../protocols/cmp-protocol';
+import {
+  CMP_INITIAL_BAUD_RATE,
+  CMP_MAX_BAUD_RATE,
+} from '../protocols/cmp-protocol';
 import {SerialSyncConnection} from '../protocols/sync-connections';
 import {SyncServer} from './sync-server';
 
@@ -124,10 +127,29 @@ export class WebSerialSyncServer extends SyncServer {
     if (!this.serialPort) {
       throw new Error('Server not started');
     }
-    const rawStream = new WebSerialStream(this.serialPort);
+    let rawStream = new WebSerialStream(this.serialPort);
+    const recreateRawStreamWithBaudRate = async (
+      baudRate: number
+    ): Promise<WebSerialStream> => {
+      this.log(`Reopening serial port with baud rate ${baudRate}`);
+      await new Promise<void>((resolve) => rawStream.end(resolve));
+      await this.serialPort!.close();
+      const availablePorts = await navigator.serial.getPorts();
+      if (availablePorts.length === 1) {
+        this.serialPort = availablePorts[0];
+      } else {
+        this.log(
+          `Re-requesting serial port because there are ${availablePorts.length} available ports.`
+        );
+        this.serialPort = await navigator.serial.requestPort();
+      }
+      await this.serialPort.open({baudRate});
+      this.log(`Reopened serial port with baud rate ${baudRate}`);
+      return new WebSerialStream(this.serialPort);
+    };
     while (this.serialPort && !this.shouldStop) {
       try {
-        await this.onConnection(rawStream);
+        await this.onConnection(rawStream, recreateRawStreamWithBaudRate);
         // Wait for next event loop iteration to allow for stop() to be called.
         await new Promise((resolve) => setTimeout(resolve, 0));
       } catch (e) {
@@ -143,32 +165,61 @@ export class WebSerialSyncServer extends SyncServer {
    *
    * @ignore
    */
-  public async onConnection(rawStream: Duplex) {
+  public async onConnection(
+    rawStream: Duplex,
+    recreateRawStreamWithBaudRate?: (baudRate: number) => Promise<Duplex>
+  ) {
     if (!this.serialPort) {
       throw new Error('Server not started');
     }
-    const connection = new SerialSyncConnection(rawStream, {
-      ...this.opts,
-      // Web Serial API does not support changing baud rate after opening.
-      maxBaudRate: CMP_INITIAL_BAUD_RATE,
-    });
+    let connection: SerialSyncConnection | null = new SerialSyncConnection(
+      rawStream,
+      {
+        ...this.opts,
+        maxBaudRate: recreateRawStreamWithBaudRate
+          ? CMP_MAX_BAUD_RATE
+          : CMP_INITIAL_BAUD_RATE,
+      }
+    );
     this.emit('connect', connection);
 
     this.log('Starting handshake');
     await connection.doHandshake();
     this.log('Handshake complete');
-
-    await connection.start();
-
-    try {
-      await this.syncFn(connection.dlpConnection);
-    } catch (e) {
-      this.log(
-        'Sync error: ' + (e instanceof Error ? e.stack || e.message : `${e}`)
-      );
+    if (
+      recreateRawStreamWithBaudRate &&
+      connection.baudRate !== CMP_INITIAL_BAUD_RATE
+    ) {
+      try {
+        connection = new SerialSyncConnection(
+          await recreateRawStreamWithBaudRate(connection.baudRate),
+          {
+            ...this.opts,
+            maxBaudRate: connection.baudRate,
+          }
+        );
+      } catch (e) {
+        const message =
+          'Could not recreate stream with higher baud rate: ' +
+          (e instanceof Error ? e.stack || e.message : `${e}`);
+        this.log(message);
+        throw new Error(message);
+      }
     }
 
-    await connection.end();
+    if (connection) {
+      await connection.start();
+
+      try {
+        await this.syncFn(connection.dlpConnection);
+      } catch (e) {
+        this.log(
+          'Sync error: ' + (e instanceof Error ? e.stack || e.message : `${e}`)
+        );
+      }
+
+      await connection.end();
+    }
     this.emit('disconnect', connection);
   }
 
