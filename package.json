@@ -22,6 +22,7 @@
     "build:browser-bundle": "mkdir -p ./dist && ts-node ./src/bin/build-browser-bundle.ts > ./dist/browser-bundle.js",
     "build:docs": "rm -rf ./docs/ && typedoc",
     "build:udev-rules": "ts-node ./src/bin/generate-udev-rules.ts",
+    "web-demo": "npm run build && npm --prefix ./tools/web-demo run dev -- --force",
     "lint": "prettier --check .",
     "test": "env TZ=UTC jest",
     "cli": "ts-node ./src/bin/cli.ts",
