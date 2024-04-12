@@ -2,6 +2,7 @@ import debug from 'debug';
 import pEvent from 'p-event';
 import {SerialPort} from 'serialport';
 import {Duplex} from 'stream';
+import {CMP_INITIAL_BAUD_RATE} from '../protocols/cmp-protocol';
 import {
   DlpReadDBListFlags,
   DlpReadDBListReqType,
@@ -11,6 +12,7 @@ import {
   SyncConnectionOptions,
 } from '../protocols/sync-connections';
 import {SyncFn, SyncServer} from './sync-server';
+import fs from 'fs';
 
 /** Sync server using a serial port. */
 export class SerialSyncServer extends SyncServer {
@@ -27,31 +29,40 @@ export class SerialSyncServer extends SyncServer {
   }
 
   override async start() {
-    if (this.serialPort) {
+    if (this.serialPort || this.runPromise) {
       throw new Error('Server already started');
     }
     this.serialPort = new SerialPort(
       {
         path: this.device,
-        baudRate: 9600,
+        baudRate: CMP_INITIAL_BAUD_RATE,
+        endOnClose: true,
       },
       (error) => {
         if (error) {
+          this.serialPort = null;
           throw error;
         } else {
-          this.run();
+          this.runPromise = this.run();
         }
       }
     );
   }
 
   override async stop() {
-    if (!this.serialPort) {
+    if (!this.serialPort || !this.runPromise || this.shouldStop) {
       return;
     }
+    this.shouldStop = true;
+    await new Promise((resolve) => this.serialPort!.drain(resolve));
     this.serialPort.close();
     await pEvent(this.serialPort, 'close');
     this.serialPort = null;
+    try {
+      await this.runPromise;
+    } catch (e) {}
+    this.runPromise = null;
+    this.shouldStop = false;
   }
 
   /** Handle a new connection.
@@ -68,7 +79,6 @@ export class SerialSyncServer extends SyncServer {
     const connection = new SerialSyncConnection(rawStream, this.opts);
     this.emit('connect', connection);
 
-    this.serialPort.update({baudRate: connection.baudRate});
     this.log('Starting handshake');
     await connection.doHandshake();
     this.log('Handshake complete');
@@ -89,9 +99,11 @@ export class SerialSyncServer extends SyncServer {
   }
 
   private async run() {
-    while (this.serialPort && this.serialPort.isOpen) {
+    while (this.serialPort && this.serialPort.isOpen && !this.shouldStop) {
       try {
         await this.onConnection(this.serialPort);
+        // Wait for next event loop iteration to allow for stop() to be called.
+        await new Promise((resolve) => setTimeout(resolve, 0));
       } catch (e) {
         // Ignore
       }
@@ -102,6 +114,10 @@ export class SerialSyncServer extends SyncServer {
 
   /** SerialPort instance. */
   private serialPort: SerialPort | null = null;
+  /** Promise returned by the currently running run() function. */
+  private runPromise: Promise<void> | null = null;
+  /** Flag indicating that stop() has been invoked. */
+  private shouldStop = false;
 }
 
 if (require.main === module) {

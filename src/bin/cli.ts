@@ -71,11 +71,15 @@ async function runSyncForCommand(command: Command, syncFn: SyncFn) {
       }
     : {};
 
-  return await createSyncServerAndRunSync(
+  await createSyncServerAndRunSync(
     connectionString,
     syncFn,
     syncConnectionOptions
   );
+  // We'll explicitly exit the process after the sync is done due to a known bug
+  // causing hanging promises:
+  // https://github.com/serialport/node-serialport/issues/2776
+  process.exit(0);
 }
 
 if (require.main === module) {
@@ -290,7 +294,6 @@ if (require.main === module) {
               console.error(error);
             }
           });
-          process.exit(0);
         }
       );
 
