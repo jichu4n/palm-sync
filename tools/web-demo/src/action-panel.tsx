@@ -11,6 +11,7 @@ import {useCallback} from 'react';
 import {SerialIcon, UsbIcon} from './icons';
 import {prefsStore} from './prefs-store';
 import {runSync} from './run-sync';
+import SvgIcon from '@mui/material/SvgIcon';
 
 const log = debug('result');
 
@@ -39,7 +40,9 @@ const ConnectionSelector = observer(function ConnectionSelector() {
           sx={{width: '10em'}}
           size="small"
         >
-          <Icon sx={{marginRight: 1}} />
+          <SvgIcon sx={{marginRight: 1}}>
+            <Icon />
+          </SvgIcon>
           {label}
         </ToggleButton>
       ))}
