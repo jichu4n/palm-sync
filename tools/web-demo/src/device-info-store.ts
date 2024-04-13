@@ -5,12 +5,6 @@ import {
   DlpReadUserInfoRespType,
 } from 'palm-sync';
 
-export interface UsbDeviceInfo {
-  vendorId?: string;
-  productId?: string;
-  serialNumber?: string;
-}
-
 class DeviceInfoStore {
   constructor() {
     makeObservable(this, {
@@ -24,18 +18,15 @@ class DeviceInfoStore {
   sysInfo: DlpReadSysInfoRespType | null = null;
   userInfo: DlpReadUserInfoRespType | null = null;
   sysDateTime: DlpGetSysDateTimeRespType | null = null;
-  usbDeviceInfo: UsbDeviceInfo | null = null;
 
   update({
     sysInfo,
     userInfo,
     sysDateTime,
-    usbDeviceInfo,
   }: {
     sysInfo?: DlpReadSysInfoRespType;
     userInfo?: DlpReadUserInfoRespType;
     sysDateTime?: DlpGetSysDateTimeRespType;
-    usbDeviceInfo?: UsbDeviceInfo;
   }) {
     if (sysInfo) {
       this.sysInfo = sysInfo;
@@ -46,10 +37,7 @@ class DeviceInfoStore {
     if (sysDateTime) {
       this.sysDateTime = sysDateTime;
     }
-    if (usbDeviceInfo) {
-      this.usbDeviceInfo = usbDeviceInfo;
-    }
-    console.log('Device info: ', sysInfo, userInfo, sysDateTime, usbDeviceInfo);
+    console.log('Device info: ', sysInfo, userInfo, sysDateTime);
   }
 }
 

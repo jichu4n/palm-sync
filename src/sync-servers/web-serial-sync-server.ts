@@ -18,10 +18,10 @@ export class WebSerialStream extends Duplex {
     super(opts);
     this.reader = serialPort.readable.getReader();
     this.writer = serialPort.writable.getWriter();
-    this.readPromise = this.startReadLoop();
+    this.readPromise = this.readLoop();
   }
 
-  private async startReadLoop() {
+  private async readLoop() {
     try {
       while (!this.shouldClose) {
         const {value, done} = await this.reader.read();
@@ -207,19 +207,17 @@ export class WebSerialSyncServer extends SyncServer {
       }
     }
 
-    if (connection) {
-      await connection.start();
+    await connection.start();
 
-      try {
-        await this.syncFn(connection.dlpConnection);
-      } catch (e) {
-        this.log(
-          'Sync error: ' + (e instanceof Error ? e.stack || e.message : `${e}`)
-        );
-      }
-
-      await connection.end();
+    try {
+      await this.syncFn(connection.dlpConnection);
+    } catch (e) {
+      this.log(
+        'Sync error: ' + (e instanceof Error ? e.stack || e.message : `${e}`)
+      );
     }
+
+    await connection.end();
     this.emit('disconnect', connection);
   }
 

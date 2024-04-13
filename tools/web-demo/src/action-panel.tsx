@@ -43,7 +43,14 @@ const ConnectionSelector = observer(function ConnectionSelector() {
           <SvgIcon sx={{marginRight: 1}}>
             <Icon />
           </SvgIcon>
-          {label}
+          <span
+            style={{
+              // Hack to center the text vertically compared to icon
+              lineHeight: '24px',
+            }}
+          >
+            {label}
+          </span>
         </ToggleButton>
       ))}
     </ToggleButtonGroup>
