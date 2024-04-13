@@ -1,8 +1,8 @@
 import {action, makeObservable, observable} from 'mobx';
 import {
+  DlpGetSysDateTimeRespType,
   DlpReadSysInfoRespType,
   DlpReadUserInfoRespType,
-  DlpGetSysDateTimeRespType,
 } from 'palm-sync';
 
 class DeviceInfoStore {

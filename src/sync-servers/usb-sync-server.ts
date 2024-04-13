@@ -222,8 +222,9 @@ export class UsbConnectionStream extends Duplex {
     }
   }
 
-  _final() {
+  _final(callback: (error?: Error | null) => void) {
     this.shouldClose = true;
+    callback(null);
   }
 
   private log = debug('palm-sync').extend('usb');
@@ -481,7 +482,9 @@ export class UsbSyncServer extends SyncServer {
   ) {
     // Tell the stream that we're about to close, so that when the pending read
     // fails it won't be treated as an error.
-    stream?.end();
+    if (stream) {
+      await new Promise<void>((resolve) => stream.end(resolve));
+    }
 
     // Release interface.
     try {
