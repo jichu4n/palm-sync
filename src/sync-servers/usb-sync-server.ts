@@ -386,7 +386,9 @@ export class UsbSyncServer extends SyncServer {
     let device: WebUSBDevice | null;
     try {
       device = await WebUSBDevice.createInstance(rawDevice);
+      this.log('AAAAAAAAAAAAAA');
       await device.open();
+      this.log('BBBBBBBBBBBBBB');
     } catch (e) {
       this.log(`Could not open device: ${e}`);
       return {device: null, stream: null};
