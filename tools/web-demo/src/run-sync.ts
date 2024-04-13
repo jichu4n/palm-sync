@@ -1,20 +1,20 @@
 import {
+  DlpGetSysDateTimeReqType,
   SyncConnectionOptions,
   SyncFn,
   createSyncServerAndRunSync,
-  DlpGetSysDateTimeReqType,
 } from 'palm-sync';
 import {deviceInfoStore} from './device-info-store';
 import {logStore} from './log-store';
+import {prefsStore} from './prefs-store';
 
 export async function runSync(syncFn: SyncFn, opts?: SyncConnectionOptions) {
   if (logStore.logs.length > 0) {
     logStore.addDivider();
   }
-  const connectionString = localStorage.getItem('connectionString') || 'usb';
   try {
     return await createSyncServerAndRunSync(
-      connectionString,
+      prefsStore.get('connectionString'),
       async (dlpConnection) => {
         const {sysInfo, userInfo} = dlpConnection;
         const sysDateTime = await dlpConnection.execute(

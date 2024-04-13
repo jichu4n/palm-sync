@@ -1,30 +1,32 @@
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import {observer} from 'mobx-react';
 import {deviceInfoStore} from './device-info-store';
-import Box from '@mui/material/Box';
 
-export const DeviceInfoViewer = observer(function DeviceInfoViewer() {
+export const DeviceInfoPanel = observer(function DeviceInfoPanel() {
   const {sysInfo, userInfo, sysDateTime} = deviceInfoStore;
   return (
-    <Paper elevation={3} sx={{padding: 2, paddingTop: 1}}>
-      <Typography variant="h6" mb={1}>
+    <Paper elevation={3}>
+      <Typography variant="h6" px={2} py={1}>
         Device Info
       </Typography>
+      <Divider />
       {!sysInfo || !userInfo || !sysDateTime ? (
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'center',
-            paddingBottom: 1,
             opacity: '50%',
           }}
+          p={3}
         >
           <Typography variant="overline">Waiting for sync</Typography>
         </Box>
       ) : (
-        <Grid container>
+        <Grid container p={2}>
           {(
             [
               ['OS', sysInfo.romSWVersion.toString(), 3],
