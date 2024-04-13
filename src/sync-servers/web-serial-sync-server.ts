@@ -101,6 +101,7 @@ export class WebSerialSyncServer extends SyncServer {
       );
       throw e;
     }
+    this.log('Opened serial port');
     this.serialPort = serialPort;
     // Start the run loop in the next event loop iteration to allow the caller
     // to subscribe to "connect" events after this method returns.
@@ -119,6 +120,7 @@ export class WebSerialSyncServer extends SyncServer {
     } catch (e) {}
     this.runPromise = null;
     await this.serialPort.close();
+    this.log('Closed serial port');
     this.serialPort = null;
     this.shouldStop = false;
   }
@@ -145,7 +147,8 @@ export class WebSerialSyncServer extends SyncServer {
       }
       await this.serialPort.open({baudRate});
       this.log(`Reopened serial port with baud rate ${baudRate}`);
-      return new WebSerialStream(this.serialPort);
+      rawStream = new WebSerialStream(this.serialPort);
+      return rawStream;
     };
     while (this.serialPort && !this.shouldStop) {
       try {
