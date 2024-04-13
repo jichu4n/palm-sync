@@ -7,7 +7,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import {observer} from 'mobx-react';
 import {debug, readDbList} from 'palm-sync';
-import {useCallback} from 'react';
+import {Fragment, useCallback} from 'react';
 import {SerialIcon, UsbIcon} from './icons';
 import {prefsStore} from './prefs-store';
 import {runSync} from './run-sync';
@@ -100,12 +100,12 @@ export function ActionPanel() {
         </Grid>
         <Grid item xs={12} />
         {controls.map((Component, idx) => (
-          <>
-            <Grid key={idx} item xs={5}>
+          <Fragment key={idx}>
+            <Grid item xs={5}>
               <Component />
             </Grid>
             <Grid item xs={12} />
-          </>
+          </Fragment>
         ))}
       </Grid>
     </Paper>
