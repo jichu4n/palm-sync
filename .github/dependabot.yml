@@ -6,3 +6,7 @@ updates:
       interval: 'weekly'
     ignore:
       - dependency-name: 'p-event' # p-event 5.0+ only supports ESM
+  - package-ecosystem: 'npm'
+    directory: '/tools/web-demo'
+    schedule:
+      interval: 'weekly'

@@ -1,22 +1,19 @@
-name: Deploy docs
+name: Deploy website
 on:
   push:
     branches: [master]
 jobs:
-  deploy-docs:
+  deploy-website:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run build
-      - run: npm run build:docs
+      - run: npm install && npm run build
       - run: npm --prefix=./tools/web-demo install
-      - run: npm --prefix=./tools/web-demo run build
-      - run: mv ./tools/web-demo/dist ./docs/web-demo
-      - uses: peaceiris/actions-gh-pages@v3
+      - run: npm run build:website
+      - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
+          publish_dir: ./website-dist

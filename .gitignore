@@ -1,6 +1,6 @@
 *.code-workspace
 /dist
-/docs
+/website-dist
 
 /node_modules
 
