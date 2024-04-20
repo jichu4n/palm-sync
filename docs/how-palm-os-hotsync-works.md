@@ -1,8 +1,6 @@
 # How Palm OS HotSync Works
 
-HotSync is a system of communication protocols that enables Palm OS devices to synchronize data with desktop computers. It often served as a Palm device's primary way of communicating with the outside world, for all kinds of use cases including transferring data, installing third-party apps, and sending and receiving emails. HotSync was a core part of the Palm OS user experience, and was quite an amazing piece technology for its time.
-
-This document explains at a high level how it all works under the hood.
+HotSync is a system of communication protocols that enables Palm OS devices to synchronize data with desktop computers. It often served as a Palm OS device's primary way of communicating with the outside world, for use cases including two-way synchronization of user data with a computer, installing third-party apps, and sending and receiving emails through a computer. HotSync was a core part of the Palm OS user experience, and was quite an amazing piece of technology for its time. This document explains at a high level how it works under the hood.
 
 Beware that the information in this document may not be fully accurate. HotSync was a proprietary system and Palm never published technical specs for many of its components. Much of the information below is based on the incredible reverse engineering work done by two open source projects, [pilot-link](https://github.com/jichu4n/pilot-link) and [ColdSync](https://github.com/dwery/coldsync), in the early 2000s. It also incorporates some of my own research while developing [palm-sync](https://github.com/jichu4n/palm-sync), a modern implementation of HotSync in TypeScript. If you spot any errors, please feel free to let me know via an issue / PR!
 
@@ -10,15 +8,15 @@ Beware that the information in this document may not be fully accurate. HotSync 
 
 Here's a high level diagram illustrating the main components of HotSync:
 
-<p><center><img src="./architecture.svg" width="500" alt="HotSync architecture"></center></p>
+<p align="center"><img src="./architecture.svg" width="500" alt="HotSync architecture"></p>
 
 Overview of the main components:
 
-- **Conduit**: Sync logic that runs on the computer. The official [Palm Desktop](https://palmdb.net/app/palm-desktop) software includes a number of built-in conduits, and can be extended with additional third-party conduits.
+- **Conduit**: Data synchronization logic that runs on the computer. The official [Palm Desktop](https://palmdb.net/app/palm-desktop) software includes a number of built-in conduits, and can be extended with additional third-party conduits.
 
 - **Desktop Link Protocol (DLP)**: Application level protocol for communicating with a Palm device. The protocol operates in a familiar request-response API style, where a conduit can send a request to the Palm and get back a response. A modern analogy might be a gRPC or REST API.
 
-- **Two-way sync**: Standard logic for synchronizing records that may be manipulated on the Palm device, on the computer, or both. Most Palm apps and their corresponding conduits follow the standard spec for marking records as new / dirty / deleted, and can thus rely on the two-way sync logic without reinventing the wheel. A modern analogy might be something like [OT](https://en.wikipedia.org/wiki/Operational_transformation).
+- **Two-way sync**: A generic system for synchronizing data that may be manipulated on the Palm device, on the computer, or both. Most Palm applications rely on the generic two-way sync logic without reinventing the wheel. A modern analogy might be something like [OT](https://en.wikipedia.org/wiki/Operational_transformation).
 
 - **Transport protocols**: Depending on the physical connection and the particular device, one of two transport protocol stacks is used to transport DLP requests and responses between the computer and the Palm device. A modern analogy might be the HTTP / TCP / IP stack.
 
@@ -32,12 +30,13 @@ DLP is the application level protocol in HotSync's protocol stack. It provides a
 
 Each DLP request performs a specific action such as getting / setting the system time, opending / closing a database, and reading / writing a record. The initial version of Palm OS supported about 30 different requests, and each subsequent major version of Palm OS added more requests, culminating in Palm OS 5 which supported a total of ~80 requests. DLP requests and responses are relatively well documented as they were made available to third-party conduit developers.
 
-Note that unlike many modern web APIs, DLP is a stateful API, and requests must be made sequentially. For example, the conduit might send a 1st request to open a database, a 2nd request to read its records, then a 3rd request to close it.
+DLP is a stateful API, and requests must be made sequentially. For example, the conduit might send a 1st request to open a database, a 2nd request to read its records, then a 3rd request to close it.
 
 Resources:
 
 - [DLCommon.h](https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/DLCommon.h) in the Palm OS SDK, which contains the definitions for all DLP request and response types
 - [dlp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/dlp.h) in ColdSync
+- [pi-dlp.h](https://github.com/jichu4n/pilot-link/blob/master/include/pi-dlp.h) in pilot-link
 
 ## Two-way sync
 
@@ -50,7 +49,9 @@ Palm OS's two-way sync system might seem primitive today compared to algorithms 
 Resources:
 
 - Palm OS Programming: The Developer's Guide, Ch. 16, p. 529 - [Google Books](https://www.google.com/books/edition/Palm_OS_Programming/PkHi3Ctrn3sC?hl=en&gbpv=1&pg=PA529&printsec=frontcover), [Internet Archive](https://archive.org/details/palmosprogrammin0000rhod/page/528/mode/2up)
-- Palm OS Programming Bible 2nd ed, Chapter 21, p. 739
+- Palm OS Programming Bible 2nd ed, Ch. 21, p. 739
+- [generic.cc](https://github.com/dwery/coldsync/blob/master/src/conduits/generic.cc) in ColdSync
+- [sync.c](https://github.com/jichu4n/pilot-link/blob/master/libpisync/sync.c) in pilot-link
 
 ## Transport protocols
 
@@ -60,7 +61,7 @@ Sitting below DLP are two alternative transport protocol stacks. Which stack is 
 
 The Serial Sync protocol stack is illustrated in the following diagram:
 
-<p><center><img src="./serial-sync.svg" width="350" alt="Serial Sync protocol stack"></center></p>
+<p align="center"><img src="./serial-sync.svg" width="350" alt="Serial Sync protocol stack"></p>
 
 #### Serial Link Protocol (SLP)
 
@@ -71,7 +72,8 @@ In addition to HotSync, SLP was also available to third-party developers for gen
 Resources:
 
 - [Palm OS Programmer's Companion, vol. II](./Palm%20OS%20Programmer's%20Companion,%20vol%20II.pdf), Ch. 5, p. 120.
-- [slp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/slp.h) in ColdSync
+- [slp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/slp.h) and [slp.c](https://github.com/dwery/coldsync/blob/master/libpconn/slp.c) in ColdSync
+- [slp.c](https://github.com/jichu4n/pilot-link/blob/master/libpisock/slp.c) in pilot-link
 
 #### Packet Assembly / Disassembly Protocol (PADP)
 
@@ -86,7 +88,8 @@ PADP was only used internally by HotSync itself and was not available to third-p
 Resources:
 
 - [PadCommn.h](https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-2/include/Core/System/PadCommn.h) in early versions of the Palm OS SDK
-- [padp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/padp.h) in ColdSync
+- [padp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/padp.h) and [padp.c](https://github.com/dwery/coldsync/blob/master/libpconn/padp.c) in ColdSync
+- [padp.c](https://github.com/jichu4n/pilot-link/blob/master/libpisock/padp.c) in pilot-link
 
 #### Connection Management Protocol (CMP)
 
@@ -94,18 +97,19 @@ CMP is used at the very beginning of each HotSync session to negotiate the baud 
 
 When communicating through a physical serial port, the computer and Palm OS device will use an initial baud rate of 9600. As part of the CMP handshake, the device provides its maximum supported baud rate to the computer, which then responds with the actual baud rate to use for subsequent communication. The device will switch over to that baud rate and start accepting DLP requests.
 
-However, the Serial Sync protocol stack is also used in situations where there is no physical baud rate involved. For example, certain early Handspring Visor models directly connect to a computer via a USB cable but still use the Serial Sync protocol stack for HotSync. In such cases, the CMP handshake still takes place but is basically a no-op.
+However, the Serial Sync protocol stack is also used in situations where there is no physical baud rate involved. For example, certain early Handspring Visor models directly connect to a computer via a USB cable but use the Serial Sync protocol stack for HotSync. In such cases, the CMP handshake still takes place but is basically a no-op.
 
 Resources:
 
 - [CMCommon.h](https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/CMCommon.h) in the Palm OS SDK
-- [cmp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/cmp.h) in ColdSync
+- [cmp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/cmp.h) and [cmp.c](https://github.com/dwery/coldsync/blob/master/libpconn/cmp.c) in ColdSync
+- [cmp.c](https://github.com/jichu4n/pilot-link/blob/master/libpisock/cmp.c) in pilot-link
 
 ### Net Sync
 
 The Net Sync protocol stack is illustrated in the following diagram:
 
-<p><center><img src="./net-sync.svg" width="350" alt="Net Sync protocol stack"></center></p>
+<p align="center"><img src="./net-sync.svg" width="350" alt="Net Sync protocol stack"></p>
 
 The most important difference of Net Sync compared to the Serial Sync protocol stack is that Net Sync assumes an underlying connection that already provides reliable and error-checked delivery. As a result, it does not need to include lower level protocols like SLP and PADP that implement these features.
 
@@ -117,25 +121,17 @@ Resources:
 
 - [netsync.c](https://github.com/dwery/coldsync/blob/master/libpconn/netsync.c)
   in ColdSync
+- [net.c](https://github.com/jichu4n/pilot-link/blob/master/libpisock/net.c) in pilot-link
 
 #### Net Sync protocol
 
-The actual Net Sync protocol is fairly lightweight and mainly serves to
-provide ordered delivery, like a much simplified version of PADP.
+The actual Net Sync protocol is fairly simple. It provides a lightweight data packet abstraction supporting ordered delivery, like a much simplified version of PADP.
 
 Resources:
 
-- [netsync.h](https://github.com/dwery/coldsync/blob/master/include/pconn/netsync.h)
+- [netsync.h](https://github.com/dwery/coldsync/blob/master/include/pconn/netsync.h) and [netsync.c](https://github.com/dwery/coldsync/blob/master/libpconn/netsync.c) in ColdSync
   in ColdSync
-
-#### Hardware
-
-The Net Sync protocol stack is used in the following scenarios:
-
-- Cradle / cable connection:
-  - Most Palm OS devices that shipped with a USB cradle / cable, including the Palm m500 series, Tungsten series, Zire series, later Handspring and Sony CLIE models
-- Network connection:
-  - All Palm OS devices when performing Network HotSync over modem or Wi-Fi
+- [net.c](https://github.com/jichu4n/pilot-link/blob/master/libpisock/net.c) in pilot-link
 
 ### Determining the transport protocol stack
 
