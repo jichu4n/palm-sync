@@ -41,7 +41,7 @@ Resources:
 
 ## Two-way sync
 
-The [Palm Desktop](https://palmdb.net/app/palm-desktop) software allows a user to edit data both on their computer and on their Palm device, then use HotSync to synchronize the two. For example, a user can create a new TODO item on their computer, and separately edit an existing TODO item on the Palm. After a successful HotSync, both devices are guaranteed to end up with the same updated TODO list. This required a way to mark changes and reconcile conflicts, conceptually similar to how modern online collaborative tools like Google Docs must reconcile edits from multiple users.
+The [Palm Desktop](https://palmdb.net/app/palm-desktop) software allows a user to edit data both on their computer and on their Palm device, then use HotSync to synchronize the two. For example, a user can create a new TODO item on their computer, and separately edit an existing TODO item on the Palm. After a successful HotSync, both devices are guaranteed to end up with the same updated TODO list. This required a way to mark changes and reconcile conflicts, just like how modern online collaborative tools like Google Docs must reconcile edits from multiple users.
 
 To solve this problem, Palm developed a generic two-way sync system with first class support in DLP and Palm OS APIs. This system is used by the built-in applications and conduits, and can be used by third-party apps / conduits as long as both sides (app and conduit) follow the standard spec. That said, this is purely optional and third-party developers are free to implement their own custom synchronization logic directly on top of DLP.
 
@@ -75,8 +75,7 @@ Resources:
 
 #### Packet Assembly / Disassembly Protocol (PADP)
 
-PADP provides reliable, ordered delivery on top of SLP. Its role in the
-protocol stack is conceptually similar to that of TCP in the networking stack.
+PADP provides reliable, ordered delivery on top of SLP. Its role in the protocol stack is conceptually similar to that of TCP in the networking stack.
 
 Each PADP data packet is broken down and transmitted as one or more smaller SLP data packets. The receiver can reassemble the original PADP data packet based on the ordering information in each SLP data packet.
 
@@ -102,47 +101,27 @@ Resources:
 - [CMCommon.h](https://github.com/jichu4n/palm-os-sdk/blob/master/sdk-5r3/include/Core/System/CMCommon.h) in the Palm OS SDK
 - [cmp.h](https://github.com/dwery/coldsync/blob/master/include/pconn/cmp.h) in ColdSync
 
-#### Hardware
-
-The Serial Sync protocol stack is used in the following scenarios:
-
-- Cradle / cable connection:
-  - Many early Palm devices that shipped with a serial cradle / cable, such as the 1st and 2nd generation Palm Pilots, Palm III series, Palm V series, Palm VII series, Palm m100 and m105.
-  - Early Handspring Visor and Treo devices that shipped with a USB cradle / cable, such as the original Visor and Treo 300
-  - Early Sony CLIE devices that shipped with a USB cradle / cable, such as the S300
-- IrDA connection
-  - All Palm OS devices when performing HotSync over IR
-- Network connection:
-  - Palm OS Emulator (POSE) and modern derivatives that emulate a serial connection over a TCP/IP connection
-
 ### Net Sync
 
 The Net Sync protocol stack is illustrated in the following diagram:
 
 <p><center><img src="./net-sync.svg" width="350" alt="Net Sync protocol stack"></center></p>
 
-The most important difference of Net Sync compared to the Serial Sync protocol
-stack is that Net Sync assumes an underlying connection that already provides
-reliable and error-checked delivery. As a result, it does not need to include
-lower level protocols like SLP and PADP that implement these features.
+The most important difference of Net Sync compared to the Serial Sync protocol stack is that Net Sync assumes an underlying connection that already provides reliable and error-checked delivery. As a result, it does not need to include lower level protocols like SLP and PADP that implement these features.
 
 #### Handshake protocol
 
-There is a handshake protocol used at the beginning of each Net Sync-based
-HotSync session, analogous to CMP in the Serial Sync protocol stack. However,
-not much is currently known about it. Open source implementations (pilot-link
-and ColdSync) simply play back a hard-coded byte sequence captured during real
-HotSync sessions, which appears to work fine in practice.
+There is a handshake protocol used at the beginning of each Net Sync-based HotSync session, analogous to CMP in the Serial Sync protocol stack. However, not much is currently known about it. Open source implementations (pilot-link and ColdSync) simply play back a hard-coded byte sequence captured during real HotSync sessions, which appears to work fine in practice.
 
 Resources:
 
 - [netsync.c](https://github.com/dwery/coldsync/blob/master/libpconn/netsync.c)
   in ColdSync
 
-#### Net Sync
+#### Net Sync protocol
 
-The Net Sync protocol is a fairly lightweight protocol that mainly serves to
-provide ordered delivery, similar to a much simplified version of PADP.
+The actual Net Sync protocol is fairly lightweight and mainly serves to
+provide ordered delivery, like a much simplified version of PADP.
 
 Resources:
 
@@ -158,3 +137,21 @@ The Net Sync protocol stack is used in the following scenarios:
 - Network connection:
   - All Palm OS devices when performing Network HotSync over modem or Wi-Fi
 
+### Determining the transport protocol stack
+
+As mentioned above, exactly which transport protocol stack is used depends on several factors. The table below summarizes the combinations of these factors:
+
+| HotSync Type | Physical Connection                                             | Devices                                                                                                                                      | Transport Protocol Stack |
+| ------------ | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Local        | Serial cradle / cable (direct or through USB-to-serial adapter) | Early devices with serial cradle / cable , incl. 1st & 2nd gen PalmPilots, Palm III, V and VII series, m100, m105                            | Serial Sync              |
+| Local        | USB cradle / cable                                              | Early Sony CLIE and Handspring devices with USB cradle / cable, incl. Visor, Treo 300, S300                                                  | Serial Sync              |
+| Local        | USB cradle / cable                                              | Most devices with USB cradle / cable, incl. Palm m125 & m130, Palm m500, Tungsten, and Zire series, and most Handspring and Sony CLIE models | Net Sync                 |
+| Local        | IR                                                              | All compatible devices                                                                                                                       | Serial Sync              |
+| Local        | Bluetooth (direct)                                              | All compatible devices                                                                                                                       | Serial Sync              |
+| Local        | Network                                                         | Emulators incl. POSE and derivatives                                                                                                         | Serial Sync              |
+| Network      | Modem / Wi-Fi                                                   | All compatible devices                                                                                                                       | Net Sync                 |
+| Network      | Bluetooth (PPP)                                                 | All compatible devices                                                                                                                       | Net Sync                 |
+
+## Sync server and conduits
+
+The official [Palm Desktop](https://palmdb.net/app/palm-desktop) software runs a daemon process on the computer that listens for incoming HotSync requests in the background. The user can select the physical connection types and the specific hardware (e.g. serial port COM1) to listen on. Once the user connects their Palm OS device to the computer and initiates a HotSync, the Palm Desktop software will run a default set of conduits such as installing third-party apps, synchronizing the state of built-in applications, and backing up the device. In addition, it will run any third-party conduits installed by the user.
