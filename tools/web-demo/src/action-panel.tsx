@@ -1,17 +1,18 @@
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
+import {PaperProps} from '@mui/material/Paper';
+import SvgIcon from '@mui/material/SvgIcon';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import Typography from '@mui/material/Typography';
+import {useTheme} from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {observer} from 'mobx-react';
 import {debug, readDbList} from 'palm-sync';
 import {Fragment, useCallback} from 'react';
 import {SerialIcon, UsbIcon} from './icons';
+import {Panel} from './panel';
 import {prefsStore} from './prefs-store';
 import {runSync} from './run-sync';
-import SvgIcon from '@mui/material/SvgIcon';
 
 const log = debug('result');
 
@@ -23,8 +24,8 @@ const ConnectionSelector = observer(function ConnectionSelector() {
     }
   }, []);
   const buttons = [
-    ['usb', UsbIcon, 'USB'],
-    ['web-serial', SerialIcon, 'Serial'],
+    ['usb', UsbIcon, 'USB', !!navigator.usb],
+    ['web-serial', SerialIcon, 'Serial', !!navigator.serial],
   ] as const;
   return (
     <ToggleButtonGroup
@@ -33,12 +34,13 @@ const ConnectionSelector = observer(function ConnectionSelector() {
       onChange={onChange}
       color="primary"
     >
-      {buttons.map(([value, Icon, label]) => (
+      {buttons.map(([value, Icon, label, isEnabled]) => (
         <ToggleButton
           key={value}
           value={value}
           sx={{width: '10em'}}
           size="small"
+          disabled={!isEnabled}
         >
           <SvgIcon sx={{marginRight: 1}}>
             <Icon />
@@ -86,14 +88,13 @@ function ListDb() {
   );
 }
 
-export function ActionPanel() {
+export function ActionPanel(props: PaperProps) {
+  const theme = useTheme();
+  const isWide = useMediaQuery(theme.breakpoints.up('sm'));
+
   const controls = [NoOp, ListDb];
   return (
-    <Paper elevation={3}>
-      <Typography variant="h6" px={2} py={1}>
-        Sync
-      </Typography>
-      <Divider />
+    <Panel title="Sync" isExpandedByDefault={true} {...props}>
       <Grid container spacing={1} p={2} justifyContent="center">
         <Grid item>
           <ConnectionSelector />
@@ -101,13 +102,18 @@ export function ActionPanel() {
         <Grid item xs={12} />
         {controls.map((Component, idx) => (
           <Fragment key={idx}>
-            <Grid item xs={5}>
+            <Grid
+              item
+              xs={4}
+              sm={5}
+              {...(!isWide && idx > 0 ? {sx: {marginLeft: 1}} : {})}
+            >
               <Component />
             </Grid>
-            <Grid item xs={12} />
+            {isWide && <Grid item xs={12} />}
           </Fragment>
         ))}
       </Grid>
-    </Paper>
+    </Panel>
   );
 }

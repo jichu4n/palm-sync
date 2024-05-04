@@ -1,18 +1,22 @@
 import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import Paper from '@mui/material/Paper';
+import {PaperProps} from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import {observer} from 'mobx-react';
 import {deviceInfoStore} from './device-info-store';
+import {Panel} from './panel';
+import {useTheme} from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
-export const DeviceInfoPanel = observer(function DeviceInfoPanel() {
+export const DeviceInfoPanel = observer(function DeviceInfoPanel(
+  props: PaperProps
+) {
+  const theme = useTheme();
+  const isWide = useMediaQuery(theme.breakpoints.up('sm'));
+
   const {sysInfo, userInfo, sysDateTime} = deviceInfoStore;
+
   return (
-    <Paper elevation={3}>
-      <Typography variant="h6" px={2} py={1}>
-        Device Info
-      </Typography>
-      <Divider />
+    <Panel title="Device Info" isExpandedByDefault={isWide} {...props}>
       {!sysInfo || !userInfo || !sysDateTime ? (
         <Box
           sx={{
@@ -63,6 +67,6 @@ export const DeviceInfoPanel = observer(function DeviceInfoPanel() {
           ))}
         </Box>
       )}
-    </Paper>
+    </Panel>
   );
 });

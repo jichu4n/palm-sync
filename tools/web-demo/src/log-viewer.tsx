@@ -1,9 +1,9 @@
-import Box from '@mui/material/Box';
+import Box, {BoxProps} from '@mui/material/Box';
 import {observer} from 'mobx-react';
 import {useEffect, useRef} from 'react';
 import {logStore} from './log-store';
 
-export const LogViewer = observer(function LogViewer() {
+export const LogViewer = observer(function LogViewer(props: BoxProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrolledToBottom = useRef(true);
   useEffect(() => {
@@ -30,6 +30,7 @@ export const LogViewer = observer(function LogViewer() {
             container.clientHeight <
           2;
       }}
+      {...props}
     >
       {logStore.logs.map((entry, i) => (
         <div key={i}>

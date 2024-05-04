@@ -4,8 +4,20 @@ export interface Prefs {
   connectionString: 'usb' | 'web-serial';
 }
 
+function getDefaultConnectionString() {
+  for (const [isEnabled, connectionString] of [
+    [!!navigator.usb, 'usb'],
+    [!!navigator.serial, 'web-serial'],
+  ] as const) {
+    if (isEnabled) {
+      return connectionString;
+    }
+  }
+  return 'usb';
+}
+
 export const DEFAULT_PREFS: Prefs = Object.freeze({
-  connectionString: 'usb',
+  connectionString: getDefaultConnectionString(),
 });
 
 class PrefsStore {
