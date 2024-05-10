@@ -44,7 +44,16 @@ The [Palm Desktop](https://palmdb.net/app/palm-desktop) software allows a user t
 
 To solve this problem, Palm developed a generic two-way sync system with first class support in DLP and Palm OS APIs. This system is used by the built-in applications and conduits, and can be used by third-party apps / conduits as long as both sides (app and conduit) follow the standard spec. That said, this is purely optional and third-party developers are free to implement their own custom synchronization logic directly on top of DLP.
 
-Palm OS's two-way sync system might seem primitive today compared to algorithms like OT and CRDTs, but at the time it solved the data synchronization problem well enough that it was seen as a "killer" feature of the Palm platform.
+The two-way sync system worked in the following fashion:
+
+- On each side (Palm or computer), whenever a record is created, updated or deleted, corresponding flags are set on the record.
+- During HotSync, we use these flags to figure out what has changed on either side. We then make corresponding updates on both sides to arrive at the same final state.
+
+This two-way system seem quite primitive compared to modern algorithms like OT:
+
+- It can only operate at the record level (such as an entire memo or calendar event);
+- It uses simple boolean flags on each record (such as dirty and deleted) to indicate changes, without tracking the actual changes;
+- When it encounters conflicting edits on the same record, it simply duplicates the record on both sides, without attempting to merge the changes into the same record.
 
 Resources:
 
