@@ -28,7 +28,7 @@ Now let's dive into the components that make up the HotSync protocol stack.
 
 DLP is the application level protocol in HotSync's protocol stack. It provides a request-response style API that serves as a clean abstraction over different physical connections such as serial, USB, IrDA, modem, Bluetooth, and Wi-Fi.
 
-Each DLP request performs a specific action such as getting / setting the system time, opending / closing a database, and reading / writing a record. The initial version of Palm OS supported about 30 different requests, and each subsequent major version of Palm OS added more requests, culminating in Palm OS 5 which supported a total of ~80 requests. DLP requests and responses are relatively well documented as they were made available to third-party conduit developers.
+Each DLP request performs a specific action such as getting / setting the system time, opening / closing a database, and reading / writing a record. The initial version of Palm OS supported about 30 different requests, and each subsequent major version of Palm OS added more requests, culminating in Palm OS 5 which supported a total of ~80 requests. DLP requests and responses are relatively well documented as they were made available to third-party conduit developers.
 
 DLP is a stateful API, and requests must be made sequentially. For example, the conduit might send a 1st request to open a database, a 2nd request to read its records, then a 3rd request to close it.
 
@@ -44,16 +44,25 @@ The [Palm Desktop](https://palmdb.net/app/palm-desktop) software allows a user t
 
 To solve this problem, Palm developed a generic two-way sync system with first class support in DLP and Palm OS APIs. This system is used by the built-in applications and conduits, and can be used by third-party apps / conduits as long as both sides (app and conduit) follow the standard spec. That said, this is purely optional and third-party developers are free to implement their own custom synchronization logic directly on top of DLP.
 
-The two-way sync system worked in the following fashion:
+The two-way sync system in a nutshell:
 
-- On each side (Palm or computer), whenever a record is created, updated or deleted, corresponding flags are set on the record.
-- During HotSync, we use these flags to figure out what has changed on either side. We then make corresponding updates on both sides to arrive at the same final state.
+- Each record has a set of boolean flags (such as dirty and deleted).
+- Whenever a record is created, updated or deleted on either side (Palm OS device or computer), corresponding flags are set on that side's copy of the record.
+- During HotSync, we compare the flags for each record on either side to figure out what has changed. We then make corresponding updates on both sides to arrive at the same final state.
 
-This two-way system seem quite primitive compared to modern algorithms like OT:
+Here's a table from _Palm OS Programming Bible_ showing how two-way sync logic handles each combination of record flags:
 
-- It can only operate at the record level (such as an entire memo or calendar event);
-- It uses simple boolean flags on each record (such as dirty and deleted) to indicate changes, without tracking the actual changes;
-- When it encounters conflicting edits on the same record, it simply duplicates the record on both sides, without attempting to merge the changes into the same record.
+<p align="center">
+  <img src="./fast-sync-1.png" width="600" alt="Two-way sync actions">
+  <br/>
+  <img src="./fast-sync-2.png" width="600" alt="Two-way sync actions">
+</p>
+
+Similarly, how two-way sync handles categories (Personal, Business etc):
+
+<p align="center"><img src="./fast-sync-categories.png" width="600" alt="Two-way sync actions"></p>
+
+While innovative for its time, this two-way system is quite primitive compared to modern algorithms like OT. It can only operate at the record level, such as at the level of an entire memo or calendar event. When it encounters conflicting edits on the same record, it simply duplicates the record on both sides, without being able to merge the changes into the same record.
 
 Resources:
 
