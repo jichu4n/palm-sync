@@ -7,7 +7,16 @@ export function buildBrowserBundle() {
     basedir: path.join(__dirname, '..', '..'),
     debug: true,
     fullPaths: true,
-    plugin: [tsify],
+    plugin: [
+      [
+        tsify,
+        {
+          // Needed on macOS to prevent an error saying "Already included file
+          // name XXX differs from file name XXX only in casing"
+          forceConsistentCasingInFileNames: false,
+        },
+      ],
+    ],
     browserField: 'browserify',
     standalone: 'palm-sync',
   });
