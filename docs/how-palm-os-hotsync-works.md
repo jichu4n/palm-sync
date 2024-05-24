@@ -1,6 +1,6 @@
 # How Palm OS HotSync Works
 
-HotSync is a system of communication protocols that enables Palm OS devices to synchronize data with desktop computers. It often served as a Palm OS device's primary way of communicating with the outside world, for use cases including two-way synchronization of user data with a computer, installing third-party apps, and sending and receiving emails through a computer. HotSync was a core part of the Palm OS user experience, and was quite an amazing piece of technology for its time. This document explains at a high level how it works under the hood.
+The HotSync system enables Palm OS devices to synchronize data with desktop computers, often serving as a Palm OS device's primary way of communicating with the outside world. It was a core part of the Palm OS user experience, and was quite an innovative technology for its time. This document explains at a high level how it works under the hood.
 
 Beware that the information in this document may not be fully accurate. HotSync was a proprietary system and Palm never published technical specs for many of its components. Much of the information below is based on the incredible reverse engineering work done by two open source projects, [pilot-link](https://github.com/jichu4n/pilot-link) and [ColdSync](https://github.com/dwery/coldsync), in the early 2000s. It also incorporates some of my own research while developing [palm-sync](https://github.com/jichu4n/palm-sync), a modern implementation of HotSync in TypeScript. If you spot any errors, please feel free to let me know via an issue / PR!
 
@@ -20,7 +20,7 @@ Overview of the main components:
 
 - **Transport protocols**: Depending on the physical connection and the particular device, one of two transport protocol stacks is used to transport DLP requests and responses between the computer and the Palm device. A modern analogy might be the HTTP / TCP / IP stack.
 
-- **Sync server**: For lack of a better term, this is the component that directly interacts with the computer's operating system and device drivers. It's responsible for things like setting up serial / USB / network connections and actually sending and receiving data through these connections.
+- **Daemon**: For lack of a better term, this is the component that directly interacts with the computer's operating system and device drivers. It's responsible for things like setting up serial / USB / network connections and actually sending and receiving data through these connections.
 
 Now let's dive into the components that make up the HotSync protocol stack.
 
@@ -28,7 +28,7 @@ Now let's dive into the components that make up the HotSync protocol stack.
 
 DLP is the application level protocol in HotSync's protocol stack. It provides a request-response style API that serves as a clean abstraction over different physical connections such as serial, USB, IrDA, modem, Bluetooth, and Wi-Fi.
 
-Each DLP request performs a specific action such as getting / setting the system time, opening / closing a database, and reading / writing a record. The initial version of Palm OS supported about 30 different requests, and each subsequent major version of Palm OS added more requests, culminating in Palm OS 5 which supported a total of ~80 requests. DLP requests and responses are relatively well documented as they were made available to third-party conduit developers.
+Each DLP request performs a specific action such as getting / setting the system time, opening / closing a database, and reading / writing a record. The initial version of Palm OS supported about 30 different requests, and each subsequent major version of Palm OS added more requests, culminating in Palm OS 5 which supported a total of ~80 requests. DLP requests and responses are relatively well documented as they were made available to third-party conduit developers through the Sync Manager API.
 
 DLP is a stateful API, and requests must be made sequentially. For example, the conduit might send a 1st request to open a database, a 2nd request to read its records, then a 3rd request to close it.
 
@@ -44,7 +44,7 @@ The [Palm Desktop](https://palmdb.net/app/palm-desktop) software allows a user t
 
 To solve this problem, Palm developed a generic two-way sync system with first class support in DLP and Palm OS APIs. This system is used by the built-in applications and conduits, and can be used by third-party apps / conduits as long as both sides (app and conduit) follow the standard spec. That said, this is purely optional and third-party developers are free to implement their own custom synchronization logic directly on top of DLP.
 
-The two-way sync system in a nutshell:
+In a nutshell:
 
 - Each record has a set of boolean flags (such as dirty and deleted).
 - Whenever a record is created, updated or deleted on either side (Palm OS device or computer), corresponding flags are set on that side's copy of the record.
@@ -148,7 +148,6 @@ The actual Net Sync protocol is fairly simple. It provides a lightweight data pa
 Resources:
 
 - [netsync.h](https://github.com/dwery/coldsync/blob/master/include/pconn/netsync.h) and [netsync.c](https://github.com/dwery/coldsync/blob/master/libpconn/netsync.c) in ColdSync
-  in ColdSync
 - [net.c](https://github.com/jichu4n/pilot-link/blob/master/libpisock/net.c) in pilot-link
 
 ### Determining the transport protocol stack
@@ -166,6 +165,20 @@ As mentioned above, exactly which transport protocol stack is used depends on se
 | Network      | Modem / Wi-Fi                                                   | All compatible devices                                                                                                                       | Net Sync                 |
 | Network      | Bluetooth (PPP)                                                 | All compatible devices                                                                                                                       | Net Sync                 |
 
-## Sync server and conduits
+## Daemon and conduits
 
-The official [Palm Desktop](https://palmdb.net/app/palm-desktop) software runs a daemon process on the computer that listens for incoming HotSync requests in the background. The user can select the physical connection types and the specific hardware (e.g. serial port COM1) to listen on. Once the user connects their Palm OS device to the computer and initiates a HotSync, the Palm Desktop software will run a default set of conduits such as installing third-party apps, synchronizing the state of built-in applications, and backing up the device. In addition, it will run any third-party conduits installed by the user.
+The official [Palm Desktop](https://palmdb.net/app/palm-desktop) software runs a daemon process that listens for incoming HotSync requests in the background. The user can select the physical connection types and the specific hardware (e.g. serial port COM1) it should listen on.
+
+When the user connects their Palm OS device to the computer and initiates a HotSync, the Palm Desktop software will run a default set of conduits such as installing third-party apps, synchronizing the state of built-in applications, and backing up the device. In addition, it will run any third-party conduits installed by the user.
+
+The full process is detailed in the _Palm OS Programming Bible_:
+
+<p align="center">
+  <img src="./sync-process-1.png" width="600" alt="Sync process">
+  <br/>
+  <img src="./sync-process-2.png" width="600" alt="Sync process">
+</p>
+
+Resources:
+
+- Palm OS Programming Bible 2nd ed, Ch. 20, p. 702
