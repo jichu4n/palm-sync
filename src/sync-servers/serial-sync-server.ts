@@ -82,7 +82,9 @@ export class SerialSyncServer extends SyncServer {
     this.log('Starting handshake');
     await connection.doHandshake();
     this.log('Handshake complete');
-    this.serialPort.update({baudRate: connection.baudRate});
+    if (connection.baudRate !== CMP_INITIAL_BAUD_RATE) {
+      this.serialPort.update({baudRate: connection.baudRate});
+    }
 
     await connection.start();
 
