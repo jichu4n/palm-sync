@@ -20,7 +20,8 @@ export function createSyncServer(
    * Valid connection strings:
    *   - usb
    *   - net or network
-   *   - serial:/dev/ttyXXX or serial:COMXXX
+   *   - serial:/dev/ttyXXX (serial:COMXXX on Windows)
+   *   - serial:/dev/ttyXXX:115200 to specify max baud rate
    *   - serial-over-net or serial-over-network
    *   - web-serial
    */
@@ -37,11 +38,19 @@ export function createSyncServer(
     return new NetworkSyncServer(syncFn, opts);
   }
   if (connection.startsWith('serial:')) {
-    const device = connection.split(':', 2)[1];
+    const pieces = connection.split(':', 3);
+    const device = pieces[1];
+    let maxBaudRate: number | undefined;
+    if (pieces[2]) {
+      maxBaudRate = parseInt(pieces[2], 10);
+      if (isNaN(maxBaudRate)) {
+        throw new Error(`Invalid max baud rate: ${pieces[2]}`);
+      }
+    }
     if (device === 'net' || device === 'network') {
       return new SerialOverNetworkSyncServer(syncFn, opts);
     } else {
-      return new SerialSyncServer(device, syncFn, opts);
+      return new SerialSyncServer(device, syncFn, {...opts, maxBaudRate});
     }
   }
   if (connection === 'web-serial') {

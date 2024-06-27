@@ -32,10 +32,11 @@ interface CommonOptions {
   usb?: boolean;
   net?: boolean;
   serial?: string;
+  maxBaudRate?: string;
 }
 
 async function runSyncForCommand(command: Command, syncFn: SyncFn) {
-  const {encoding, usb, net, serial} =
+  const {encoding, usb, net, serial, maxBaudRate} =
     command.optsWithGlobals() as CommonOptions;
 
   let connectionString: string = '';
@@ -57,6 +58,9 @@ async function runSyncForCommand(command: Command, syncFn: SyncFn) {
       process.exit(1);
     }
     connectionString = `serial:${serial}`;
+    if (maxBaudRate) {
+      connectionString += `:${maxBaudRate}`;
+    }
   } else if (process.env.PALM_SYNC_CONNECTION) {
     connectionString = process.env.PALM_SYNC_CONNECTION;
   } else {
@@ -110,6 +114,10 @@ if (require.main === module) {
       .option(
         '--serial <device>',
         'Listen for serial connection on device, e.g. "/dev/ttyUSB0", "COM1", or "net"'
+      )
+      .option(
+        '-b, --maxBaudRate <number>',
+        'Maximum baud rate for serial connection'
       );
 
     program

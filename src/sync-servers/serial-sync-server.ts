@@ -9,10 +9,9 @@ import {
 } from '../protocols/dlp-commands';
 import {
   SerialSyncConnection,
-  SyncConnectionOptions,
+  SerialSyncConnectionOptions,
 } from '../protocols/sync-connections';
 import {SyncFn, SyncServer} from './sync-server';
-import fs from 'fs';
 
 /** Sync server using a serial port. */
 export class SerialSyncServer extends SyncServer {
@@ -22,7 +21,7 @@ export class SerialSyncServer extends SyncServer {
     /** HotSync logic to run when a connection is made. */
     syncFn: SyncFn,
     /** Options for SyncConnection. */
-    opts: SyncConnectionOptions = {}
+    opts: SerialSyncConnectionOptions = {}
   ) {
     super(syncFn, opts);
     this.device = device;
@@ -82,6 +81,7 @@ export class SerialSyncServer extends SyncServer {
     this.log('Starting handshake');
     await connection.doHandshake();
     this.log('Handshake complete');
+
     if (connection.baudRate !== CMP_INITIAL_BAUD_RATE) {
       this.serialPort.update({baudRate: connection.baudRate});
     }
