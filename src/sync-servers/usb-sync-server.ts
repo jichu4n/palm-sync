@@ -424,14 +424,22 @@ export class UsbSyncServer extends SyncServer {
       }
     }
     const {interfaceNumber} = device.configuration.interfaces[0];
+
     // On Linux, the visor module will typically claim the device interface as
     // soon as the Palm OS device is connected unless explicitly blacklisted. So
     // if we detect the interface is already claimed, we'll try to detach it.
-    const rawInterface = rawDevice.interface(interfaceNumber);
-    if (rawInterface.isKernelDriverActive()) {
-      this.log(`Detaching kernel driver for interface ${interfaceNumber}`);
-      rawInterface.detachKernelDriver();
+    // This might fail, and also might throw an exception on other platforms
+    // (e.g. on Windows) so we'll just treat this as best effort.
+    try {
+      const rawInterface = rawDevice.interface(interfaceNumber);
+      if (rawInterface.isKernelDriverActive()) {
+        this.log(`Detaching kernel driver for interface ${interfaceNumber}`);
+        rawInterface.detachKernelDriver();
+      }
+    } catch (e) {
+      // Do nothing.
     }
+
     try {
       await device.claimInterface(interfaceNumber);
     } catch (e) {
