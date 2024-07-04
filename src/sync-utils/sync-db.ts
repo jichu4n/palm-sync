@@ -109,7 +109,7 @@ function compareRec(rec1: RawPdbRecord, rec2: RawPdbRecord) {
 }
 
 /** Type of sync action to be performed on a record. */
-enum RecordActionType {
+export enum RecordActionType {
   /** Add the provided record on the desktop.
    *
    *  If a record with the same ID already exists on the desktop, it will be overwritten.
@@ -132,7 +132,7 @@ enum RecordActionType {
 }
 
 /** Sync action to be performed on a record. */
-interface RecordAction {
+export interface RecordAction {
   /** Type of sync action to perform. */
   type: RecordActionType;
   /** Record to perform the action on. */
@@ -432,7 +432,7 @@ export interface RecordActionContext {
   archiveDb: RawPdbDatabase;
 }
 
-type RecordActionFn = (
+export type RecordActionFn = (
   ctx: RecordActionContext,
   record: RawPdbRecord
 ) => Promise<void>;
@@ -661,7 +661,7 @@ export function cloneRecord(record: RawPdbRecord): RawPdbRecord {
   return newRecord;
 }
 
-/** Options for {@link syncRawDb}. */
+/** Options for {@link fastSyncDb} and {@link slowSyncDb}. */
 export interface SyncDbOptions {
   /** Card number on the Palm OS device (typically 0). */
   cardNo?: number;
