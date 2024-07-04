@@ -4,9 +4,9 @@
 
 [![Build Status][build-status-image]][github-url]
 
-**palm-sync** is a TypeScript toolkit for HotSync with Palm OS devices.
+**palm-sync** is a TypeScript toolkit for performing HotSync with Palm OS devices.
 
-palm-sync provides a new implementation of Palm OS HotSync in TypeScript, and supports Node.js and browser environments on most current mainstream OS platforms. Its goal is to provide a suite of libraries and tools that can pave the way for a modern cross-platform Palm Desktop alternative.
+palm-sync provides a new implementation of HotSync in TypeScript, and supports Node.js and browser environments on current mainstream OS platforms. Its goal is to provide a suite of libraries and tools that can pave the way for a modern cross-platform Palm Desktop alternative.
 
 ## Supported platforms and features
 
@@ -74,7 +74,7 @@ Not supported:
 - **Platforms**: iOS, iPadOS
 - **Connections**: Bluetooth, IR
 
-For more information, please see Connecting to Palm OS Devices.
+For more information, please see Connecting Palm OS Devices.
 
 ## Web demo
 
@@ -85,9 +85,7 @@ If you have a Palm OS device, you can try out palm-sync right in your browser! T
 Requirements:
 
 - **Connection**: Palm OS device connected via USB or serial, including via a serial-to-USB adapter.
-- **OS**: Windows, macOS, Linux, ChromeOS, or Android.
-  - For USB on Windows, you'll need to install a WinUSB driver for the Palm device. The easiest way is to use a tool such as [Zadig](https://zadig.akeo.ie/).
-  - For serial on Linux, you may need to add yourself to the `dialout` or `uucp` group.
+- **OS**: Windows, macOS, Linux, ChromeOS, or Android. See Connecting Palm OS Devices for OS-specific configuration.
 - **Browser**: A Chromium-based browser such as Google Chrome or Microsoft Edge.
 
 ## Quickstart
@@ -133,9 +131,9 @@ npm run build
 #   - For serial-over-network (POSE and other emulators), use `--serial:net`
 #     to listen on port 6416
 ./node_modules/.bin/palm-sync run --usb ./dist/list-dbs.js
-
-# Now connect and initiate HotSync on the Palm OS device!
 ```
+
+Now connect and initiate HotSync on the Palm OS device! See Connecting Palm OS Devices for OS-specific configuration steps.
 
 ## API
 
@@ -178,13 +176,15 @@ Under the hood, a `DlpConnection` wraps one of two possible transport protocol s
 
 palm-sync provides a collection of utility functions to help with common conduit tasks. Some key utilities include:
 
-#### Working with databases
+#### Databases and PDB / PRC files
 
 - [`readDbList()`](https://jichu4n.github.io/palm-sync/docs/functions/readDbList.html)
 - [`readRawDb()`](https://jichu4n.github.io/palm-sync/docs/functions/readRawDb.html) and [`readDb()`](https://jichu4n.github.io/palm-sync/docs/functions/readDb.html)
 - [`writeRawDb()`](https://jichu4n.github.io/palm-sync/docs/functions/writeRawDb.html) and [`writeDb()`](https://jichu4n.github.io/palm-sync/docs/functions/writeDb.html)
 
-#### Two-way syncing
+#### Two-way sync
+
+These functions provide a generic implementation of Palm OS's two-way synchronization logic.
 
 - [`fastSync()`](https://jichu4n.github.io/palm-sync/docs/functions/fastSync.html) and [`fastSyncDb()`](https://jichu4n.github.io/palm-sync/docs/functions/fastSyncDb.html)
 - [`slowSync()`](https://jichu4n.github.io/palm-sync/docs/functions/slowSync.html) and [`slowSyncDb()`](https://jichu4n.github.io/palm-sync/docs/functions/slowSyncDb.html)
