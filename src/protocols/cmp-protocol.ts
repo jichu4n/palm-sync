@@ -127,18 +127,24 @@ export class CmpDatagram extends SObject {
   }
 }
 
-/** Performs a CMP negotiation using the provided PADP stream. */
-export async function doCmpHandshake(
-  stream: PadpStream,
-  maxBaudRate = CMP_MAX_BAUD_RATE
-): Promise<{
+/** Result of a CMP handshake. */
+export interface CmpHandshakeResult {
   /** Baud rate after negotiation.
    *
    * This will be the smaller of `maxBaudRate` and the highest baud rate
    * supported by the Palm device.
    */
   baudRate: number;
-}> {
+}
+
+/** Performs a CMP negotiation using the provided PADP stream.
+ *
+ * Returns the negotiated baud rate.
+ */
+export async function doCmpHandshake(
+  stream: PadpStream,
+  maxBaudRate = CMP_MAX_BAUD_RATE
+): Promise<CmpHandshakeResult> {
   const log = debug('palm-sync').extend('cmp');
 
   // Read initial WAKEUP.

@@ -18,4 +18,5 @@ export * from './sync-servers/web-serial-sync-server';
 export * from './sync-servers/sync-server-utils';
 export * from './sync-utils/read-db';
 export * from './sync-utils/write-db';
+export * from './sync-utils/sync-db';
 export * from './sync-utils/sync-device';

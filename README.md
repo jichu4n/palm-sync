@@ -127,12 +127,14 @@ export async function run(dlpConnection: DlpConnection) {
 # Run tsc to produce ./dist/list-dbs.js
 npm run build
 
-# Listen for USB connection and run specified conduit.
-#   - For serial, use `--serial /dev/ttyXXX` (or `--serial COMn` on Windows)
+# Wait for HotSync connection over USB and run specified conduit.
+#   - For serial, use `--serial /dev/ttyXXX` (`--serial COMn` on Windows)
 #   - For network HotSync (port 14238), use `--net`
+#   - For serial-over-network (POSE and other emulators), use `--serial:net`
+#     to listen on port 6416
 ./node_modules/.bin/palm-sync run --usb ./dist/list-dbs.js
 
-# Now connect a Palm OS device and initiate HotSync!
+# Now connect and initiate HotSync on the Palm OS device!
 ```
 
 ## API
@@ -152,6 +154,48 @@ Additionally, palm-sync depends on the following sister projects:
 
 - [**palm-pdb**](https://github.com/jichu4n/palm-pdb) - Manipulating Palm OS databases and related data structures.
 - [**serio**](https://github.com/jichu4n/serio) - Serializing / deserializing binary data.
+
+### Sync servers
+
+The [`SyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SyncServer.html) class represents a daemon that listens for incoming HotSync connections. A `SyncServer` is responsible for interfacing with the underlying hardware, setting up a transport protocol stack and passing control to the configured conduit. The various subclasses of `SyncServer` correspond to different types of connections, such as [`UsbSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/UsbSyncServer.html), [`SerialSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SerialSyncServer.html) and [`NetworkSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/NetworkSyncServer.html).
+
+The main APIs for setting up a `SyncServer` are:
+
+- [`createSyncServer()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServer.html) - Main entrypoint to create a `SyncServer` instance. The caller can use `start()` and `stop()` to manage the server lifecycle, and subscribe to its `connect` and `disconnect` events.
+- [`createSyncServerAndRunSync()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServerAndRunSync.html) - Convenience function to run a single HotSync operation - create and start a `SyncServer` instance, run a conduit, and stop the server.
+
+`SyncServer`s themselves don't contain specific conduit logic (i.e. business logic for data synchronization). Instead, they take in a [`SyncFn`](https://jichu4n.github.io/palm-sync/docs/types/SyncFn.html) to be invoked when a HotSync connection is established. The `SyncFn` is responsible for performing the desired conduit logic using the DLP protocol. This provides a clean layer of abstraction between conduit logic and the various types of physical connections.
+
+### Protocols
+
+The [`DlpConnection`](https://jichu4n.github.io/palm-sync/docs/classes/DlpConnection.html) class represents a connection to a Palm device over the DLP protocol. It provides a high-level API for executing DLP commands, which is the primary way conduits interact with a connected Palm device.
+
+For the full list of supported DLP commands, see the list of subclasses of [`DlpRequest`](https://jichu4n.github.io/palm-sync/docs/classes/DlpRequest.html). palm-sync provides request and response type definitions for all DLP commands up to DLP version 1.2 (Palm OS 3.0). It does not currently support commands introduced in DLP version 1.3 (Palm OS 4.0) and later.
+
+Under the hood, a `DlpConnection` wraps one of two possible transport protocol stacks, which themselves are implemented as transform streams wrapping the underlying raw data streams. The `SyncServer` subclass for each connection type is responsible for setting up the appropriate transport stack and constructing `DlpConnection`s. Conduit logic generally does not need to directly interact with the transport protocol stacks.
+
+### Sync utils
+
+palm-sync provides a collection of utility functions to help with common conduit tasks. Some key utilities include:
+
+#### Working with databases
+
+- [`readDbList()`](https://jichu4n.github.io/palm-sync/docs/functions/readDbList.html)
+- [`readRawDb()`](https://jichu4n.github.io/palm-sync/docs/functions/readRawDb.html) and [`readDb()`](https://jichu4n.github.io/palm-sync/docs/functions/readDb.html)
+- [`writeRawDb()`](https://jichu4n.github.io/palm-sync/docs/functions/writeRawDb.html) and [`writeDb()`](https://jichu4n.github.io/palm-sync/docs/functions/writeDb.html)
+
+#### Two-way syncing
+
+- [`fastSync()`](https://jichu4n.github.io/palm-sync/docs/functions/fastSync.html) and [`fastSyncDb()`](https://jichu4n.github.io/palm-sync/docs/functions/fastSyncDb.html)
+- [`slowSync()`](https://jichu4n.github.io/palm-sync/docs/functions/slowSync.html) and [`slowSyncDb()`](https://jichu4n.github.io/palm-sync/docs/functions/slowSyncDb.html)
+
+#### Conduits
+
+TODO
+
+### Logs
+
+TODO
 
 ### Reference
 
