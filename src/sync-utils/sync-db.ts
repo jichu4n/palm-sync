@@ -490,7 +490,7 @@ export function clearRecordAttrs(record: RawPdbRecord) {
 }
 
 /** Abstract interface for reading / writing for sync. */
-interface DbSyncInterface {
+export interface DbSyncInterface {
   /** Return all modified records. */
   readModifiedRecords(): Promise<Array<RawPdbRecord>>;
   /** Return all records */
@@ -506,7 +506,7 @@ interface DbSyncInterface {
 }
 
 /** Sync interface backed by a RawPdbDatabase. */
-class RawPdbDatabaseSyncInterface implements DbSyncInterface {
+export class RawPdbDatabaseSyncInterface implements DbSyncInterface {
   constructor(private readonly db: RawPdbDatabase) {}
 
   private findRecordIndex(recordId: number): number {
@@ -575,7 +575,7 @@ class RawPdbDatabaseSyncInterface implements DbSyncInterface {
 }
 
 /** Sync interface for actual Palm OS devices. */
-class DeviceSyncInterface implements DbSyncInterface {
+export class DeviceSyncInterface implements DbSyncInterface {
   constructor(
     private readonly dlpConnection: DlpConnection,
     private readonly dbId: number
@@ -655,7 +655,7 @@ class DeviceSyncInterface implements DbSyncInterface {
   }
 }
 
-function cloneRecord(record: RawPdbRecord): RawPdbRecord {
+export function cloneRecord(record: RawPdbRecord): RawPdbRecord {
   const newRecord = RawPdbRecord.from(record.serialize());
   newRecord.entry.deserialize(record.entry.serialize());
   return newRecord;
@@ -777,7 +777,9 @@ export async function fastSyncDb(
   openConduit = true
 ) {
   log(`Fast sync database ${desktopDb.header.name} on card ${cardNo}`);
-  if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  if (openConduit) {
+    await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  }
 
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
@@ -794,7 +796,7 @@ export async function fastSyncDb(
 
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
-  log('DB Closed');
+  log('Closed');
 }
 
 /** Perform a slow sync for a database. */
@@ -805,7 +807,9 @@ export async function slowSyncDb(
   openConduit = true
 ) {
   log(`Slow sync database ${desktopDb.header.name} on card ${cardNo}`);
-  if (openConduit) await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  if (openConduit) {
+    await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+  }
 
   const {dbId} = await dlpConnection.execute(
     DlpOpenDBReqType.with({
@@ -822,7 +826,7 @@ export async function slowSyncDb(
 
   log('Closing database');
   await dlpConnection.execute(DlpCloseDBReqType.with({dbId}));
-  log('DB Closed');
+  log('Closed');
 }
 
 export async function cleanUpDb(rawDb: RawPdbDatabase) {
