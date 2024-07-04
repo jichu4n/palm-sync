@@ -4,9 +4,9 @@
 
 [![Build Status][build-status-image]][github-url]
 
-**palm-sync** is a TypeScript toolkit for performing HotSync with Palm OS devices.
+**palm-sync** is a modern, cross-platform toolkit for HotSync with Palm OS devices, built with TypeScript.
 
-palm-sync provides a new implementation of HotSync in TypeScript, and supports Node.js and browser environments on current mainstream OS platforms. Its goal is to provide a suite of libraries and tools that can pave the way for a modern cross-platform Palm Desktop alternative.
+palm-sync provides a new implementation of Palm HotSync protocols in TypeScript, and supports Node.js and browser environments. It aspires to be the foundation for a new generation of Palm OS synchronization tools for modern operating systems.
 
 ## Supported platforms and features
 
@@ -71,22 +71,21 @@ palm-sync provides a new implementation of HotSync in TypeScript, and supports N
 
 Not supported:
 
-- **Platforms**: iOS, iPadOS
+- **Operating systems**: iOS, iPadOS
 - **Connections**: Bluetooth, IR
 
 For more information, please see Connecting Palm OS Devices.
 
 ## Web demo
 
-If you have a Palm OS device, you can try out palm-sync right in your browser! The web demo allows you to do a simple HotSync over a USB or serial connection.
+You can try out palm-sync right in your browser! The web demo allows you to do a simple HotSync with a Palm OS device via USB or serial.
 
 👉 [ **jichu4n.github.io/palm-sync/web-demo** ](https://jichu4n.github.io/palm-sync/web-demo/)
 
 Requirements:
 
-- **Connection**: Palm OS device connected via USB or serial, including via a serial-to-USB adapter.
-- **OS**: Windows, macOS, Linux, ChromeOS, or Android. See Connecting Palm OS Devices for OS-specific configuration.
-- **Browser**: A Chromium-based browser such as Google Chrome or Microsoft Edge.
+- Palm OS device connected via USB or serial, including via serial-to-USB adapter.
+- A Chromium-based browser such as Google Chrome or Microsoft Edge, running on Windows, macOS, Linux, ChromeOS, or Android (USB only). See Connecting Palm OS Devices for OS-specific setup.
 
 ## Quickstart
 
@@ -133,7 +132,7 @@ npm run build
 ./node_modules/.bin/palm-sync run --usb ./dist/list-dbs.js
 ```
 
-Now connect and initiate HotSync on the Palm OS device! See Connecting Palm OS Devices for OS-specific configuration steps.
+Now connect and initiate HotSync on the Palm OS device! See Connecting Palm OS Devices for OS-specific setup.
 
 ## API
 
@@ -155,14 +154,22 @@ Additionally, palm-sync depends on the following sister projects:
 
 ### Sync servers
 
-The [`SyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SyncServer.html) class represents a daemon that listens for incoming HotSync connections. A `SyncServer` is responsible for interfacing with the underlying hardware, setting up a transport protocol stack and passing control to the configured conduit. The various subclasses of `SyncServer` correspond to different types of connections, such as [`UsbSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/UsbSyncServer.html), [`SerialSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SerialSyncServer.html) and [`NetworkSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/NetworkSyncServer.html).
+The [`SyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SyncServer.html) class represents a daemon that listens for incoming HotSync connections. A `SyncServer` is responsible for interfacing with the underlying hardware, setting up a transport protocol stack and passing control to the configured conduit. The various subclasses of `SyncServer` correspond to different types of connections.
 
-The main APIs for setting up a `SyncServer` are:
+| Connection type                                                                                                    | Node.js                                                        | Browser (Chromium)                                                                      |
+| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| [`UsbSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/UsbSyncServer.html)                             | Yes - [`usb`](https://www.npmjs.com/package/usb)               | Yes - [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API)         |
+| [`SerialSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SerialSyncServer.html)                       | Yes - [`serialport`](https://www.npmjs.com/package/serialport) | No                                                                                      |
+| [`WebSerialSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/WebSerialSyncServer.html)                 | No                                                             | Yes - [Web Serial API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Serial_API) |
+| [`NetworkSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/NetworkSyncServer.html)                     | Yes - [`net`](https://nodejs.org/api/net.html)                 | No                                                                                      |
+| [`SerialOverNetworkSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SerialOverNetworkSyncServer.html) | Yes - [`net`](https://nodejs.org/api/net.html)                 | No                                                                                      |
+
+To create a `SyncServer`:
 
 - [`createSyncServer()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServer.html) - Main entrypoint to create a `SyncServer` instance. The caller can use `start()` and `stop()` to manage the server lifecycle, and subscribe to its `connect` and `disconnect` events.
 - [`createSyncServerAndRunSync()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServerAndRunSync.html) - Convenience function to run a single HotSync operation - create and start a `SyncServer` instance, run a conduit, and stop the server.
 
-`SyncServer`s themselves don't contain specific conduit logic (i.e. business logic for data synchronization). Instead, they take in a [`SyncFn`](https://jichu4n.github.io/palm-sync/docs/types/SyncFn.html) to be invoked when a HotSync connection is established. The `SyncFn` is responsible for performing the desired conduit logic using the DLP protocol. This provides a clean layer of abstraction between conduit logic and the various types of physical connections.
+A `SyncServer`s doesn't perform conduit logic (i.e. business logic for data synchronization) itself. Instead, it takes in a [`SyncFn`](https://jichu4n.github.io/palm-sync/docs/types/SyncFn.html) to be invoked when a HotSync connection is established. The `SyncFn` is responsible for performing the desired conduit logic over the DLP protocol. This provides a clean layer of abstraction between conduit logic and the various types of connections.
 
 ### Protocols
 
