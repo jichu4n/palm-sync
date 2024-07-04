@@ -19,4 +19,4 @@ jobs:
       - run: npm run build:udev-rules new.rules && diff 60-palm-os-devices.rules new.rules
       - run: npm --prefix=./tools/web-demo install
       - run: npm --prefix=./tools/web-demo run lint
-      - run: npm --prefix=./tools/web-demo run build
+      - run: npm run build:website
