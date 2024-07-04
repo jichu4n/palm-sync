@@ -45,6 +45,7 @@ export type SyncServerSpec =
     }
   | {
       type: SyncServerType.WEB_SERIAL;
+      maxBaudRate?: number;
     };
 
 /** Create a sync server from a {@link SyncServerSpec}. */
@@ -62,13 +63,16 @@ function createSyncServerFromSpec(
       return new NetworkSyncServer(syncFn, opts);
     case SyncServerType.SERIAL:
       return new SerialSyncServer(spec.device, syncFn, {
-        ...opts,
         maxBaudRate: spec.maxBaudRate,
+        ...opts,
       });
     case SyncServerType.SERIAL_OVER_NETWORK:
       return new SerialOverNetworkSyncServer(syncFn, opts);
     case SyncServerType.WEB_SERIAL:
-      return new WebSerialSyncServer(syncFn, opts);
+      return new WebSerialSyncServer(syncFn, {
+        maxBaudRate: spec.maxBaudRate,
+        ...opts,
+      });
     default:
       spec satisfies never;
       throw new Error(`Invalid sync server type: ${JSON.stringify(spec)}`);
@@ -99,12 +103,12 @@ function parseConnectionString(connection: string): SyncServerSpec {
     if (device === 'net' || device === 'network') {
       return {type: SyncServerType.SERIAL_OVER_NETWORK};
     } else if (device === 'web' || device === 'web-serial') {
-      return {type: SyncServerType.WEB_SERIAL};
+      return {type: SyncServerType.WEB_SERIAL, maxBaudRate};
     } else {
       return {type: SyncServerType.SERIAL, device, maxBaudRate};
     }
   }
-  throw new Error(`Invalid connection type: ${connection}`);
+  throw new Error(`Invalid connection string: ${connection}`);
 }
 
 /** Create a sync server from a connection string. */
