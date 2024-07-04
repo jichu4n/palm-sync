@@ -85,6 +85,10 @@ export class WebSerialStream extends Duplex {
   private shouldClose = false;
 }
 
+/** Sync server for Web Serial API connections.
+ *
+ * Only available in the browser.
+ */
 export class WebSerialSyncServer extends SyncServer {
   constructor(
     /** HotSync logic to run when a connection is made. */

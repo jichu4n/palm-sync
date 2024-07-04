@@ -13,7 +13,10 @@ import {
 } from '../protocols/sync-connections';
 import {SyncFn, SyncServer} from './sync-server';
 
-/** Sync server using a serial port. */
+/** Sync server for serial connections.
+ *
+ * Only available in Node.js.
+ */
 export class SerialSyncServer extends SyncServer {
   constructor(
     /** Serial port device to listen on. */

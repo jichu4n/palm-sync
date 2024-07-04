@@ -235,6 +235,10 @@ export class UsbConnectionStream extends Duplex {
 /** USB device polling interval used in waitForDevice(). */
 const USB_DEVICE_POLLING_INTERVAL_MS = 200;
 
+/** Sync server for USB connections.
+ *
+ * Available both in Node.js and the browser.
+ */
 export class UsbSyncServer extends SyncServer {
   override async start() {
     if (this.runPromise) {

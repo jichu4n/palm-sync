@@ -17,7 +17,11 @@ import {TcpSyncServer} from './tcp-sync-server';
  */
 export const SERIAL_NETWORK_SYNC_PORT = 6416;
 
-/** Serial-over-network HotSync server for use with Palm OS emulators. */
+/** Sync server for serial-over-network connections, primarily for use with Palm
+ * OS emulators such as POSE.
+ *
+ * Only available in Node.js.
+ */
 export class SerialOverNetworkSyncServer extends TcpSyncServer<SerialSyncConnection> {
   connectionType = SerialSyncConnection;
   port = SERIAL_NETWORK_SYNC_PORT;

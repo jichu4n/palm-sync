@@ -8,7 +8,10 @@ import {TcpSyncServer} from './tcp-sync-server';
 /** HotSync port to listen on. */
 export const NET_SYNC_PORT = 14238;
 
-/** Network HotSync server. */
+/** Sync server for network HotSync connections.
+ *
+ * Only available in Node.js.
+ */
 export class NetworkSyncServer extends TcpSyncServer<NetSyncConnection> {
   connectionType = NetSyncConnection;
   port = NET_SYNC_PORT;

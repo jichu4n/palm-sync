@@ -8,7 +8,7 @@ import {
 import {Duplex} from 'stream';
 import {SyncServer} from './sync-server';
 
-/** Base class  sync servers that communicate over TCP/IP. */
+/** Base class for sync servers that communicate over TCP/IP. */
 export abstract class TcpSyncServer<
   SyncConnectionT extends SyncConnection,
 > extends SyncServer {
