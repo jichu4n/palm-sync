@@ -19,13 +19,13 @@ const log = debug('result');
 const ConnectionSelector = observer(function ConnectionSelector() {
   const connectionString = prefsStore.get('connectionString');
   const onChange = useCallback((_: unknown, newConnectionString: string) => {
-    if (newConnectionString === 'usb' || newConnectionString === 'web-serial') {
+    if (newConnectionString === 'usb' || newConnectionString === 'serial:web') {
       prefsStore.set('connectionString', newConnectionString);
     }
   }, []);
   const buttons = [
     ['usb', UsbIcon, 'USB', !!navigator.usb],
-    ['web-serial', SerialIcon, 'Serial', !!navigator.serial],
+    ['serial:web', SerialIcon, 'Serial', !!navigator.serial],
   ] as const;
   return (
     <ToggleButtonGroup

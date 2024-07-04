@@ -1,13 +1,13 @@
 import {action, makeObservable, observable} from 'mobx';
 
 export interface Prefs {
-  connectionString: 'usb' | 'web-serial';
+  connectionString: 'usb' | 'serial:web';
 }
 
 function getDefaultConnectionString() {
   for (const [isEnabled, connectionString] of [
     [!!navigator.usb, 'usb'],
-    [!!navigator.serial, 'web-serial'],
+    [!!navigator.serial, 'serial:web'],
   ] as const) {
     if (isEnabled) {
       return connectionString;

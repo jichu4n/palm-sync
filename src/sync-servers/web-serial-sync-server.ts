@@ -1,11 +1,11 @@
 import debug from 'debug';
 import {Duplex, DuplexOptions} from 'stream';
+import {CMP_INITIAL_BAUD_RATE} from '../protocols/cmp-protocol';
 import {
-  CMP_INITIAL_BAUD_RATE,
-  CMP_MAX_BAUD_RATE,
-} from '../protocols/cmp-protocol';
-import {SerialSyncConnection} from '../protocols/sync-connections';
-import {SyncServer} from './sync-server';
+  SerialSyncConnection,
+  SerialSyncConnectionOptions,
+} from '../protocols/sync-connections';
+import {SyncFn, SyncServer} from './sync-server';
 
 /** Duplex stream based on a SerialPort instance.
  *
@@ -86,6 +86,15 @@ export class WebSerialStream extends Duplex {
 }
 
 export class WebSerialSyncServer extends SyncServer {
+  constructor(
+    /** HotSync logic to run when a connection is made. */
+    syncFn: SyncFn,
+    /** Options for SyncConnection. */
+    opts: SerialSyncConnectionOptions = {}
+  ) {
+    super(syncFn, opts);
+  }
+
   override async start() {
     if (this.serialPort || this.runPromise) {
       throw new Error('Server already started');
@@ -179,9 +188,11 @@ export class WebSerialSyncServer extends SyncServer {
       rawStream,
       {
         ...this.opts,
-        maxBaudRate: recreateRawStreamWithBaudRate
-          ? CMP_MAX_BAUD_RATE
-          : CMP_INITIAL_BAUD_RATE,
+        // If it's not possible to recreate the stream with a higher baud rate,
+        // we have to stick to the initial baud rate.
+        ...(recreateRawStreamWithBaudRate
+          ? {}
+          : {maxBaudRate: CMP_INITIAL_BAUD_RATE}),
       }
     );
     this.emit('connect', connection);
@@ -189,6 +200,7 @@ export class WebSerialSyncServer extends SyncServer {
     this.log('Starting handshake');
     await connection.doHandshake();
     this.log('Handshake complete');
+
     if (
       recreateRawStreamWithBaudRate &&
       connection.baudRate !== CMP_INITIAL_BAUD_RATE
