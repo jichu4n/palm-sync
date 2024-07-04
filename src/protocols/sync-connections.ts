@@ -32,7 +32,10 @@ export interface DlpConnectionOptions {
   responseDeserializeOptions?: DeserializeOptions;
 }
 
-/** Representation of a DLP connection over an underlying transport. */
+/** Connection to a Palm OS device using the DLP protocol.
+ *
+ * This class provides a high-level interface for executing DLP commands.
+ */
 export class DlpConnection {
   constructor(
     /** Underlying transport stream. */
@@ -46,14 +49,14 @@ export class DlpConnection {
     opts: {
       /** Whether to throw an error when the response has a non-zero error code.
        *
-       * By default, execute() will not throw an error when the response has a
+       * By default, `execute()` will throw an error when the response has a
        * non-zero error code.
        *
-       * If ignoreErrorCode is set to true, execute() will ignore non-zero error
+       * If `ignoreErrorCode` is set to true, `execute()` will ignore non-zero error
        * codes and return the response as-is.
        *
-       * If ignoreErrorCode is set to one or more error codes, execute() will
-       * ignore the specified error codes but will still throw an error for
+       * If `ignoreErrorCode` is set to one or more error codes, `execute()` will
+       * ignore those specific error codes but will still throw an error for
        * other error codes.
        */
       ignoreErrorCode?: boolean | DlpRespErrorCode | Array<DlpRespErrorCode>;

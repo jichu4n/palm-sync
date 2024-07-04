@@ -17,7 +17,6 @@ import {
   RawPdbRecord,
   RawPrcDatabase,
   RawPrcRecord,
-  RecordAttrs,
   RecordEntryType,
   RsrcEntryType,
 } from 'palm-pdb';
@@ -70,9 +69,9 @@ export async function readDb<DatabaseT extends Serializable>(
   dlpConnection: DlpConnection,
   /** Database type constructor.
    *
-   * This should typically be a subclass of Database from the palm-pdb package.
-   * But we're keeping the signature generic here as that is not a hard
-   * requirement.
+   * This should typically be a subclass of
+   * [Database](https://jichu4n.github.io/palm-pdb/classes/Database.html). But
+   * we're keeping the signature generic here as that is not a hard requirement.
    */
   dbType: new () => DatabaseT,
   /** Database name to read. */
@@ -86,7 +85,7 @@ export async function readDb<DatabaseT extends Serializable>(
   return db;
 }
 
-/** Read a database and write to PDB / PRC file. */
+/** Read a database from a Palm OS device and write it to a PDB / PRC file. */
 export async function readDbToFile(
   dlpConnection: DlpConnection,
   /** Database name to read. */
@@ -101,7 +100,7 @@ export async function readDbToFile(
   await writeRawDbToFile(rawDb, name, outputDir);
 }
 
-/** Write a raw database to a PDB / PRC file */
+/** Write a raw database to a PDB / PRC file. */
 export async function writeRawDbToFile(
   /** The raw database to be written */
   rawDb: RawPdbDatabase | RawPrcDatabase,

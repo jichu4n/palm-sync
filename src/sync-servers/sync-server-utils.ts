@@ -111,17 +111,18 @@ function parseConnectionString(connection: string): SyncServerSpec {
   throw new Error(`Invalid connection string: ${connection}`);
 }
 
-/** Create a sync server from a connection string. */
+/** Create a sync server from a connection string or {@link SyncServerSpec}. */
 export function createSyncServer(
   /** Connection string or {@link SyncServerSpec}.
    *
    * Valid connection strings:
-   *   - usb
-   *   - net or network
-   *   - serial:/dev/ttyXXX (serial:COMXXX on Windows)
-   *   - serial:/dev/ttyXXX:115200 to specify max baud rate
-   *   - serial:net or serial:network for serial-over-network
-   *   - serial:web or serial:web-serial for Web Serial
+   *   - `usb`
+   *   - `net` or `network`
+   *   - `serial:/dev/ttyXXX` (`serial:COMn` on Windows)
+   *   - `serial:/dev/ttyXXX:19200` to specify max baud rate
+   *   - `serial:net` or `serial:network` for serial-over-network (POSE and
+   *     other emulators)
+   *   - `serial:web` or `serial:web-serial` for Web Serial
    */
   connection: string | SyncServerSpec,
   /** Sync function to run for new connections. */
@@ -157,11 +158,14 @@ export async function runSync(syncServer: SyncServer) {
   return connection;
 }
 
-/** Create a sync server and run it for a single HotSync operation. */
+/** Create a sync server and run it for a single HotSync operation.
+ *
+ * See {@link createSyncServer} for the more information on the parameters.
+ */
 export async function createSyncServerAndRunSync(
-  connectionString: string,
+  connection: string | SyncServerSpec,
   syncFn: SyncFn,
   opts: SyncConnectionOptions = {}
 ) {
-  return await runSync(createSyncServer(connectionString, syncFn, opts));
+  return await runSync(createSyncServer(connection, syncFn, opts));
 }

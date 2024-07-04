@@ -17,7 +17,6 @@ import {
   RawPdbRecord,
   RawPrcDatabase,
   RawPrcRecord,
-  RecordAttrs,
 } from 'palm-pdb';
 import {Serializable, SerializeOptions} from 'serio';
 import {
@@ -57,9 +56,9 @@ export async function writeDb<DatabaseT extends Serializable>(
   dlpConnection: DlpConnection,
   /** Database to write.
    *
-   * This should typically be a subclass of Database from the palm-pdb package.
-   * But we're keeping the signature generic here as that is not a hard
-   * requirement.
+   * This should typically be a subclass of
+   * [Database](https://jichu4n.github.io/palm-pdb/classes/Database.html). But
+   * we're keeping the signature generic here as that is not a hard requirement.
    */
   db: DatabaseT,
   opts: WriteDbOptions & SerializeOptions = {}
