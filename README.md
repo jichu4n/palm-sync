@@ -171,7 +171,6 @@ To create a `SyncServer`:
 - [`createSyncServer()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServer.html) - Main entrypoint to create a `SyncServer` instance. The caller can use `start()` and `stop()` to manage the server lifecycle, and subscribe to its `connect` and `disconnect` events.
 - [`createSyncServerAndRunSync()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServerAndRunSync.html) - Convenience function to run a single HotSync operation - create and start a `SyncServer` instance, run a conduit, and stop the server.
 
-
 ### Protocols
 
 The [`DlpConnection`](https://jichu4n.github.io/palm-sync/docs/classes/DlpConnection.html) class represents a connection to a Palm device over the DLP protocol. It provides a high-level API for executing DLP commands, which is the primary way conduits interact with a connected Palm device.
@@ -203,7 +202,11 @@ TODO
 
 ### Logs
 
-TODO
+palm-sync uses the [`debug`](https://www.npmjs.com/package/debug) library for logging messages. All messages are logged under the `palm-sync` namespace.
+
+To enable verbose logging, set the `DEBUG` environment variable to `palm-sync:*` or call `debug.enable('palm-sync:*')` to enable logging programmatically. You can capture logs by overriding `debug.log`. See [`debug` documentation](https://www.npmjs.com/package/debug) for more information.
+
+Note that on Web, you will need to import `debug` from `palm-sync` itself as it is bundled with the library using Browserify. See [`log-store.ts`](https://github.com/jichu4n/palm-sync/blob/master/tools/web-demo/src/log-store.ts) for an example.
 
 ### Reference
 
