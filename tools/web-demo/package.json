@@ -15,7 +15,7 @@
     "@fontsource/inter": "^5.0.19",
     "@mui/icons-material": "^5.15.21",
     "@mui/material": "^5.16.0",
-    "mobx": "^6.12.5",
+    "mobx": "^6.13.0",
     "mobx-react": "^9.1.1",
     "palm-sync": "file:../../",
     "react": "^18.3.1",
