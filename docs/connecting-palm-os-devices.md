@@ -11,55 +11,78 @@ The following are required regardless of OS:
 
 ### Serial
 
-To connect a Palm OS device with a serial cradle or cable to a modern computer, you likely need a serial-to-USB adapter. These are widely available and fairly cheap (typically $5 USD or less on sites like AliExpress), and are generally supported out of the box on modern mainstream OSes.
+#### Hardware
 
-Recommended way to perform a HotSync over serial:
+To connect a Palm OS device with a serial cradle or cable to a modern computer, you'll likely need a serial-to-USB adapter. These are widely available and fairly cheap (typically $5 USD or less on sites like AliExpress), and are generally supported out of the box on modern OSes.
+
+#### Performing a HotSync
+
+The recommended way to perform a HotSync with `palm-sync` over serial:
 
 1. Physically connect the Palm device to the computer via serial cradle / cable and serial-to-USB adapter if needed.
-2. Start `palm-sync` sync server.
+2. Start `palm-sync` sync server on the computer.
    - CLI: `--serial ttyXXX` on macOS and Linux, `--serial COMn` on Windows
-3. Start HotSync on Palm OS device.
+   - Browser: Start sync, select the serial port in the popup, and click `Connect`.
+3. Start HotSync on the Palm OS device.
 
-Starting HotSync on the Palm OS device before staring the `palm-sync` sync server generally won't work. In such cases you might need to physically disconnect the Palm device from the computer before trying again.
+The order is important here. If you perform steps 2 and 3 in the reverse order, the sync will most likely fail and you may need to physically disconnect the Palm device from the computer before trying again.
 
-### Baud rate
+#### Baud rate
 
-Modern serial-to-USB adapters typically support baud rates up to 115200, while early Palm OS devices can only support much lower baud rates. As part of the CMP protocol, the Palm device reports the highest baud rate it can support, and both sides will switch to it. However, depending on the OS, platform, serial adapter and Palm device, this may not always work correctly.
+Modern serial-to-USB adapters typically support baud rates up to 115200, while early Palm OS devices can only support much lower baud rates. During the initial handshake phase of a HotSync session, the Palm device and the computer negotiate the highest baud rate supported on both sides, and switch to that baud rate for the remainder of the session.
 
-So, if your serial connection stalls, try disconnecting and explicitly selecting a lower maximum baud rate through the API or CLI (e.g. `--maxBaudRate 9600`). You can start with the lowest possible baud rate of 9600 and work your way up.
+However, the negotiated baud rate may not actually work correctly on your hardware and platform. So if your serial connection stalls, try explicitly specifying a lower maximum baud rate through the API or CLI (e.g. `--maxBaudRate 9600`).
+
+### USB
+
+#### Performing a HotSync
+
+The recommended way to perform a HotSync with `palm-sync` over USB:
+
+1. Physically connect the Palm device to the computer via USB cradle / cable.
+2. Start HotSync on the Palm OS device.
+3. Start `palm-sync` sync server.
+   - CLI: `--usb`
+   - Browser: Start sync, select the Palm device in the popup, and click `Connect`.
+
+For most Palm devices with a USB cradle / cable, steps 2 and 3 can be performed in either order. However, some models like the LifeDrive and Z22 might only work when following the order above.
 
 ## Windows
 
-`palm-sync` supports Windows 10 and Windows 11.
+`palm-sync` supports Windows 10 and Windows 11:
 
-### Device setup
+- **Node.js**: Official build of Node.js for Windows (installed directly or via a tool like nvm). Node.js installed inside WSL is also supported (see [WSL section below](#wsl)).
+- **Browser**: Tested in Chrome or Edge; will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are enabled.
 
-#### Serial
+### Serial
 
 Use Device Manager to identify the port number corresponding to the serial port or serial-to-USB adapter, which should look something like `COM5`.
 
-#### USB
+![Windows Device Manager](./windows-serial-to-usb-adapter.png)
+
+### USB
 
 `palm-sync` uses either `libusb` (Node.js) or the WebUSB API (browser). In both cases, a generic WinUSB driver must be installed for the connected Palm OS device. The recommended way to install and configure the driver is to use [Zadig](http://zadig.akeo.ie/). See [libusb documentation](https://github.com/libusb/libusb/wiki/Windows#driver-installation) for more information.
 
-To set up a Palm device for the first time using Zadig:
+To set up a Palm device using Zadig:
 
 - Install Zadig on the computer and launch it.
+- Select `Options` > `List All Devices` from the menu: ![Zadig Options menu](./windows-zadig-options.png)
 - Connect the Palm device to the computer via USB cradle / cable.
 - Start HotSync on the Palm device. This is necessary because most Palm devices won't actually show up on the computer until you start a HotSync.
-- In Zadig, select the Palm device, select the WinUSB driver, and click on the install button. It's okay if the Palm device disconnects during the process.
+- In Zadig, select the Palm device, select the WinUSB driver, and click on `Replace Driver`. It's normal for this step to take a while and it's okay if the Palm device disconnects during the process. ![Zadig WinUSB driver](./windows-zadig.png)
+- The Palm device should be automatically mapped to the WinUSB driver on subsequent connections. However, you should keep Zadig around in case the driver needs to be replaced again.
 
-The Palm device should be automatically mapped to the WinUSB driver on subsequent connections. However, you should keep Zadig around in case you need to map the driver again.
-
-### palm-sync setup
+You can now start HotSync on the Palm device, and run `palm-sync` in Node.js or the browser. If the WinUSB driver is correctly installed for the device, `palm-sync` should now be able to detect and communicate with it.
 
 ### WSL
 
-TODO
+You can forward the relevant USB device (either the Palm device or the serial-to-USB adapter) to the Linux distribution inside WSL, then run `palm-sync` just like on regular Linux.
 
-### Browser
+- See [Microsoft documentation](https://learn.microsoft.com/en-us/windows/wsl/connect-usb) for detailed instructions on forwarding USB devices to WSL.
+- See the [Linux section below](#linux) for instructions on setting up `palm-sync` on Linux.
 
-TODO1866-0213
+Caveat: Since WSL does not support forwarding actual serial ports, you will need to use a USB-to-serial adapter if you want to use WSL.
 
 ## macOS
 
