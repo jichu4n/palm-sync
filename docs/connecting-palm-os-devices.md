@@ -55,7 +55,7 @@ TODO
 
 `palm-sync` supports Windows 10 and Windows 11.
 
-- **Node.js**: Official build of Node.js for Windows, installed from the Node.js website or via a tool like nvm. Node.js installed inside WSL is also supported - see [WSL section below](#wsl).
+- **Node.js**: Official build of Node.js 18.x or higher, installed from the Node.js website or via a tool like nvm. Node.js inside WSL is also supported.
 - **Browser**: Tested in Google Chrome and Microsoft Edge. Will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are available.
 
 ### Serial
@@ -81,23 +81,23 @@ You can now start HotSync on the Palm device, and run `palm-sync` in Node.js or 
 
 ### WSL
 
-You can forward the relevant USB device (either the Palm device or the serial-to-USB adapter) to the Linux distribution inside WSL, then run `palm-sync` just like on regular Linux.
+You can forward the relevant USB device (either the Palm device or the serial-to-USB adapter) to a Linux distribution inside WSL, then run `palm-sync` just like on regular Linux.
 
 - See [Microsoft documentation](https://learn.microsoft.com/en-us/windows/wsl/connect-usb) for detailed instructions on forwarding USB devices to WSL.
 - See the [Linux section below](#linux) for instructions on setting up `palm-sync` on Linux.
 
-Caveat: Since WSL does not support forwarding actual serial ports, you will need to use a USB-to-serial adapter if you want to use WSL.
+Caveat: WSL does not support forwarding actual serial ports. So if you want to use WSL with a Palm device that has a serial cradle / cable, you will need to use a USB-to-serial adapter.
 
 ## macOS
 
-`palm-sync` should work on macOS 10.15 Catalina and later, running on either Intel or Apple Silicon.
+`palm-sync` should work on macOS 10.15 Catalina and later, and on both Intel and Apple Silicon.
 
-- **Node.js**: Official build of Node.js, installed from the Node.js website or via Homebrew.
+- **Node.js**: Official build of Node.js 18.x or higher, installed from the Node.js website or via Homebrew.
 - **Browser**: Tested in Google Chrome. Will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are available.
 
 ### Serial
 
-Use `ls /dev/tty.*` to identify the device corresponding to the serial port or serial-to-USB adapter. The device should look something like `/dev/tty.usbserial-XXXX`.
+Use `ls /dev/tty.*` to identify the device corresponding to your serial-to-USB adapter. The device will typically look something like `/dev/tty.usbserial-XXXX`.
 
 ### USB
 
@@ -105,7 +105,38 @@ Palm devices with a USB cradle / cable should work out of the box on macOS.
 
 ## Linux
 
-TODO
+`palm-sync` should work on most modern Linux distributions.
+
+- **Node.js**: Node.js 18.x or higher, installed via package manager or a tool like nvm.
+- **Browser**: Tested in Google Chrome. Will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are available.
+
+### Serial
+
+Use `ls -l /dev/ttyUSB*` to identify the device corresponding to your serial-to-USB adapter. The device will typically look something like `/dev/ttyUSB0`.
+
+Depending on the distribution, the device will likely be owned by a special user group like `dialout` or `uucp`, which will be shown in the output of `ls -l /dev/ttyUSB*`. To access the device without `sudo`, you'll need to add your user to that group, and reboot or log out and back in for it to take effect.
+
+### USB
+
+To set up your Linux environment to sync with Palm devices over USB using `palm-sync`, you'll need to perform the following steps:
+
+#### Blacklist `visor` module
+
+Copy [`blacklist-visor.conf`](https://github.com/jichu4n/palm-sync/blob/master/blacklist-visor.conf) to `/etc/modprobe.d/`.
+
+Then, run `sudo modprobe -r visor` to ensure the module is not already loaded.
+
+**Why**: The `visor` module is an ancient Linux kernel module that presents a serial interface for Palm OS devices. This driver interferes with `palm-sync` which accesses Palm OS devices directly using `libusb` or WebUSB.
+
+#### Add `udev` rules
+
+Copy [`60-palm-os-devices.rules`](https://github.com/jichu4n/palm-sync/blob/master/60-palm-os-devices.rules) to `/etc/udev/rules.d/`.
+
+Then, run `sudo udevadm control --reload-rules && sudo udevadm trigger` or reboot for it to take effect.
+
+Note that the above `udev` rules use `TAG+="uaccess"` to grant access to the current logged in user, which relies on systemd. If you don't use systemd, or if you want to restrict access to a specific group instead, you can replace `TAG+="uaccess"` with `GROUP="groupname"`.
+
+**Why**: The above `udev` rules specify the USB vendor and product IDs of Palm OS devices, and grant the current user access to a matching device when connected.
 
 ## ChromeOS
 
