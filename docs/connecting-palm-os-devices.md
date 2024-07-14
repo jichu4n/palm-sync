@@ -7,7 +7,7 @@ This document will guide you through the process of connecting a Palm OS device 
 The following are required regardless of OS:
 
 - **Node.js**: Node.js 18.x or higher.
-- **Browser**: WebUSB and/or Web Serial APIs. These APIs are presently only available in Chromium-based browsers, such as Google Chrome and Microsoft Edge.
+- **Browser**: WebUSB and/or Web Serial APIs. As of the time of writing, these APIs are available in Chromium-based browsers, such as Google Chrome and Microsoft Edge, but not in Firefox or Safari.
 
 ### Serial
 
@@ -47,12 +47,16 @@ The recommended way to perform a HotSync with `palm-sync` over USB:
 
 For most Palm devices with a USB cradle / cable, steps 2 and 3 can be performed in either order. However, some models like the LifeDrive and Z22 might only work when following the order above.
 
+### Network
+
+TODO
+
 ## Windows
 
-`palm-sync` supports Windows 10 and Windows 11:
+`palm-sync` supports Windows 10 and Windows 11.
 
-- **Node.js**: Official build of Node.js for Windows (installed directly or via a tool like nvm). Node.js installed inside WSL is also supported (see [WSL section below](#wsl)).
-- **Browser**: Tested in Chrome or Edge; will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are enabled.
+- **Node.js**: Official build of Node.js for Windows, installed from the Node.js website or via a tool like nvm. Node.js installed inside WSL is also supported - see [WSL section below](#wsl).
+- **Browser**: Tested in Google Chrome and Microsoft Edge. Will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are available.
 
 ### Serial
 
@@ -86,7 +90,18 @@ Caveat: Since WSL does not support forwarding actual serial ports, you will need
 
 ## macOS
 
-TODO
+`palm-sync` should work on macOS 10.15 Catalina and later, running on either Intel or Apple Silicon.
+
+- **Node.js**: Official build of Node.js, installed from the Node.js website or via Homebrew.
+- **Browser**: Tested in Google Chrome. Will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are available.
+
+### Serial
+
+Use `ls /dev/tty.*` to identify the device corresponding to the serial port or serial-to-USB adapter. The device should look something like `/dev/tty.usbserial-XXXX`.
+
+### USB
+
+Palm devices with a USB cradle / cable should work out of the box on macOS.
 
 ## Linux
 
