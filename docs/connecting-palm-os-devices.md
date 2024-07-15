@@ -97,7 +97,14 @@ Caveat: WSL does not support forwarding actual serial ports. So if you want to u
 
 ### Serial
 
-Use `ls /dev/tty.*` to identify the device corresponding to your serial-to-USB adapter. The device will typically look something like `/dev/tty.usbserial-XXXX`.
+Use `ls /dev/tty.*` to identify the device corresponding to your serial-to-USB adapter. The device will typically look something like `/dev/tty.usbserial-XXXX`, such as `/dev/tty.usbserial-2240` in the example below:
+
+```
+$ ls -l /dev/tty.*
+crw-rw-rw- 1 root wheel 9, 2 Jul  4 00:48 /dev/tty.Bluetooth-Incoming-Port
+crw-rw-rw- 1 root wheel 9, 4 Jul 14 22:24 /dev/tty.usbserial-2240
+crw-rw-rw- 1 root wheel 9, 0 Jul  4 00:47 /dev/tty.wlan-debug
+```
 
 ### USB
 
@@ -112,31 +119,38 @@ Palm devices with a USB cradle / cable should work out of the box on macOS.
 
 ### Serial
 
-Use `ls -l /dev/ttyUSB*` to identify the device corresponding to your serial-to-USB adapter. The device will typically look something like `/dev/ttyUSB0`.
+Use `ls -l /dev/ttyUSB*` to identify the device corresponding to your serial-to-USB adapter, which will typically look something like `/dev/ttyUSB0`.
 
-Depending on the distribution, the device will likely be owned by a special user group like `dialout` or `uucp`, which will be shown in the output of `ls -l /dev/ttyUSB*`. To access the device without `sudo`, you'll need to add your user to that group, and reboot or log out and back in for it to take effect.
+```
+$ ls -l /dev/ttyUSB*
+crw-rw---- 1 root uucp 188, 0 Jul 14 22:08 /dev/ttyUSB0
+```
+
+Depending on the distribution, permission to access serial devices may be controlled by a user group such as `dialout` or `uucp`. For example, in the above output we see that non-root users must be in the `uucp` group in order to access `/dev/ttyUSB0`. You'll need to add your regular user to that group, and log out and back in (or reboot) for the change to take effect.
 
 ### USB
 
 To set up your Linux environment to sync with Palm devices over USB using `palm-sync`, you'll need to perform the following steps:
 
-#### Blacklist `visor` module
+#### 1. Blacklist `visor` module
 
-Copy [`blacklist-visor.conf`](https://github.com/jichu4n/palm-sync/blob/master/blacklist-visor.conf) to `/etc/modprobe.d/`.
+Copy [`blacklist-visor.conf`](https://github.com/jichu4n/palm-sync/blob/master/blacklist-visor.conf) from this repo to `/etc/modprobe.d/`.
 
 Then, run `sudo modprobe -r visor` to ensure the module is not already loaded.
 
-**Why**: The `visor` module is an ancient Linux kernel module that presents a serial interface for Palm OS devices. This driver interferes with `palm-sync` which accesses Palm OS devices directly using `libusb` or WebUSB.
+**Why**: The `visor` module is an ancient Linux kernel module that presents a serial interface for Palm OS devices. This driver may interfere with `palm-sync`, so it's recommended to blacklist it from being loaded when a Palm device is connected.
 
-#### Add `udev` rules
+#### 2. Add `udev` rules
 
-Copy [`60-palm-os-devices.rules`](https://github.com/jichu4n/palm-sync/blob/master/60-palm-os-devices.rules) to `/etc/udev/rules.d/`.
+Copy [`60-palm-os-devices.rules`](https://github.com/jichu4n/palm-sync/blob/master/60-palm-os-devices.rules) from this repo to `/etc/udev/rules.d/`.
 
-Then, run `sudo udevadm control --reload-rules && sudo udevadm trigger` or reboot for it to take effect.
+Then, run the following command (or just reboot) for the rules to take effect:
 
-Note that the above `udev` rules use `TAG+="uaccess"` to grant access to the current logged in user, which relies on systemd. If you don't use systemd, or if you want to restrict access to a specific group instead, you can replace `TAG+="uaccess"` with `GROUP="groupname"`.
+```
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
 
-**Why**: The above `udev` rules specify the USB vendor and product IDs of Palm OS devices, and grant the current user access to a matching device when connected.
+**Why**: These `udev` rules allow non-root users to connect to Palm OS devices without `sudo`. On Linux, only the root user can directly access USB devices by default. These `udev` rules specify a list of known Palm OS devices, and grant access to non-root users when a matching device is connected.
 
 ## ChromeOS
 
