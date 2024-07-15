@@ -24,7 +24,10 @@ function generateRuleForDevice(deviceConfig: UsbDeviceConfig) {
       'ACTION=="add"',
       `ATTRS{idVendor}=="${vendorId}"`,
       `ATTRS{idProduct}=="${productId}"`,
-      'TAG+="uaccess"',
+      // On systemd-based systems, we can use `TAG+="uaccess"` to grant access
+      // to the current logged in user. However, setting MODE to 0666 is more
+      // broadly compatible.
+      `MODE="0666"`,
     ].join(', '),
   ].join('\n');
 }
