@@ -29,9 +29,9 @@ The order is important here. If you perform steps 2 and 3 in the reverse order, 
 
 #### Baud rate
 
-Modern serial-to-USB adapters typically support baud rates up to 115200, while early Palm OS devices can only support much lower baud rates. During the initial handshake phase of a HotSync session, the Palm device and the computer negotiate the highest baud rate supported on both sides, and switch to that baud rate for the remainder of the session.
+Modern serial-to-USB adapters typically support baud rates up to 115200, while some early Palm devices only support much lower baud rates. During the initial handshake phase of a HotSync session, the Palm device and the computer negotiate the highest baud rate supported on both sides, and switch to that baud rate for the remainder of the session.
 
-However, the negotiated baud rate may not actually work correctly on your hardware and platform. So if your serial connection stalls, try explicitly specifying a lower maximum baud rate through the API or CLI (e.g. `--maxBaudRate 9600`).
+However, the negotiated baud rate may not always work correctly. If your serial connection stalls, try explicitly specifying a lower maximum baud rate through the API or CLI (e.g. `--maxBaudRate 9600`).
 
 ### USB
 
@@ -70,12 +70,12 @@ Use Device Manager to identify the port number corresponding to the serial port 
 
 To set up a Palm device using Zadig:
 
-- Install Zadig on the computer and launch it.
-- Select `Options` > `List All Devices` from the menu: ![Zadig Options menu](./windows-zadig-options.png)
-- Connect the Palm device to the computer via USB cradle / cable.
-- Start HotSync on the Palm device. This is necessary because most Palm devices won't actually show up on the computer until you start a HotSync.
-- In Zadig, select the Palm device, select the WinUSB driver, and click on `Replace Driver`. It's normal for this step to take a while and it's okay if the Palm device disconnects during the process. ![Zadig WinUSB driver](./windows-zadig.png)
-- The Palm device should be automatically mapped to the WinUSB driver on subsequent connections. However, you should keep Zadig around in case the driver needs to be replaced again.
+1. Install Zadig on the computer and launch it.
+2. Select `Options` > `List All Devices` from the menu: ![Zadig Options menu](./windows-zadig-options.png)
+3. Connect the Palm device to the computer via USB cradle / cable.
+4. Start HotSync on the Palm device. This is necessary because most Palm devices won't actually show up on the computer until you start a HotSync.
+5. In Zadig, select the Palm device, select the WinUSB driver, and click on `Replace Driver`. It's normal for this step to take a while and it's okay if the Palm device disconnects during the process. ![Zadig WinUSB driver](./windows-zadig.png)
+6. The Palm device should be automatically mapped to the WinUSB driver on subsequent connections. However, you should keep Zadig around in case the driver needs to be replaced again.
 
 You can now start HotSync on the Palm device, and run `palm-sync` in Node.js or the browser. If the WinUSB driver is correctly installed for the device, `palm-sync` should now be able to detect and communicate with it.
 
@@ -90,7 +90,7 @@ Caveat: WSL does not support forwarding actual serial ports. So if you want to u
 
 ## macOS
 
-`palm-sync` should work on macOS 10.15 Catalina and later, and on both Intel and Apple Silicon.
+`palm-sync` should work on macOS 10.15 Catalina and later, either Intel or Apple Silicon.
 
 - **Node.js**: Official build of Node.js 18.x or higher, installed from the Node.js website or via Homebrew.
 - **Browser**: Tested in Google Chrome. Will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are available.
@@ -112,7 +112,7 @@ Palm devices with a USB cradle / cable should work out of the box on macOS.
 
 ## Linux
 
-`palm-sync` should work on most modern Linux distributions.
+`palm-sync` should work on any modern Linux distribution.
 
 - **Node.js**: Node.js 18.x or higher, installed via package manager or a tool like nvm.
 - **Browser**: Tested in Google Chrome. Will likely work in other Chromium-based browsers as long as WebUSB and / or Web Serial APIs are available.
@@ -126,7 +126,7 @@ $ ls -l /dev/ttyUSB*
 crw-rw---- 1 root uucp 188, 0 Jul 14 22:08 /dev/ttyUSB0
 ```
 
-Depending on the distribution, permission to access serial devices may be controlled by a user group such as `dialout` or `uucp`. For example, in the above output we see that non-root users must be in the `uucp` group in order to access `/dev/ttyUSB0`. You'll need to add your regular user to that group, and log out and back in (or reboot) for the change to take effect.
+Depending on the distribution, permission to access serial devices may be limited to a user group such as `dialout` or `uucp`. For example, in the above output we see that non-root users must be in the `uucp` group in order to access `/dev/ttyUSB0`. You'll need to add your regular user to that group, and log out and back in (or reboot) for the change to take effect.
 
 ### USB
 
@@ -154,7 +154,35 @@ sudo udevadm control --reload-rules && sudo udevadm trigger
 
 ## ChromeOS
 
-TODO
+`palm-sync` should work on recent versions of ChromeOS.
+
+- **Node.js**: Node.js 18.x or higher installed in Linux container. See [Set up Linux on your Chromebook](https://support.google.com/chromebook/answer/9145439?hl=en).
+- **Browser**: Chrome version 89 or higher for WebUSB and Web Serial APIs.
+
+### Serial
+
+If running inside the browser, no additional setup is needed.
+
+If running on Node.js inside a Linux container, you need to connect the serial-to-USB adapter to the Linux container:
+
+1. Physically connect the serial-to-USB adapter to the Chromebook.
+2. You should see a notification in ChromeOS asking if you want to connect the device to the Linux container. Click `Connect to Linux`: ![ChromeOS USB notification](./chromeos-serial-to-usb-adapter-notification.png)
+   Alternatively, you can go to Settings app > `About ChromeOS` > `Linux development environment` > `Manage USB devices` and enable the serial-to-USB adapter from the list: ![ChromeOS USB settings](./chromeos-serial-to-usb-adapter.png)
+3. See the [Linux section above](#linux) for how to set up the serial connection inside the Linux container.
+4. Start `palm-sync` sync server inside the Linux container.
+
+### USB
+
+If running inside the browser, no additional setup is needed.
+
+If running on Node.js inside a Linux container, you need to perform the following steps:
+
+1. Inside the Linux container, follow the [Linux instructions above](#linux) to prepare for sync over USB.
+2. Physically connect the Palm device to the computer via USB cradle / cable.
+3. Start HotSync on the Palm device. This is necessary because most Palm devices won't actually show up on the computer until you start a HotSync.
+4. You should see a notification in ChromeOS asking if you want to connect the Palm device to the Linux container. Click `Connect to Linux`: ![ChromeOS USB notification](./chromeos-usb-palm-notification.png)
+   Alternatively, you can go to Settings app > `About ChromeOS` > `Linux development environment` > `Manage USB devices` and enable the serial-to-USB adapter from the list: ![ChromeOS USB settings](./chromeos-usb-palm.png)
+5. Start `palm-sync` sync server inside the Linux container.
 
 ## Android
 
