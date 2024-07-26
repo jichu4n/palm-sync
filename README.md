@@ -74,7 +74,7 @@ Not supported:
 - **Operating systems**: iOS, iPadOS
 - **Connections**: Bluetooth, IR
 
-For more information, please see Connecting Palm OS Devices.
+For more information, please see [Connecting Palm OS Devices](./docs/connecting-palm-os-devices.md).
 
 ## Web demo
 
@@ -85,7 +85,7 @@ You can try out palm-sync right in your browser! The web demo allows you to do a
 Requirements:
 
 - Palm OS device connected via USB or serial, including via serial-to-USB adapter.
-- A Chromium-based browser such as Google Chrome or Microsoft Edge, running on Windows, macOS, Linux, ChromeOS, or Android (USB only). See Connecting Palm OS Devices for OS-specific setup.
+- A Chromium-based browser such as Google Chrome or Microsoft Edge, running on Windows, macOS, Linux, ChromeOS, or Android (USB only). See [Connecting Palm OS Devices](./docs/connecting-palm-os-devices.md) for OS-specific setup.
 
 ## Quickstart
 
@@ -132,7 +132,7 @@ npm run build
 ./node_modules/.bin/palm-sync run --usb ./dist/list-dbs.js
 ```
 
-Now connect and initiate HotSync on the Palm OS device! See Connecting Palm OS Devices for OS-specific setup.
+Now connect and initiate HotSync on the Palm OS device! See [Connecting Palm OS Devices](./docs/connecting-palm-os-devices.md) for OS-specific setup.
 
 ## API
 

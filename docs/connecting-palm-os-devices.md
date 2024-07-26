@@ -1,10 +1,10 @@
 # Connecting Palm OS Devices
 
-This document will guide you through the process of connecting a Palm OS device to your computer to perform a HotSync with [`palm-sync`](https://github.com/jichu4n/palm-sync/).
+This document will guide you through the process of connecting a Palm OS device to your computer to perform a HotSync with [`palm-sync`](https://github.com/jichu4n/palm-sync/). Please read through the [General setup](#general-setup) section first, then follow the instructions for your specific OS.
 
 ## General setup
 
-The following are required regardless of OS:
+The following are required on all OSes:
 
 - **Node.js**: Node.js 18.x or higher.
 - **Browser**: WebUSB and/or Web Serial APIs. As of the time of writing, these APIs are available in Chromium-based browsers, such as Google Chrome and Microsoft Edge, but not in Firefox or Safari.
