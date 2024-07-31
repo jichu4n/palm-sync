@@ -118,14 +118,14 @@ export class DlpConnection {
 
   /** System information about the Palm OS device.
    *
-   * Configured at the beginning of a HotSync sessiion, so application level
+   * Configured at the beginning of a HotSync session, so application level
    * sync logic can assume this information is available by the time it runs.
    */
   sysInfo!: DlpReadSysInfoRespType;
 
   /** HotSync user information.
    *
-   * Configured at the beginning of a HotSync sessiion, so application level
+   * Configured at the beginning of a HotSync session, so application level
    * sync logic can assume this information is available by the time it runs.
    */
   userInfo!: DlpReadUserInfoRespType;

@@ -1,16 +1,19 @@
-import fs from 'fs-extra';
-import {DlpDBInfoType, DlpOpenConduitReqType} from '../protocols/dlp-commands';
+import {
+  DlpDBInfoType,
+  DlpOpenConduitReqType,
+  DlpReadUserInfoRespType,
+} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DATABASES_STORAGE_DIR, SyncType} from '../sync-utils/sync-device';
+import {SyncType} from '../sync-utils/sync-device';
 import {ConduitData, ConduitInterface} from './conduit-interface';
 import {RawPdbDatabase} from 'palm-pdb';
 import {
-  writeRawDbToFile,
   ReadDbOptions,
   readRawDb,
 } from '../sync-utils/read-db';
 import {cleanUpDb, fastSyncDb, slowSyncDb} from '../sync-utils/sync-db';
 import debug from 'debug';
+import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('sync-dbs');
 
@@ -23,12 +26,9 @@ export class SyncDatabasesConduit implements ConduitInterface {
 
   async execute(
     dlpConnection: DlpConnection,
-    conduitData: ConduitData
+    conduitData: ConduitData,
+    dbStg: DatabaseStorageInterface
   ): Promise<void> {
-    if (conduitData.palmDir == null) {
-      throw new Error('conduitData.palmDir is mandatory for this Conduit');
-    }
-
     if (conduitData.dbList == null) {
       throw new Error('conduitData.dbList is mandatory for this Conduit');
     }
@@ -53,11 +53,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
             await cleanUpDb(rawDb as RawPdbDatabase);
           }
 
-          await writeRawDbToFile(
-            rawDb,
-            dbInfo.name,
-            `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
-          );
+          dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb);
         }
         break;
 
@@ -66,7 +62,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
         for (let index = 0; index < conduitData.dbList.length; index++) {
           const dbInfo = conduitData.dbList[index];
 
-          if (await shouldSkipRecord(dbInfo, conduitData.palmDir)) {
+          if (await shouldSkipRecord(dbInfo, dlpConnection.userInfo, dbStg)) {
             log(
               `[${index + 1}]/[${conduitData.dbList.length}]: ${
                 dbInfo.name
@@ -75,10 +71,11 @@ export class SyncDatabasesConduit implements ConduitInterface {
             continue;
           }
 
-          const desktopDbFile = await fs.readFile(
-            `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}/${dbInfo.name}.pdb`
-          );
-          var rawDekstopDb = RawPdbDatabase.from(desktopDbFile);
+          const rawDekstopDb = (await dbStg.readDatabaseFromStorage(
+            dlpConnection.userInfo,
+            `${dbInfo.name}.pdb`
+          )) as RawPdbDatabase;
+
 
           try {
             if (conduitData.syncType == SyncType.FAST_SYNC) {
@@ -93,11 +90,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
               }.pdb successfully synced.`
             );
 
-            await writeRawDbToFile(
-              rawDekstopDb,
-              dbInfo.name,
-              `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
-            );
+            await dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDekstopDb);
           } catch (error) {
             console.error(
               `Failed to sync resource [${dbInfo.name}], skipping...`,
@@ -130,7 +123,8 @@ async function getRawDbFromDevice(
 
 async function shouldSkipRecord(
   dbInfo: DlpDBInfoType,
-  palmDir: String
+  userInfo: DlpReadUserInfoRespType,
+  dbStg: DatabaseStorageInterface
 ): Promise<Boolean> {
   // We only sync databases, so if it's a PRC, we skip
   if (dbInfo.dbFlags.resDB) {
@@ -144,10 +138,8 @@ async function shouldSkipRecord(
 
   // We only sync databases that exists on Desktop
   const fileName = `${dbInfo.name}.pdb`;
-  const resourceExistsOnPC = await fs.exists(
-    `${palmDir}/${DATABASES_STORAGE_DIR}/${fileName}`
-  );
-  if (!resourceExistsOnPC) {
+
+  if (await dbStg.databaseExistsInStorage(userInfo, fileName)) {
     log(`The databse [${fileName}] does not exists on PC, skipping...`);
     return true;
   }

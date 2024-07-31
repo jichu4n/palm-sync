@@ -1,3 +1,4 @@
+import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
 import {DlpDBInfoType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {PalmDeviceIdentification, SyncType} from '../sync-utils/sync-device';
@@ -11,7 +12,8 @@ export interface ConduitInterface {
 
   execute(
     dlpConnection: DlpConnection,
-    conduitData: ConduitData
+    conduitData: ConduitData,
+    fs: DatabaseStorageInterface
   ): Promise<void>;
 }
 
@@ -21,6 +23,5 @@ export interface ConduitInterface {
 export interface ConduitData {
   palmID: PalmDeviceIdentification;
   dbList: DlpDBInfoType[] | null;
-  palmDir: string | null;
   syncType: SyncType | null;
 }
