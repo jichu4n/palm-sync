@@ -9,7 +9,6 @@
  * @module
  */
 import debug from 'debug';
-import fs from 'fs-extra';
 import {
   DatabaseHdrType,
   DatabaseTimestamp,
@@ -43,6 +42,7 @@ import {
 } from '../protocols/dlp-commands';
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
+import { DatabaseStorageInterface } from '../database-storage/db-storage-interface';
 
 const log = debug('palm-sync').extend('read-db');
 const logFile = debug('palm-sync').extend('sync-file');
@@ -90,6 +90,8 @@ export async function readDbToFile(
   dlpConnection: DlpConnection,
   /** Database name to read. */
   name: string,
+  /** The database storage backend that will handle this operation */
+  dbStg: DatabaseStorageInterface,
   /** Output directory. Defaults to current working directory. */
   outputDir?: string,
   /** Additional options. */
@@ -97,7 +99,7 @@ export async function readDbToFile(
 ) {
   logFile(`=> ${name}`);
   const rawDb = await readRawDb(dlpConnection, name, opts);
-  await writeRawDbToFile(rawDb, name, outputDir);
+  await writeRawDbToFile(rawDb, name, dbStg, dlpConnection, outputDir);
 }
 
 /** Write a raw database to a PDB / PRC file. */
@@ -106,14 +108,21 @@ export async function writeRawDbToFile(
   rawDb: RawPdbDatabase | RawPrcDatabase,
   /** Database name to read. */
   name: string,
+  /** The database storage backend that will handle this operation */
+  dbStg: DatabaseStorageInterface,
+  /** PDA Connection details */
+  dlpConnection: DlpConnection,
   /** Output directory. Defaults to current working directory. */
   outputDir?: string
 ) {
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
   const filePath = outputDir ? path.join(outputDir, fileName) : fileName;
-  await fs.ensureFile(filePath);
-  await fs.writeFile(filePath, rawDb.serialize());
+
+  await dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb, filePath);
+
+  // await fs.ensureFile(filePath);
+  // await fs.writeFile(filePath, rawDb.serialize());
 }
 
 /** Read list of all databases from a Palm OS device. */
@@ -181,6 +190,8 @@ export async function readAllDbsToFile(
     /** Whether to include databases in RAM. */
     ram: boolean;
   },
+  /** The database storage backend that will handle this operation */
+  dbStg: DatabaseStorageInterface,
   /** Output directory. Defaults to current working directory. */
   outputDir?: string,
   /** Additional options. */
@@ -189,7 +200,7 @@ export async function readAllDbsToFile(
   const dbInfoList = await readDbList(dlpConnection, storageTypes, opts);
   log(`Reading ${dbInfoList.length} databases`);
   for (const dbInfo of dbInfoList) {
-    await readDbToFile(dlpConnection, dbInfo.name, outputDir, {
+    await readDbToFile(dlpConnection, dbInfo.name, dbStg, outputDir, {
       ...opts,
       dbInfo,
     });

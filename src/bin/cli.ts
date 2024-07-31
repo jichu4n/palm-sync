@@ -21,6 +21,12 @@ import {
 } from '../sync-utils/read-db';
 import {syncDevice} from '../sync-utils/sync-device';
 import {writeDbFromFile} from '../sync-utils/write-db';
+import { DownloadNewResourcesConduit } from '../conduits/download-rsc-conduit';
+import { InstallNewResourcesConduit } from '../conduits/install-rsc-conduit';
+import { SyncDatabasesConduit } from '../conduits/sync-databases-conduit';
+import { UpdateClockConduit } from '../conduits/update-clock-conduit';
+import { UpdateSyncInfoConduit } from '../conduits/update-sync-info-conduit';
+import { NodeDatabaseStorageImplementation } from '../database-storage/node-db-stg-impl';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -98,6 +104,8 @@ if (require.main === module) {
         // Don't print namespace or timestamp by default.
       };
     }
+
+    const nodeDbStgImpl = new NodeDatabaseStorageImplementation();
 
     program
       .name('palm-sync')
@@ -203,7 +211,7 @@ if (require.main === module) {
             }
             syncFn = async (dlpConnection) => {
               for (const name of names) {
-                await readDbToFile(dlpConnection, name, outputDir);
+                await readDbToFile(dlpConnection, name, nodeDbStgImpl, outputDir);
               }
             };
           } else if (ram || rom) {
@@ -211,6 +219,7 @@ if (require.main === module) {
               await readAllDbsToFile(
                 dlpConnection,
                 {ram: !!ram, rom: !!rom},
+                nodeDbStgImpl,
                 outputDir
               );
             };
@@ -235,7 +244,7 @@ if (require.main === module) {
         ) => {
           await runSyncForCommand(command, async (dlpConnection) => {
             for (const filePath of filePaths) {
-              await writeDbFromFile(dlpConnection, filePath, {overwrite});
+              await writeDbFromFile(dlpConnection, filePath, nodeDbStgImpl, {overwrite});
             }
           });
         }
@@ -297,7 +306,16 @@ if (require.main === module) {
 
           await runSyncForCommand(command, async (dlpConnection) => {
             try {
-              await syncDevice(dlpConnection, storageDir, userName);
+
+              let conduits = [
+                new SyncDatabasesConduit(),
+                new DownloadNewResourcesConduit(),
+                new InstallNewResourcesConduit(),
+                new UpdateClockConduit(),
+                new UpdateSyncInfoConduit(),
+              ];
+
+              await syncDevice(dlpConnection, userName, nodeDbStgImpl, conduits);
             } catch (error) {
               console.error(error);
             }

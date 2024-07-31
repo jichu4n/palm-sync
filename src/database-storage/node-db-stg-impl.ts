@@ -4,7 +4,7 @@ import {DatabaseStorageInterface} from './db-storage-interface';
 import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
 import {RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 
-class NodeDatabaseManager implements DatabaseStorageInterface {
+export class NodeDatabaseStorageImplementation implements DatabaseStorageInterface {
   writeDatabaseToStorage(
     userInfo: DlpReadUserInfoRespType,
     db: RawPdbDatabase | RawPrcDatabase,
@@ -17,6 +17,8 @@ class NodeDatabaseManager implements DatabaseStorageInterface {
     dbName: string,
     dbPath?: string
   ): Promise<RawPdbDatabase | RawPrcDatabase> {
+    // prefer reading from dbPath first if available!
+
     throw new Error('Method not implemented.');
   }
   databaseExistsInStorage(

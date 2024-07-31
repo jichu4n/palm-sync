@@ -10,7 +10,6 @@
  */
 
 import debug from 'debug';
-import fs from 'fs-extra';
 import {
   DatabaseHdrType,
   RawPdbDatabase,
@@ -33,6 +32,7 @@ import {
 } from '../protocols/dlp-commands';
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
+import { DatabaseStorageInterface } from '../database-storage/db-storage-interface';
 
 const log = debug('palm-sync').extend('write-db');
 const logFile = debug('palm-sync').extend('sync-file');
@@ -71,14 +71,13 @@ export async function writeDbFromFile(
   dlpConnection: DlpConnection,
   /** Path to the PDB / PRC file to install. */
   filePath: string,
+  /** The database storage backend that will handle this operation */
+  dbStg: DatabaseStorageInterface,
   opts: WriteDbOptions = {}
 ): Promise<void> {
   logFile(`=> ${filePath}`);
-  return await writeDbFromBuffer(
-    dlpConnection,
-    await fs.readFile(filePath),
-    opts
-  );
+
+  return await writeRawDb(dlpConnection, await dbStg.readDatabaseFromStorage(dlpConnection.userInfo, "", filePath), opts); 
 }
 
 function writeDbFromBuffer(

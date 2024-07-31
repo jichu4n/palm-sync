@@ -1,9 +1,8 @@
 import crypto from 'crypto';
 import debug from 'debug';
-import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
-import {ConduitData} from '../conduits/conduit-interface';
+import {ConduitData, ConduitInterface} from '../conduits/conduit-interface';
 import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
 import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
 import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
@@ -13,6 +12,7 @@ import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
 import {DlpAddSyncLogEntryReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
+import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
 
 const log = debug('palm-sync').extend('sync-device');
 
@@ -43,21 +43,12 @@ export enum SyncType {
 
 export async function syncDevice(
   dlpConnection: DlpConnection,
-  storageDir: string,
-  requestedUserName: string
+  requestedUserName: string,
+  /** The database storage backend that will handle this operation */
+  dbStg: DatabaseStorageInterface,
+  conduits: Array<ConduitInterface>
 ) {
-  const palmDir = path.join(storageDir, requestedUserName);
-
-  let conduits = [
-    new SyncDatabasesConduit(),
-    new DownloadNewResourcesConduit(),
-    new InstallNewResourcesConduit(),
-    new UpdateClockConduit(),
-    new UpdateSyncInfoConduit(),
-  ];
-
   log(`Start syncing device! There are [${conduits.length}] conduits.`);
-  await assertMandatoryDirectories(storageDir, palmDir);
 
   let syncType = getDefaultSyncType();
   let localID = getLocalID(dlpConnection, requestedUserName);
@@ -71,17 +62,17 @@ export async function syncDevice(
     );
   }
 
-  if (!(await fs.exists(path.join(palmDir, JSON_PALM_ID)))) {
-    log(
-      `The username [${requestedUserName}] is new. Creating new local-id file.`
-    );
-    await fs.writeJSON(path.join(palmDir, JSON_PALM_ID), localID);
-    syncType = SyncType.FIRST_SYNC;
-  } else {
-    if (localID.newlySet) {
-      shoudRestoreAllResources = true;
-    }
-  }
+  // if (!(await fs.exists(path.join(palmDir, JSON_PALM_ID)))) {
+  //   log(
+  //     `The username [${requestedUserName}] is new. Creating new local-id file.`
+  //   );
+  //   await fs.writeJSON(path.join(palmDir, JSON_PALM_ID), localID);
+  //   syncType = SyncType.FIRST_SYNC;
+  // } else {
+  //   if (localID.newlySet) {
+  //     shoudRestoreAllResources = true;
+  //   }
+  // }
 
   if (dlpConnection.userInfo.lastSyncPc != localID.thisPcId) {
     syncType = SyncType.SLOW_SYNC;
@@ -96,13 +87,16 @@ export async function syncDevice(
   let conduitData: ConduitData = {
     palmID: localID,
     dbList: null,
-    palmDir: palmDir,
     syncType: syncType,
   };
 
   if (shoudRestoreAllResources) {
     log('Restoring backup!');
-    await new RestoreResourcesConduit().execute(dlpConnection, conduitData);
+    await new RestoreResourcesConduit().execute(
+      dlpConnection,
+      conduitData,
+      dbStg
+    );
     await appendToHotsyncLog(
       dlpConnection,
       `Successfully restored the backup!`
@@ -130,7 +124,7 @@ export async function syncDevice(
     log(
       `Executing conduit [${i + 1}] of [${conduits.length}]: ${conduit.name}`
     );
-    await conduit.execute(dlpConnection, conduitData);
+    await conduit.execute(dlpConnection, conduitData, dbStg);
 
     await appendToHotsyncLog(dlpConnection, `- '${conduit.name}' OK!`);
 
@@ -140,18 +134,6 @@ export async function syncDevice(
   await appendToHotsyncLog(dlpConnection, `Thanks for using palm-sync!`);
 
   log(`Finished sync!`);
-}
-
-async function assertMandatoryDirectories(storageDir: string, palmDir: string) {
-  try {
-    await fs.ensureDir(storageDir);
-    await fs.ensureDir(palmDir);
-    await fs.ensureDir(path.join(palmDir, TO_INSTALL_DIR));
-    await fs.ensureDir(path.join(palmDir, DATABASES_STORAGE_DIR));
-  } catch (e) {
-    console.error(`Failed to create necessary directories to sync device`, e);
-    throw new Error(`Failed to create necessary directories to sync device`);
-  }
 }
 
 function getDefaultSyncType(): SyncType {
