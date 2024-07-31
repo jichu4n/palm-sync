@@ -19,7 +19,6 @@ import {
   RecordEntryType,
   RsrcEntryType,
 } from 'palm-pdb';
-import path from 'path';
 import {DeserializeOptions, SBuffer, Serializable} from 'serio';
 import {
   DlpCloseDBReqType,
@@ -92,14 +91,12 @@ export async function readDbToFile(
   name: string,
   /** The database storage backend that will handle this operation */
   dbStg: DatabaseStorageInterface,
-  /** Output directory. Defaults to current working directory. */
-  outputDir?: string,
   /** Additional options. */
   opts: ReadDbOptions = {}
 ) {
   logFile(`=> ${name}`);
   const rawDb = await readRawDb(dlpConnection, name, opts);
-  await writeRawDbToFile(rawDb, name, dbStg, dlpConnection, outputDir);
+  await writeRawDbToFile(rawDb, name, dbStg, dlpConnection);
 }
 
 /** Write a raw database to a PDB / PRC file. */
@@ -111,18 +108,12 @@ export async function writeRawDbToFile(
   /** The database storage backend that will handle this operation */
   dbStg: DatabaseStorageInterface,
   /** PDA Connection details */
-  dlpConnection: DlpConnection,
-  /** Output directory. Defaults to current working directory. */
-  outputDir?: string
+  dlpConnection: DlpConnection
 ) {
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
-  const filePath = outputDir ? path.join(outputDir, fileName) : fileName;
 
-  await dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb, filePath);
-
-  // await fs.ensureFile(filePath);
-  // await fs.writeFile(filePath, rawDb.serialize());
+  await dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb);
 }
 
 /** Read list of all databases from a Palm OS device. */
@@ -192,15 +183,13 @@ export async function readAllDbsToFile(
   },
   /** The database storage backend that will handle this operation */
   dbStg: DatabaseStorageInterface,
-  /** Output directory. Defaults to current working directory. */
-  outputDir?: string,
   /** Additional options. */
   opts: Omit<ReadDbOptions, 'dbInfo'> = {}
 ) {
   const dbInfoList = await readDbList(dlpConnection, storageTypes, opts);
   log(`Reading ${dbInfoList.length} databases`);
   for (const dbInfo of dbInfoList) {
-    await readDbToFile(dlpConnection, dbInfo.name, dbStg, outputDir, {
+    await readDbToFile(dlpConnection, dbInfo.name, dbStg, {
       ...opts,
       dbInfo,
     });

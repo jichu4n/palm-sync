@@ -7,11 +7,19 @@ import {RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 export class NodeDatabaseStorageImplementation
   implements DatabaseStorageInterface
 {
+  constructor(baseDir?: string) {
+    this.baseDir = baseDir;
+  }
+
+  baseDir?: string;
+
   writeDatabaseToStorage(
     userInfo: DlpReadUserInfoRespType,
     db: RawPdbDatabase | RawPrcDatabase,
     outputDir?: string
   ): Promise<void> {
+    // outputDir Defaults to current working directory.
+
     throw new Error('Method not implemented.');
   }
   readDatabaseFromStorage(

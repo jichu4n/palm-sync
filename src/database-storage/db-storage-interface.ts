@@ -4,8 +4,7 @@ import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
 export interface DatabaseStorageInterface {
   writeDatabaseToStorage(
     userInfo: DlpReadUserInfoRespType,
-    db: RawPdbDatabase | RawPrcDatabase,
-    outputDir?: string
+    db: RawPdbDatabase | RawPrcDatabase
   ): Promise<void>;
   readDatabaseFromStorage(
     userInfo: DlpReadUserInfoRespType,

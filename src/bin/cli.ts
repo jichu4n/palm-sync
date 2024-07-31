@@ -105,8 +105,6 @@ if (require.main === module) {
       };
     }
 
-    const nodeDbStgImpl = new NodeDatabaseStorageImplementation();
-
     program
       .name('palm-sync')
       .version(packageJson.version)
@@ -214,8 +212,7 @@ if (require.main === module) {
                 await readDbToFile(
                   dlpConnection,
                   name,
-                  nodeDbStgImpl,
-                  outputDir
+                  new NodeDatabaseStorageImplementation(outputDir)
                 );
               }
             };
@@ -224,8 +221,7 @@ if (require.main === module) {
               await readAllDbsToFile(
                 dlpConnection,
                 {ram: !!ram, rom: !!rom},
-                nodeDbStgImpl,
-                outputDir
+                new NodeDatabaseStorageImplementation(outputDir)
               );
             };
           } else {
@@ -249,9 +245,14 @@ if (require.main === module) {
         ) => {
           await runSyncForCommand(command, async (dlpConnection) => {
             for (const filePath of filePaths) {
-              await writeDbFromFile(dlpConnection, filePath, nodeDbStgImpl, {
-                overwrite,
-              });
+              await writeDbFromFile(
+                dlpConnection,
+                filePath,
+                new NodeDatabaseStorageImplementation(),
+                {
+                  overwrite,
+                }
+              );
             }
           });
         }
@@ -324,7 +325,7 @@ if (require.main === module) {
               await syncDevice(
                 dlpConnection,
                 userName,
-                nodeDbStgImpl,
+                new NodeDatabaseStorageImplementation(storageDir),
                 conduits
               );
             } catch (error) {
