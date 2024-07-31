@@ -4,7 +4,9 @@ import {DatabaseStorageInterface} from './db-storage-interface';
 import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
 import {RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 
-export class NodeDatabaseStorageImplementation implements DatabaseStorageInterface {
+export class NodeDatabaseStorageImplementation
+  implements DatabaseStorageInterface
+{
   writeDatabaseToStorage(
     userInfo: DlpReadUserInfoRespType,
     db: RawPdbDatabase | RawPrcDatabase,

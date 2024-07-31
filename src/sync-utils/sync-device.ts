@@ -1,14 +1,8 @@
 import crypto from 'crypto';
 import debug from 'debug';
 import os from 'os';
-import path from 'path';
 import {ConduitData, ConduitInterface} from '../conduits/conduit-interface';
-import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
-import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
 import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
-import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
-import {UpdateClockConduit} from '../conduits/update-clock-conduit';
-import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
 import {DlpAddSyncLogEntryReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
