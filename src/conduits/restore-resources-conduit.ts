@@ -3,7 +3,7 @@ import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {writeDb} from '../sync-utils/write-db';
 import {ConduitData, ConduitInterface} from './conduit-interface';
-import { DatabaseStorageInterface } from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('restore-rsc');
 
@@ -25,19 +25,21 @@ export class RestoreResourcesConduit implements ConduitInterface {
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
 
-    for await (const db of await dbStg.getAllDatabasesFromStorage(dlpConnection.userInfo)) {
-        log(`Restoring [${db.header.name}] to the device`);
+    for await (const db of await dbStg.getAllDatabasesFromStorage(
+      dlpConnection.userInfo
+    )) {
+      log(`Restoring [${db.header.name}] to the device`);
 
-        try {
-          await writeDb(dlpConnection, db, {overwrite: true});
-        } catch (error) {
-          console.error(
-            `Failed to restore [${db.header.name}] from the backup. Skipping it...`,
-            error
-          );
-        }
+      try {
+        await writeDb(dlpConnection, db, {overwrite: true});
+      } catch (error) {
+        console.error(
+          `Failed to restore [${db.header.name}] from the backup. Skipping it...`,
+          error
+        );
+      }
 
-        installCount++;
+      installCount++;
     }
 
     log(`Done! Successfully restored ${installCount} resources`);

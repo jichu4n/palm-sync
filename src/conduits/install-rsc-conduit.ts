@@ -24,7 +24,9 @@ export class InstallNewResourcesConduit implements ConduitInterface {
     let installCount = 0;
 
     try {
-      for await (const db of await dbStg.getDatabasesFromInstallList(dlpConnection.userInfo)) {
+      for await (const db of await dbStg.getDatabasesFromInstallList(
+        dlpConnection.userInfo
+      )) {
         await writeDb(dlpConnection, db, {overwrite: true});
         await dbStg.removeDatabaseFromInstallList(dlpConnection.userInfo, db);
 

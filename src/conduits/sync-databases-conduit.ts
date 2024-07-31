@@ -7,10 +7,7 @@ import {DlpConnection} from '../protocols/sync-connections';
 import {SyncType} from '../sync-utils/sync-device';
 import {ConduitData, ConduitInterface} from './conduit-interface';
 import {RawPdbDatabase} from 'palm-pdb';
-import {
-  ReadDbOptions,
-  readRawDb,
-} from '../sync-utils/read-db';
+import {ReadDbOptions, readRawDb} from '../sync-utils/read-db';
 import {cleanUpDb, fastSyncDb, slowSyncDb} from '../sync-utils/sync-db';
 import debug from 'debug';
 import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
@@ -76,7 +73,6 @@ export class SyncDatabasesConduit implements ConduitInterface {
             `${dbInfo.name}.pdb`
           )) as RawPdbDatabase;
 
-
           try {
             if (conduitData.syncType == SyncType.FAST_SYNC) {
               await fastSyncDb(dlpConnection, rawDekstopDb, {cardNo: 0}, false);
@@ -90,7 +86,10 @@ export class SyncDatabasesConduit implements ConduitInterface {
               }.pdb successfully synced.`
             );
 
-            await dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDekstopDb);
+            await dbStg.writeDatabaseToStorage(
+              dlpConnection.userInfo,
+              rawDekstopDb
+            );
           } catch (error) {
             console.error(
               `Failed to sync resource [${dbInfo.name}], skipping...`,

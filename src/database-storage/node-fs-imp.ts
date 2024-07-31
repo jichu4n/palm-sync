@@ -1,29 +1,46 @@
 import * as fsExtra from 'fs-extra';
 import * as path from 'path';
-import { DatabaseStorageInterface } from './db-storage-interface';
-import { DlpReadUserInfoRespType } from '../protocols/dlp-commands';
-import { RawPdbDatabase, RawPrcDatabase } from 'palm-pdb';
+import {DatabaseStorageInterface} from './db-storage-interface';
+import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
+import {RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 
 class NodeDatabaseManager implements DatabaseStorageInterface {
-  writeDatabaseToStorage(userInfo: DlpReadUserInfoRespType, db: RawPdbDatabase | RawPrcDatabase, outputDir?: string): Promise<void> {
+  writeDatabaseToStorage(
+    userInfo: DlpReadUserInfoRespType,
+    db: RawPdbDatabase | RawPrcDatabase,
+    outputDir?: string
+  ): Promise<void> {
     throw new Error('Method not implemented.');
   }
-  readDatabaseFromStorage(userInfo: DlpReadUserInfoRespType, dbName: string, dbPath?: string): Promise<RawPdbDatabase | RawPrcDatabase> {
+  readDatabaseFromStorage(
+    userInfo: DlpReadUserInfoRespType,
+    dbName: string,
+    dbPath?: string
+  ): Promise<RawPdbDatabase | RawPrcDatabase> {
     throw new Error('Method not implemented.');
   }
-  databaseExistsInStorage(userInfo: DlpReadUserInfoRespType, dbName: string): Promise<boolean> {
+  databaseExistsInStorage(
+    userInfo: DlpReadUserInfoRespType,
+    dbName: string
+  ): Promise<boolean> {
     throw new Error('Method not implemented.');
   }
-  getAllDatabasesFromStorage(userInfo: DlpReadUserInfoRespType): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
+  getAllDatabasesFromStorage(
+    userInfo: DlpReadUserInfoRespType
+  ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
     throw new Error('Method not implemented.');
   }
-  getDatabasesFromInstallList(userInfo: DlpReadUserInfoRespType): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
+  getDatabasesFromInstallList(
+    userInfo: DlpReadUserInfoRespType
+  ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
     throw new Error('Method not implemented.');
   }
-  removeDatabaseFromInstallList(userInfo: DlpReadUserInfoRespType, db: RawPdbDatabase | RawPrcDatabase): Promise<void> {
+  removeDatabaseFromInstallList(
+    userInfo: DlpReadUserInfoRespType,
+    db: RawPdbDatabase | RawPrcDatabase
+  ): Promise<void> {
     throw new Error('Method not implemented.');
   }
-
 
   // private getPath(deviceId: string, dbName: string): string {
   //   return path.join(deviceId, dbName);
