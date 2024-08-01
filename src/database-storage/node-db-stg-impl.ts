@@ -1,8 +1,8 @@
-import * as fsExtra from 'fs-extra';
+import fs from 'fs-extra';
 import * as path from 'path';
 import {DatabaseStorageInterface} from './db-storage-interface';
 import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
-import {RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
+import {DatabaseHdrType, RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 
 export class NodeDatabaseStorageImplementation
   implements DatabaseStorageInterface
@@ -13,81 +13,99 @@ export class NodeDatabaseStorageImplementation
 
   baseDir?: string;
 
-  writeDatabaseToStorage(
-    userInfo: DlpReadUserInfoRespType,
-    db: RawPdbDatabase | RawPrcDatabase,
-    outputDir?: string
-  ): Promise<void> {
-    // outputDir Defaults to current working directory.
-
-    throw new Error('Method not implemented.');
-  }
-  readDatabaseFromStorage(
-    userInfo: DlpReadUserInfoRespType,
-    dbName: string,
-    dbPath?: string
-  ): Promise<RawPdbDatabase | RawPrcDatabase> {
-    // prefer reading from dbPath first if available!
-
-    throw new Error('Method not implemented.');
-  }
-  databaseExistsInStorage(
-    userInfo: DlpReadUserInfoRespType,
-    dbName: string
-  ): Promise<boolean> {
-    throw new Error('Method not implemented.');
-  }
-  getAllDatabasesFromStorage(
-    userInfo: DlpReadUserInfoRespType
-  ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
-    throw new Error('Method not implemented.');
-  }
-  getDatabasesFromInstallList(
-    userInfo: DlpReadUserInfoRespType
-  ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
-    throw new Error('Method not implemented.');
-  }
-  removeDatabaseFromInstallList(
+  async writeDatabaseToStorage(
     userInfo: DlpReadUserInfoRespType,
     db: RawPdbDatabase | RawPrcDatabase
   ): Promise<void> {
-    throw new Error('Method not implemented.');
+    const filePath = this.getBackupPath(userInfo.userName, this.getDbFullName(db));
+    await fs.ensureFile(filePath);
+    await fs.writeFile(filePath, db.serialize());
   }
 
-  // private getPath(deviceId: string, dbName: string): string {
-  //   return path.join(deviceId, dbName);
-  // }
+  async readDatabaseFromStorage(
+    userInfo: DlpReadUserInfoRespType,
+    dbName: string
+  ): Promise<RawPdbDatabase | RawPrcDatabase> {
+    const filePath = this.getBackupPath(userInfo.userName, dbName);
+    const fileExists = await fs.pathExists(filePath);
 
-  // async saveDatabase(deviceId: string, dbName: string, data: Buffer): Promise<void> {
-  //   const filePath = this.getPath(deviceId, dbName);
-  //   await fsExtra.ensureFile(filePath);
-  //   await fsExtra.writeFile(filePath, data);
-  // }
+    if (!fileExists) {
+      throw new Error(`Database file ${dbName} does not exist.`);
+    }
 
-  // async readDatabase(deviceId: string, dbName: string): Promise<Buffer> {
-  //   const filePath = this.getPath(deviceId, dbName);
-  //   return await fsExtra.readFile(filePath);
-  // }
+    const fileBuffer = await fs.readFile(filePath);
+    const header = DatabaseHdrType.from(fileBuffer);
+    return header.attributes.resDB
+      ? RawPrcDatabase.from(fileBuffer)
+      : RawPdbDatabase.from(fileBuffer);
+  }
 
-  // async databaseExists(deviceId: string, dbName: string): Promise<boolean> {
-  //   const filePath = this.getPath(deviceId, dbName);
-  //   return await fsExtra.pathExists(filePath);
-  // }
+  async databaseExistsInStorage(
+    userInfo: DlpReadUserInfoRespType,
+    dbName: string
+  ): Promise<boolean> {
+    const filePath = this.getBackupPath(userInfo.userName, dbName);
+    return await fs.pathExists(filePath);
+  }
 
-  // async getFilesInDirectory(deviceId: string, dirName: string): Promise<AsyncIterableIterator<Dirent>> {
-  //   const dirPath = this.getPath(deviceId, dirName);
-  //   const dir = await fsExtra.opendir(dirPath);
-  //   return dir[Symbol.asyncIterator]();
-  // }
+  async getAllDatabasesFromStorage(
+    userInfo: DlpReadUserInfoRespType
+  ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
+    const userDir = this.getBackupPath(userInfo.userName, '');
+    const dbFiles = await fs.readdir(userDir);
 
-  // async moveDatabase(deviceId: string, srcDbName: string, destDbName: string): Promise<void> {
-  //   const srcPath = this.getPath(deviceId, srcDbName);
-  //   const destPath = this.getPath(deviceId, destDbName);
-  //   await fsExtra.move(srcPath, destPath);
-  // }
+    const databases: Array<RawPdbDatabase | RawPrcDatabase> = [];
 
-  // async deleteDatabase(deviceId: string, dbName: string): Promise<void> {
-  //   const filePath = this.getPath(deviceId, dbName);
-  //   await fsExtra.remove(filePath);
-  // }
+    for (const dbFile of dbFiles) {
+      const db = await this.readDatabaseFromStorage(userInfo, dbFile);
+      databases.push(db);
+    }
+
+    return databases;
+  }
+
+  async getDatabasesFromInstallList(
+    userInfo: DlpReadUserInfoRespType
+  ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
+    const installDir = this.getInstallPath(userInfo.userName);
+    const installFiles = await fs.readdir(installDir);
+
+    const databases: Array<RawPdbDatabase | RawPrcDatabase> = [];
+
+    for (const dbFile of installFiles) {
+      const db = await this.readDatabaseFromStorage(userInfo, dbFile);
+      databases.push(db);
+    }
+
+    return databases;
+  }
+
+  async removeDatabaseFromInstallList(
+    userInfo: DlpReadUserInfoRespType,
+    db: RawPdbDatabase | RawPrcDatabase
+  ): Promise<void> {
+    const installDir = this.getInstallPath(userInfo.userName);
+    const dbName = this.getDbFullName(db);
+    const filePath = path.join(installDir, dbName);
+
+    const fileExists = await fs.pathExists(filePath);
+    if (fileExists) {
+      await fs.remove(filePath);
+    }
+  }
+
+  private getDbFullName(db: RawPdbDatabase | RawPrcDatabase): string {
+    const ext = db.header.attributes.resDB ? 'prc' : 'pdb';
+    return `${db.header.name}.${ext}`;
+  }
+
+  private getBackupPath(deviceId: string, dbName: string): string {
+    const backupDir = this.baseDir ? path.join(this.baseDir, deviceId, 'backup') : path.join(deviceId, 'backup');
+    return path.join(backupDir, dbName);
+  }
+
+  private getInstallPath(deviceId: string): string {
+    return this.baseDir ? path.join(this.baseDir, deviceId, 'install') : path.join(deviceId, 'install');
+  }
+
 }

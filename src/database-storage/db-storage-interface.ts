@@ -8,8 +8,7 @@ export interface DatabaseStorageInterface {
   ): Promise<void>;
   readDatabaseFromStorage(
     userInfo: DlpReadUserInfoRespType,
-    dbName: string,
-    dbPath?: string
+    dbName: string
   ): Promise<RawPdbDatabase | RawPrcDatabase>;
   databaseExistsInStorage(
     userInfo: DlpReadUserInfoRespType,

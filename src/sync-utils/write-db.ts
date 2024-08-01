@@ -70,16 +70,16 @@ export async function writeDb<DatabaseT extends Serializable>(
 export async function writeDbFromFile(
   dlpConnection: DlpConnection,
   /** Path to the PDB / PRC file to install. */
-  filePath: string,
+  fileName: string,
   /** The database storage backend that will handle this operation */
   dbStg: DatabaseStorageInterface,
   opts: WriteDbOptions = {}
 ): Promise<void> {
-  logFile(`=> ${filePath}`);
+  logFile(`=> ${fileName}`);
 
   return await writeRawDb(
     dlpConnection,
-    await dbStg.readDatabaseFromStorage(dlpConnection.userInfo, '', filePath),
+    await dbStg.readDatabaseFromStorage(dlpConnection.userInfo, fileName),
     opts
   );
 }

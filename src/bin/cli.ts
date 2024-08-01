@@ -245,10 +245,13 @@ if (require.main === module) {
         ) => {
           await runSyncForCommand(command, async (dlpConnection) => {
             for (const filePath of filePaths) {
+              const directory = path.dirname(filePath);
+              const filename = path.basename(filePath);
+
               await writeDbFromFile(
                 dlpConnection,
-                filePath,
-                new NodeDatabaseStorageImplementation(),
+                filename,
+                new NodeDatabaseStorageImplementation(directory),
                 {
                   overwrite,
                 }
