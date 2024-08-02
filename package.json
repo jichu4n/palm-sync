@@ -1,6 +1,6 @@
 {
   "name": "palm-sync",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sync with Palm OS devices",
   "repository": {
     "type": "git",
@@ -39,7 +39,8 @@
     "usb": "./src/sync-servers/usb.browser.ts",
     "./src/sync-servers/network-sync-server.ts": false,
     "./src/sync-servers/serial-network-sync-server.ts": false,
-    "./src/sync-servers/serial-sync-server.ts": false
+    "./src/sync-servers/serial-sync-server.ts": false,
+    "./src/database-storage/node-db-stg-impl.ts": false
   },
   "devDependencies": {
     "@types/browserify": "^12.0.40",
