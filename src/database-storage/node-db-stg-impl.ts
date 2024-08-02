@@ -7,11 +7,21 @@ import {DatabaseHdrType, RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 export class NodeDatabaseStorageImplementation
   implements DatabaseStorageInterface
 {
-  constructor(baseDir?: string) {
+  constructor(baseDir?: string, readWriteToBasedir: boolean = false) {
     this.baseDir = baseDir;
+    this.readWriteToBasedir = readWriteToBasedir;
+
+    if (readWriteToBasedir) {
+      if (!baseDir) {
+        throw new Error('set to readWriteToBasedir, but basedir it is null!');
+      }
+
+      fs.ensureDirSync(baseDir);
+    }
   }
 
   baseDir?: string;
+  readWriteToBasedir: boolean;
 
   async createUsernameInStorage(requestedUserName: string): Promise<void> {
     await fs.ensureDir(this.getBackupPath(requestedUserName));
@@ -27,10 +37,13 @@ export class NodeDatabaseStorageImplementation
     userInfo: DlpReadUserInfoRespType,
     db: RawPdbDatabase | RawPrcDatabase
   ): Promise<void> {
-    const filePath = this.getBackupPathForDatabase(
-      userInfo.userName,
-      this.getDbFullName(db)
-    );
+    const filePath = this.readWriteToBasedir
+      ? path.join(this.baseDir as string, this.getDbFullName(db))
+      : this.getBackupPathForDatabase(
+          userInfo.userName,
+          this.getDbFullName(db)
+        );
+
     await fs.ensureFile(filePath);
     await fs.writeFile(filePath, db.serialize());
   }
@@ -39,17 +52,23 @@ export class NodeDatabaseStorageImplementation
     userInfo: DlpReadUserInfoRespType,
     dbName: string
   ): Promise<RawPdbDatabase | RawPrcDatabase> {
-    var filePath = this.getBackupPathForDatabase(userInfo.userName, dbName);
-    const backupFileExists = await fs.pathExists(filePath);
+    let filePath: string | undefined;
 
-    if (!backupFileExists) {
-      filePath = this.getInstallPathForDatabase(userInfo.userName, dbName);
-      const installFileExists = await fs.pathExists(filePath);
+    if (this.readWriteToBasedir) {
+      filePath = path.join(this.baseDir as string, dbName);
+    } else {
+      filePath = this.getBackupPathForDatabase(userInfo.userName, dbName);
+      const backupFileExists = await fs.pathExists(filePath);
 
-      if (!installFileExists) {
-        throw new Error(
-          `Database file [${dbName}] does not exist in the backup nor in the install dir.`
-        );
+      if (!backupFileExists) {
+        filePath = this.getInstallPathForDatabase(userInfo.userName, dbName);
+        const installFileExists = await fs.pathExists(filePath);
+
+        if (!installFileExists) {
+          throw new Error(
+            `Database file [${dbName}] does not exist in the backup nor in the install dir.`
+          );
+        }
       }
     }
 

@@ -19,9 +19,7 @@ export interface DatabaseStorageInterface {
   getAllDatabasesFromStorage(
     userInfo: DlpReadUserInfoRespType
   ): Promise<Array<RawPdbDatabase | RawPrcDatabase>>;
-  getDatabasesFromInstallList(
-    userInfo: DlpReadUserInfoRespType
-  ): Promise<{
+  getDatabasesFromInstallList(userInfo: DlpReadUserInfoRespType): Promise<{
     databases: Array<RawPdbDatabase | RawPrcDatabase>;
     filenames: string[];
   }>;

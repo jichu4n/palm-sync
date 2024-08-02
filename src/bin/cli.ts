@@ -212,7 +212,7 @@ if (require.main === module) {
                 await readDbToFile(
                   dlpConnection,
                   name,
-                  new NodeDatabaseStorageImplementation(outputDir)
+                  new NodeDatabaseStorageImplementation(outputDir, true)
                 );
               }
             };
@@ -221,7 +221,7 @@ if (require.main === module) {
               await readAllDbsToFile(
                 dlpConnection,
                 {ram: !!ram, rom: !!rom},
-                new NodeDatabaseStorageImplementation(outputDir)
+                new NodeDatabaseStorageImplementation(outputDir, true)
               );
             };
           } else {
@@ -251,7 +251,7 @@ if (require.main === module) {
               await writeDbFromFile(
                 dlpConnection,
                 filename,
-                new NodeDatabaseStorageImplementation(directory),
+                new NodeDatabaseStorageImplementation(directory, true),
                 {
                   overwrite,
                 }
