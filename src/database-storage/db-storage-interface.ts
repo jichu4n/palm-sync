@@ -2,6 +2,8 @@ import {RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
 
 export interface DatabaseStorageInterface {
+  createUsernameInStorage(requestedUserName: string): Promise<void>;
+  isUsernameKnownInStorage(requestedUserName: string): Promise<boolean>;
   writeDatabaseToStorage(
     userInfo: DlpReadUserInfoRespType,
     db: RawPdbDatabase | RawPrcDatabase
@@ -19,9 +21,13 @@ export interface DatabaseStorageInterface {
   ): Promise<Array<RawPdbDatabase | RawPrcDatabase>>;
   getDatabasesFromInstallList(
     userInfo: DlpReadUserInfoRespType
-  ): Promise<Array<RawPdbDatabase | RawPrcDatabase>>;
+  ): Promise<{
+    databases: Array<RawPdbDatabase | RawPrcDatabase>;
+    filenames: string[];
+  }>;
   removeDatabaseFromInstallList(
     userInfo: DlpReadUserInfoRespType,
-    db: RawPdbDatabase | RawPrcDatabase
+    db: RawPdbDatabase | RawPrcDatabase,
+    filename: string
   ): Promise<void>;
 }

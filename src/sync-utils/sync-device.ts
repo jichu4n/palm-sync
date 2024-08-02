@@ -11,9 +11,6 @@ import {DatabaseStorageInterface} from '../database-storage/db-storage-interface
 const log = debug('palm-sync').extend('sync-device');
 
 const NO_ID_SET = 0;
-export const TO_INSTALL_DIR = 'install';
-export const DATABASES_STORAGE_DIR = 'databases';
-export const JSON_PALM_ID = 'palm-id.json';
 export const CARD_ZERO = 0;
 
 export class PalmDeviceIdentification {
@@ -56,20 +53,20 @@ export async function syncDevice(
     );
   }
 
-  // if (!(await fs.exists(path.join(palmDir, JSON_PALM_ID)))) {
-  //   log(
-  //     `The username [${requestedUserName}] is new. Creating new local-id file.`
-  //   );
-  //   await fs.writeJSON(path.join(palmDir, JSON_PALM_ID), localID);
-  //   syncType = SyncType.FIRST_SYNC;
-  // } else {
-  //   if (localID.newlySet) {
-  //     shoudRestoreAllResources = true;
-  //   }
-  // }
-
   if (dlpConnection.userInfo.lastSyncPc != localID.thisPcId) {
     syncType = SyncType.SLOW_SYNC;
+  }
+
+  if (!(await dbStg.isUsernameKnownInStorage(requestedUserName))) {
+    log(
+      `The username [${requestedUserName}] is new. Creating new local-id file.`
+    );
+    await dbStg.createUsernameInStorage(requestedUserName);
+    syncType = SyncType.FIRST_SYNC;
+  } else {
+    if (localID.newlySet) {
+      shoudRestoreAllResources = true;
+    }
   }
 
   log(`Sync Type is [${syncType.valueOf()}]`);
@@ -119,7 +116,6 @@ export async function syncDevice(
       `Executing conduit [${i + 1}] of [${conduits.length}]: ${conduit.name}`
     );
     await conduit.execute(dlpConnection, conduitData, dbStg);
-
     await appendToHotsyncLog(dlpConnection, `- '${conduit.name}' OK!`);
 
     log(`Conduit '${conduit.name}' successfully executed!`);
@@ -182,7 +178,7 @@ function getComputerID() {
   const hash = crypto.createHash('sha256').update(combinedInfo).digest('hex');
   const truncatedHash = parseInt(hash.substring(0, 8), 16) >>> 0; // Truncate to 32 bits
 
-  log(`This computer ID is [0x${truncatedHash}]`);
+  log(`This computer ID is [0x${truncatedHash}] parsed from [${combinedInfo}]`);
 
   return truncatedHash;
 }

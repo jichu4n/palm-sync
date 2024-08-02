@@ -24,11 +24,22 @@ export class InstallNewResourcesConduit implements ConduitInterface {
     let installCount = 0;
 
     try {
-      for await (const db of await dbStg.getDatabasesFromInstallList(
+      const {databases, filenames} = await dbStg.getDatabasesFromInstallList(
         dlpConnection.userInfo
-      )) {
+      );
+      log(`Found [${databases.length}] resources to install`);
+
+      for (let i = 0; i < databases.length; i++) {
+        const db = databases[i];
+        log(`Installing [${db.header.name}]`);
         await writeDb(dlpConnection, db, {overwrite: true});
-        await dbStg.removeDatabaseFromInstallList(dlpConnection.userInfo, db);
+        log(`Successfully installed [${db.header.name}]`);
+        await dbStg.removeDatabaseFromInstallList(
+          dlpConnection.userInfo,
+          db,
+          filenames[i]
+        );
+        log(`Removed [${db.header.name}] from install list`);
 
         installCount++;
       }
@@ -39,7 +50,7 @@ export class InstallNewResourcesConduit implements ConduitInterface {
     if (installCount == 0) {
       log(`No new resources to install`);
     } else {
-      log(`Done! Successfully installed ${installCount} resources`);
+      log(`Done! Successfully installed [${installCount}] resources`);
     }
   }
 }
