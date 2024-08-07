@@ -1,12 +1,20 @@
 import fs from 'fs-extra';
 import * as path from 'path';
+import os from 'os';
+import crypto from 'crypto';
+import debug from 'debug';
 import {DatabaseStorageInterface} from './db-storage-interface';
 import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
 import {DatabaseHdrType, RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 
+const log = debug('palm-sync').extend('node-db-stg');
+
 export class NodeDatabaseStorageImplementation
   implements DatabaseStorageInterface
 {
+  baseDir?: string;
+  readWriteToBasedir: boolean;
+
   constructor(baseDir?: string, readWriteToBasedir: boolean = false) {
     this.baseDir = baseDir;
     this.readWriteToBasedir = readWriteToBasedir;
@@ -20,8 +28,25 @@ export class NodeDatabaseStorageImplementation
     }
   }
 
-  baseDir?: string;
-  readWriteToBasedir: boolean;
+  getComputerId(): number {
+    const hostname = os.hostname();
+    const cpus = os
+      .cpus()
+      .map((cpu) => cpu.model)
+      .join(';');
+    const totalMemory = os.totalmem();
+
+    const combinedInfo = `${hostname}:${cpus}:${totalMemory}`;
+
+    const hash = crypto.createHash('sha256').update(combinedInfo).digest('hex');
+    const truncatedHash = parseInt(hash.substring(0, 8), 16) >>> 0; // Truncate to 32 bits
+
+    log(
+      `This computer ID is [0x${truncatedHash}] parsed from [${combinedInfo}]`
+    );
+
+    return truncatedHash;
+  }
 
   async createUsernameInStorage(requestedUserName: string): Promise<void> {
     await fs.ensureDir(this.getBackupPath(requestedUserName));

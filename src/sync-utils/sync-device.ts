@@ -1,6 +1,5 @@
-import crypto from 'crypto';
 import debug from 'debug';
-import os from 'os';
+import crypto from 'crypto';
 import {ConduitData, ConduitInterface} from '../conduits/conduit-interface';
 import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
 import {DlpAddSyncLogEntryReqType} from '../protocols/dlp-commands';
@@ -14,10 +13,10 @@ const NO_ID_SET = 0;
 export const CARD_ZERO = 0;
 
 export class PalmDeviceIdentification {
-  userId = 0;
+  userId = NO_ID_SET;
   userName = '';
   newlySet = false;
-  thisPcId = getComputerID();
+  thisPcId = NO_ID_SET;
 }
 
 /**
@@ -42,7 +41,7 @@ export async function syncDevice(
   log(`Start syncing device! There are [${conduits.length}] conduits.`);
 
   let syncType = getDefaultSyncType();
-  let localID = getLocalID(dlpConnection, requestedUserName);
+  let localID = getLocalID(dlpConnection, requestedUserName, dbStg);
 
   let shoudRestoreAllResources = false;
 
@@ -132,9 +131,12 @@ function getDefaultSyncType(): SyncType {
 
 function getLocalID(
   dlpConnection: DlpConnection,
-  requestedUserName: string
+  requestedUserName: string,
+  dbStg: DatabaseStorageInterface
 ): PalmDeviceIdentification {
   let localID = new PalmDeviceIdentification();
+
+  localID.thisPcId = dbStg.getComputerId();
 
   if (dlpConnection.userInfo.userId !== NO_ID_SET) {
     localID.userId = dlpConnection.userInfo.userId;
@@ -157,28 +159,4 @@ async function appendToHotsyncLog(
   let logEntry = new DlpAddSyncLogEntryReqType();
   logEntry.text = `${message}\n`;
   await dlpConnection.execute(logEntry);
-}
-
-/**
- * Generates a UInt32 using computer's hostname, CPU and memory information
- * used for identifying if the PDA was syncd with another computer.
- *
- * @returns A UInt32 that roughly uniquely identifies a computer
- */
-function getComputerID() {
-  const hostname = os.hostname();
-  const cpus = os
-    .cpus()
-    .map((cpu) => cpu.model)
-    .join(';');
-  const totalMemory = os.totalmem();
-
-  const combinedInfo = `${hostname}:${cpus}:${totalMemory}`;
-
-  const hash = crypto.createHash('sha256').update(combinedInfo).digest('hex');
-  const truncatedHash = parseInt(hash.substring(0, 8), 16) >>> 0; // Truncate to 32 bits
-
-  log(`This computer ID is [0x${truncatedHash}] parsed from [${combinedInfo}]`);
-
-  return truncatedHash;
 }

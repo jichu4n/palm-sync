@@ -32,14 +32,13 @@ export class RestoreResourcesConduit implements ConduitInterface {
 
       try {
         await writeDb(dlpConnection, db, {overwrite: true});
+        installCount++;
       } catch (error) {
         console.error(
           `Failed to restore [${db.header.name}] from the backup. Skipping it...`,
           error
         );
       }
-
-      installCount++;
     }
 
     log(`Done! Successfully restored ${installCount} resources`);
