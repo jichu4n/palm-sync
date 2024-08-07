@@ -26,7 +26,10 @@ import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
 import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
 import {UpdateClockConduit} from '../conduits/update-clock-conduit';
 import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
-import {NodeDatabaseStorageImplementation} from '../database-storage/node-db-stg-impl';
+import {
+  NodeDatabaseStorageImplementation,
+  READ_WRITE_TO_BASE_DIR_DIRECTLY,
+} from '../database-storage/node-db-stg-impl';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -212,7 +215,10 @@ if (require.main === module) {
                 await readDbToFile(
                   dlpConnection,
                   name,
-                  new NodeDatabaseStorageImplementation(outputDir, true)
+                  new NodeDatabaseStorageImplementation(
+                    outputDir,
+                    READ_WRITE_TO_BASE_DIR_DIRECTLY
+                  )
                 );
               }
             };
@@ -221,7 +227,10 @@ if (require.main === module) {
               await readAllDbsToFile(
                 dlpConnection,
                 {ram: !!ram, rom: !!rom},
-                new NodeDatabaseStorageImplementation(outputDir, true)
+                new NodeDatabaseStorageImplementation(
+                  outputDir,
+                  READ_WRITE_TO_BASE_DIR_DIRECTLY
+                )
               );
             };
           } else {
@@ -251,7 +260,10 @@ if (require.main === module) {
               await writeDbFromFile(
                 dlpConnection,
                 filename,
-                new NodeDatabaseStorageImplementation(directory, true),
+                new NodeDatabaseStorageImplementation(
+                  directory,
+                  READ_WRITE_TO_BASE_DIR_DIRECTLY
+                ),
                 {
                   overwrite,
                 }
