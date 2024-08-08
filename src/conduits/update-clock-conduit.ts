@@ -4,6 +4,7 @@ import {
 } from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {ConduitData, ConduitInterface} from './conduit-interface';
+import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
 import debug from 'debug';
 
 const log = debug('palm-sync').extend('conduit').extend('update-clock');
@@ -17,7 +18,8 @@ export class UpdateClockConduit implements ConduitInterface {
 
   async execute(
     dlpConnection: DlpConnection,
-    conduitData: ConduitData
+    conduitData: ConduitData,
+    dbStg: DatabaseStorageInterface
   ): Promise<void> {
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
     let setDateTimeReq = new DlpSetSysDateTimeReqType();

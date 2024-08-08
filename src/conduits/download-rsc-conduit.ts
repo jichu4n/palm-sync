@@ -1,17 +1,11 @@
 import debug from 'debug';
-import fs from 'fs-extra';
 import {RawPdbDatabase} from 'palm-pdb';
-import path from 'path';
 import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
-import {
-  ReadDbOptions,
-  readRawDb,
-  writeRawDbToFile,
-} from '../sync-utils/read-db';
+import {ReadDbOptions, readRawDb} from '../sync-utils/read-db';
 import {cleanUpDb} from '../sync-utils/sync-db';
-import {DATABASES_STORAGE_DIR} from '../sync-utils/sync-device';
 import {ConduitData, ConduitInterface} from './conduit-interface';
+import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('download-new');
 
@@ -23,13 +17,11 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
 
   async execute(
     dlpConnection: DlpConnection,
-    conduitData: ConduitData
+    conduitData: ConduitData,
+    dbStg: DatabaseStorageInterface
   ): Promise<void> {
     if (conduitData.dbList == null) {
       throw new Error('dbList is mandatory for this Conduit');
-    }
-    if (conduitData.palmDir == null) {
-      throw new Error('palmDir is mandatory for this Conduit');
     }
 
     let downloadCount = 0;
@@ -42,8 +34,9 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
       const ext = dbInfo.dbFlags.resDB ? 'prc' : 'pdb';
       const fileName = `${dbInfo.name}.${ext}`;
 
-      const resourceExists = await fs.exists(
-        path.join(conduitData.palmDir, DATABASES_STORAGE_DIR, fileName)
+      const resourceExists = await dbStg.databaseExistsInStorage(
+        dlpConnection.userInfo,
+        fileName
       );
 
       if (!resourceExists) {
@@ -61,11 +54,8 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             await cleanUpDb(rawDb as RawPdbDatabase);
           }
 
-          await writeRawDbToFile(
-            rawDb,
-            dbInfo.name,
-            path.join(conduitData.palmDir, DATABASES_STORAGE_DIR)
-          );
+          dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb);
+
           downloadCount++;
         } catch (error) {
           console.error(
