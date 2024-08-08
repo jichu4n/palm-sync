@@ -137,7 +137,10 @@ async function shouldSkipRecord(
 
   // We only sync databases that exists on Desktop
   const fileName = `${dbInfo.name}.pdb`;
-  const existsInStorage = await dbStg.databaseExistsInStorage(userInfo, fileName);
+  const existsInStorage = await dbStg.databaseExistsInStorage(
+    userInfo,
+    fileName
+  );
 
   if (!existsInStorage) {
     log(`The databse [${fileName}] does not exists on storage, skipping...`);
