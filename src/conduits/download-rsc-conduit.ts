@@ -35,7 +35,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
       const fileName = `${dbInfo.name}.${ext}`;
 
       const resourceExists = await dbStg.databaseExistsInStorage(
-        dlpConnection.userInfo,
+        conduitData.palmID.userName,
         fileName
       );
 
@@ -54,7 +54,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             await cleanUpDb(rawDb as RawPdbDatabase);
           }
 
-          dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb);
+          dbStg.writeDatabaseToStorage(conduitData.palmID.userName, rawDb);
 
           downloadCount++;
         } catch (error) {

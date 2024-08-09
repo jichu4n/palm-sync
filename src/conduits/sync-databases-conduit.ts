@@ -50,7 +50,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
             await cleanUpDb(rawDb as RawPdbDatabase);
           }
 
-          dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb);
+          dbStg.writeDatabaseToStorage(conduitData.palmID.userName, rawDb);
         }
         break;
 
@@ -59,7 +59,9 @@ export class SyncDatabasesConduit implements ConduitInterface {
         for (let index = 0; index < conduitData.dbList.length; index++) {
           const dbInfo = conduitData.dbList[index];
 
-          if (await shouldSkipRecord(dbInfo, dlpConnection.userInfo, dbStg)) {
+          if (
+            await shouldSkipRecord(dbInfo, conduitData.palmID.userName, dbStg)
+          ) {
             log(
               `[${index + 1}]/[${conduitData.dbList.length}]: ${
                 dbInfo.name
@@ -69,7 +71,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
           }
 
           const rawDekstopDb = (await dbStg.readDatabaseFromStorage(
-            dlpConnection.userInfo,
+            conduitData.palmID.userName,
             `${dbInfo.name}.pdb`
           )) as RawPdbDatabase;
 
@@ -87,7 +89,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
             );
 
             await dbStg.writeDatabaseToStorage(
-              dlpConnection.userInfo,
+              conduitData.palmID.userName,
               rawDekstopDb
             );
           } catch (error) {
@@ -122,7 +124,7 @@ async function getRawDbFromDevice(
 
 async function shouldSkipRecord(
   dbInfo: DlpDBInfoType,
-  userInfo: DlpReadUserInfoRespType,
+  username: string,
   dbStg: DatabaseStorageInterface
 ): Promise<Boolean> {
   // We only sync databases, so if it's a PRC, we skip
@@ -138,7 +140,7 @@ async function shouldSkipRecord(
   // We only sync databases that exists on Desktop
   const fileName = `${dbInfo.name}.pdb`;
   const existsInStorage = await dbStg.databaseExistsInStorage(
-    userInfo,
+    username,
     fileName
   );
 

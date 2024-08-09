@@ -60,13 +60,13 @@ export class NodeDatabaseStorageImplementation
   }
 
   async writeDatabaseToStorage(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     db: RawPdbDatabase | RawPrcDatabase
   ): Promise<void> {
     const filePath = this.readWriteToBasedir
       ? path.join(this.baseDir as string, this.getDbFullName(db))
       : this.getBackupPathForDatabase(
-          userInfo.userName,
+          requestedUserName,
           this.getDbFullName(db)
         );
 
@@ -75,7 +75,7 @@ export class NodeDatabaseStorageImplementation
   }
 
   async readDatabaseFromStorage(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     dbName: string
   ): Promise<RawPdbDatabase | RawPrcDatabase> {
     let filePath: string | undefined;
@@ -83,11 +83,11 @@ export class NodeDatabaseStorageImplementation
     if (this.readWriteToBasedir) {
       filePath = path.join(this.baseDir as string, dbName);
     } else {
-      filePath = this.getBackupPathForDatabase(userInfo.userName, dbName);
+      filePath = this.getBackupPathForDatabase(requestedUserName, dbName);
       const backupFileExists = await fs.pathExists(filePath);
 
       if (!backupFileExists) {
-        filePath = this.getInstallPathForDatabase(userInfo.userName, dbName);
+        filePath = this.getInstallPathForDatabase(requestedUserName, dbName);
         const installFileExists = await fs.pathExists(filePath);
 
         if (!installFileExists) {
@@ -106,36 +106,34 @@ export class NodeDatabaseStorageImplementation
   }
 
   async databaseExistsInStorage(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     dbName: string
   ): Promise<boolean> {
-    const filePath = this.getBackupPathForDatabase(userInfo.userName, dbName);
+    const filePath = this.getBackupPathForDatabase(requestedUserName, dbName);
     return await fs.pathExists(filePath);
   }
 
   async getAllDatabasesFromStorage(
-    userInfo: DlpReadUserInfoRespType
+    requestedUserName: string
   ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
-    const userDir = this.getBackupPath(userInfo.userName);
+    const userDir = this.getBackupPath(requestedUserName);
     const dbFiles = await fs.readdir(userDir);
 
     const databases: Array<RawPdbDatabase | RawPrcDatabase> = [];
 
     for (const dbFile of dbFiles) {
-      const db = await this.readDatabaseFromStorage(userInfo, dbFile);
+      const db = await this.readDatabaseFromStorage(requestedUserName, dbFile);
       databases.push(db);
     }
 
     return databases;
   }
 
-  async getDatabasesFromInstallList(
-    userInfo: DlpReadUserInfoRespType
-  ): Promise<{
+  async getDatabasesFromInstallList(requestedUserName: string): Promise<{
     databases: Array<RawPdbDatabase | RawPrcDatabase>;
     filenames: string[];
   }> {
-    const installDir = this.getInstallPath(userInfo.userName);
+    const installDir = this.getInstallPath(requestedUserName);
     const installFiles = await fs.readdir(installDir);
 
     const databases: Array<RawPdbDatabase | RawPrcDatabase> = [];
@@ -147,7 +145,7 @@ export class NodeDatabaseStorageImplementation
       .sort();
 
     for (const dbFile of sortedFiles) {
-      const db = await this.readDatabaseFromStorage(userInfo, dbFile);
+      const db = await this.readDatabaseFromStorage(requestedUserName, dbFile);
       databases.push(db);
       filenames.push(dbFile);
     }
@@ -156,16 +154,16 @@ export class NodeDatabaseStorageImplementation
   }
 
   async removeDatabaseFromInstallList(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     db: RawPdbDatabase | RawPrcDatabase,
     filename: string
   ): Promise<void> {
-    const installDir = this.getInstallPath(userInfo.userName);
+    const installDir = this.getInstallPath(requestedUserName);
     const installFilePath = path.join(installDir, filename);
 
     const dbName = this.getDbFullName(db);
     const backupFilePath = this.getBackupPathForDatabase(
-      userInfo.userName,
+      requestedUserName,
       dbName
     );
 

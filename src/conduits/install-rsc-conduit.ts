@@ -25,7 +25,7 @@ export class InstallNewResourcesConduit implements ConduitInterface {
 
     try {
       const {databases, filenames} = await dbStg.getDatabasesFromInstallList(
-        dlpConnection.userInfo
+        conduitData.palmID.userName
       );
       log(`Found [${databases.length}] resources to install`);
 
@@ -35,7 +35,7 @@ export class InstallNewResourcesConduit implements ConduitInterface {
         await writeDb(dlpConnection, db, {overwrite: true});
         log(`Successfully installed [${db.header.name}]`);
         await dbStg.removeDatabaseFromInstallList(
-          dlpConnection.userInfo,
+          conduitData.palmID.userName,
           db,
           filenames[i]
         );

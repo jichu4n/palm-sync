@@ -113,7 +113,7 @@ export async function writeRawDbToFile(
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
 
-  await dbStg.writeDatabaseToStorage(dlpConnection.userInfo, rawDb);
+  await dbStg.writeDatabaseToStorage(dlpConnection.userInfo.userName, rawDb);
 }
 
 /** Read list of all databases from a Palm OS device. */

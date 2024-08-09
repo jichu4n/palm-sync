@@ -22,12 +22,14 @@ export class RestoreResourcesConduit implements ConduitInterface {
     dbStg: DatabaseStorageInterface
   ): Promise<void> {
     let installCount = 0;
+    log(`Restoring backup for [${conduitData.palmID.userName}]`);
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
+    const dbs = await dbStg.getAllDatabasesFromStorage(
+      conduitData.palmID.userName
+    );
 
-    for await (const db of await dbStg.getAllDatabasesFromStorage(
-      dlpConnection.userInfo
-    )) {
+    for (const db of dbs) {
       log(`Restoring [${db.header.name}] to the device`);
 
       try {

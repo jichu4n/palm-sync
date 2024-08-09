@@ -20,7 +20,7 @@ export interface DatabaseStorageInterface {
    * @param db the database to be written
    */
   writeDatabaseToStorage(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     db: RawPdbDatabase | RawPrcDatabase
   ): Promise<void>;
   /**
@@ -30,7 +30,7 @@ export interface DatabaseStorageInterface {
    * @param dbName the name of the database to retrieve
    */
   readDatabaseFromStorage(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     dbName: string
   ): Promise<RawPdbDatabase | RawPrcDatabase>;
   /**
@@ -40,7 +40,7 @@ export interface DatabaseStorageInterface {
    * @param dbName the name of the database to retrieve
    */
   databaseExistsInStorage(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     dbName: string
   ): Promise<boolean>;
   /**
@@ -49,14 +49,14 @@ export interface DatabaseStorageInterface {
    * @param userInfo the user which the database belongs to
    */
   getAllDatabasesFromStorage(
-    userInfo: DlpReadUserInfoRespType
+    requestedUserName: string
   ): Promise<Array<RawPdbDatabase | RawPrcDatabase>>;
   /**
    * Returns an array of databases which should be installed in the PDA for the
    * supplied user.
    * @param userInfo the user which the database belongs to
    */
-  getDatabasesFromInstallList(userInfo: DlpReadUserInfoRespType): Promise<{
+  getDatabasesFromInstallList(requestedUserName: string): Promise<{
     databases: Array<RawPdbDatabase | RawPrcDatabase>;
     filenames: string[];
   }>;
@@ -69,7 +69,7 @@ export interface DatabaseStorageInterface {
    * @param filename the precise filename of the database archive
    */
   removeDatabaseFromInstallList(
-    userInfo: DlpReadUserInfoRespType,
+    requestedUserName: string,
     db: RawPdbDatabase | RawPrcDatabase,
     filename: string
   ): Promise<void>;

@@ -58,13 +58,20 @@ export async function syncDevice(
 
   if (!(await dbStg.isUsernameKnownInStorage(requestedUserName))) {
     log(
-      `The username [${requestedUserName}] is new. Creating new local-id file.`
+      `The requested username [${requestedUserName}] was never synced here before. Creating folder structure in filesystem.`
     );
     await dbStg.createUsernameInStorage(requestedUserName);
     syncType = SyncType.FIRST_SYNC;
   } else {
     if (localID.newlySet) {
+      log(
+        `The requested username [${localID.userName}] is known in storage, but the device is clean. Restoring backup.`
+      );
       shoudRestoreAllResources = true;
+    } else {
+      log(
+        `The requested username [${requestedUserName}] is known in storage, and matches the device.`
+      );
     }
   }
 
