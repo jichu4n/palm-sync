@@ -57,7 +57,7 @@
     "ts-node": "^10.9.2",
     "tsify": "^5.0.4",
     "typedoc": "^0.26.6",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.4"
   },
   "dependencies": {
     "debug": "^4.3.6",
