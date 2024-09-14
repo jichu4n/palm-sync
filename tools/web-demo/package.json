@@ -14,7 +14,7 @@
     "@emotion/styled": "^11.13.0",
     "@fontsource/inter": "^5.0.21",
     "@mui/icons-material": "^5.16.7",
-    "@mui/material": "^5.16.5",
+    "@mui/material": "^5.16.7",
     "mobx": "^6.13.1",
     "mobx-react": "^9.1.1",
     "palm-sync": "file:../../",
