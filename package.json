@@ -46,7 +46,7 @@
     "@types/dom-serial": "^1.0.6",
     "@types/duplexify": "^3.6.4",
     "@types/fs-extra": "^11.0.4",
-    "@types/jest": "^29.5.12",
+    "@types/jest": "^29.5.13",
     "@types/lodash": "^4.17.7",
     "@types/node": "^22.5.5",
     "browserify": "^17.0.0",
