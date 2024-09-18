@@ -41,7 +41,7 @@ import {
 } from '../protocols/dlp-commands';
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('read-db');
 const logFile = debug('palm-sync').extend('sync-file');
@@ -113,7 +113,7 @@ export async function writeRawDbToFile(
   const ext = rawDb.header.attributes.resDB ? 'prc' : 'pdb';
   const fileName = `${name}.${ext}`;
 
-  await dbStg.writeDatabaseToStorage(dlpConnection.userInfo.userName, rawDb);
+  await dbStg.writeDatabase(dlpConnection.userInfo.userName, rawDb);
 }
 
 /** Read list of all databases from a Palm OS device. */

@@ -1,5 +1,4 @@
 import {RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
-import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
 
 export interface DatabaseStorageInterface {
   /**
@@ -7,19 +6,19 @@ export interface DatabaseStorageInterface {
    * create identification files regarding the specific PDA used.
    * @param requestedUserName the username of the PDA
    */
-  createUsernameInStorage(requestedUserName: string): Promise<void>;
+  createUser(requestedUserName: string): Promise<void>;
   /**
    * Returns `true` if the requestedUserName was used in the `createUsernameInStorage()` function
    *  in the past and may have data in this computer.
    * @param requestedUserName the username of the PDA
    */
-  isUsernameKnownInStorage(requestedUserName: string): Promise<boolean>;
+  userExists(requestedUserName: string): Promise<boolean>;
   /**
    * Writes the database in the filesystem for persistance for the supplied user.
    * @param userInfo the user which the database belongs to
    * @param db the database to be written
    */
-  writeDatabaseToStorage(
+  writeDatabase(
     requestedUserName: string,
     db: RawPdbDatabase | RawPrcDatabase
   ): Promise<void>;
@@ -29,7 +28,7 @@ export interface DatabaseStorageInterface {
    * @param userInfo the user which the database belongs to
    * @param dbName the name of the database to retrieve
    */
-  readDatabaseFromStorage(
+  readDatabase(
     requestedUserName: string,
     dbName: string
   ): Promise<RawPdbDatabase | RawPrcDatabase>;
@@ -39,7 +38,7 @@ export interface DatabaseStorageInterface {
    * @param userInfo the user which the database belongs to
    * @param dbName the name of the database to retrieve
    */
-  databaseExistsInStorage(
+  databaseExists(
     requestedUserName: string,
     dbName: string
   ): Promise<boolean>;
@@ -48,7 +47,7 @@ export interface DatabaseStorageInterface {
    * supplied user.
    * @param userInfo the user which the database belongs to
    */
-  getAllDatabasesFromStorage(
+  getAllDatabases(
     requestedUserName: string
   ): Promise<Array<RawPdbDatabase | RawPrcDatabase>>;
   /**

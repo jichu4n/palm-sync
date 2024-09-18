@@ -3,7 +3,7 @@ import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {writeDb} from '../sync-utils/write-db';
 import {ConduitData, ConduitInterface} from './conduit-interface';
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('restore-rsc');
 
@@ -25,7 +25,7 @@ export class RestoreResourcesConduit implements ConduitInterface {
     log(`Restoring backup for [${conduitData.palmID.userName}]`);
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
-    const dbs = await dbStg.getAllDatabasesFromStorage(
+    const dbs = await dbStg.getAllDatabases(
       conduitData.palmID.userName
     );
 

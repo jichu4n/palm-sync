@@ -27,9 +27,9 @@ import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
 import {UpdateClockConduit} from '../conduits/update-clock-conduit';
 import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
 import {
-  NodeDatabaseStorageImplementation,
+  NodeDatabaseStorage,
   READ_WRITE_TO_BASE_DIR_DIRECTLY,
-} from '../database-storage/node-db-stg-impl';
+} from '../database-storage/node-database-storage';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -215,7 +215,7 @@ if (require.main === module) {
                 await readDbToFile(
                   dlpConnection,
                   name,
-                  new NodeDatabaseStorageImplementation(
+                  new NodeDatabaseStorage(
                     outputDir,
                     READ_WRITE_TO_BASE_DIR_DIRECTLY
                   )
@@ -227,7 +227,7 @@ if (require.main === module) {
               await readAllDbsToFile(
                 dlpConnection,
                 {ram: !!ram, rom: !!rom},
-                new NodeDatabaseStorageImplementation(
+                new NodeDatabaseStorage(
                   outputDir,
                   READ_WRITE_TO_BASE_DIR_DIRECTLY
                 )
@@ -260,7 +260,7 @@ if (require.main === module) {
               await writeDbFromFile(
                 dlpConnection,
                 filename,
-                new NodeDatabaseStorageImplementation(
+                new NodeDatabaseStorage(
                   directory,
                   READ_WRITE_TO_BASE_DIR_DIRECTLY
                 ),
@@ -340,7 +340,7 @@ if (require.main === module) {
               await syncDevice(
                 dlpConnection,
                 userName,
-                new NodeDatabaseStorageImplementation(storageDir),
+                new NodeDatabaseStorage(storageDir),
                 conduits
               );
             } catch (error) {

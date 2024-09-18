@@ -10,7 +10,7 @@ import {RawPdbDatabase} from 'palm-pdb';
 import {ReadDbOptions, readRawDb} from '../sync-utils/read-db';
 import {cleanUpDb, fastSyncDb, slowSyncDb} from '../sync-utils/sync-db';
 import debug from 'debug';
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('sync-dbs');
 
@@ -50,7 +50,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
             await cleanUpDb(rawDb as RawPdbDatabase);
           }
 
-          dbStg.writeDatabaseToStorage(conduitData.palmID.userName, rawDb);
+          dbStg.writeDatabase(conduitData.palmID.userName, rawDb);
         }
         break;
 
@@ -70,7 +70,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
             continue;
           }
 
-          const rawDekstopDb = (await dbStg.readDatabaseFromStorage(
+          const rawDekstopDb = (await dbStg.readDatabase(
             conduitData.palmID.userName,
             `${dbInfo.name}.pdb`
           )) as RawPdbDatabase;
@@ -88,7 +88,7 @@ export class SyncDatabasesConduit implements ConduitInterface {
               }.pdb successfully synced.`
             );
 
-            await dbStg.writeDatabaseToStorage(
+            await dbStg.writeDatabase(
               conduitData.palmID.userName,
               rawDekstopDb
             );
@@ -139,7 +139,7 @@ async function shouldSkipRecord(
 
   // We only sync databases that exists on Desktop
   const fileName = `${dbInfo.name}.pdb`;
-  const existsInStorage = await dbStg.databaseExistsInStorage(
+  const existsInStorage = await dbStg.databaseExists(
     username,
     fileName
   );

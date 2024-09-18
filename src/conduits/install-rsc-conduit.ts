@@ -3,7 +3,7 @@ import {DlpConnection} from '../protocols/sync-connections';
 import {ConduitData, ConduitInterface} from './conduit-interface';
 import {writeDb} from '../sync-utils/write-db';
 import debug from 'debug';
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('install-rsc');
 

@@ -1,4 +1,4 @@
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 import {DlpDBInfoType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {PalmDeviceIdentification, SyncType} from '../sync-utils/sync-device';

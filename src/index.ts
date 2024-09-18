@@ -20,7 +20,7 @@ export * from './sync-utils/read-db';
 export * from './sync-utils/write-db';
 export * from './sync-utils/sync-db';
 export * from './sync-utils/sync-device';
-export * from './database-storage/db-storage-interface';
+export * from './database-storage/database-storage-interface';
 export * from './conduits/conduit-interface';
 export * from './conduits/download-rsc-conduit';
 export * from './conduits/install-rsc-conduit';

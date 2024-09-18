@@ -5,7 +5,7 @@ import {DlpConnection} from '../protocols/sync-connections';
 import {ReadDbOptions, readRawDb} from '../sync-utils/read-db';
 import {cleanUpDb} from '../sync-utils/sync-db';
 import {ConduitData, ConduitInterface} from './conduit-interface';
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('download-new');
 
@@ -34,7 +34,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
       const ext = dbInfo.dbFlags.resDB ? 'prc' : 'pdb';
       const fileName = `${dbInfo.name}.${ext}`;
 
-      const resourceExists = await dbStg.databaseExistsInStorage(
+      const resourceExists = await dbStg.databaseExists(
         conduitData.palmID.userName,
         fileName
       );
@@ -54,7 +54,7 @@ export class DownloadNewResourcesConduit implements ConduitInterface {
             await cleanUpDb(rawDb as RawPdbDatabase);
           }
 
-          dbStg.writeDatabaseToStorage(conduitData.palmID.userName, rawDb);
+          dbStg.writeDatabase(conduitData.palmID.userName, rawDb);
 
           downloadCount++;
         } catch (error) {

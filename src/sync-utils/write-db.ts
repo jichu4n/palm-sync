@@ -32,7 +32,7 @@ import {
 } from '../protocols/dlp-commands';
 import {DlpRespErrorCode} from '../protocols/dlp-protocol';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('write-db');
 const logFile = debug('palm-sync').extend('sync-file');
@@ -79,7 +79,7 @@ export async function writeDbFromFile(
 
   return await writeRawDb(
     dlpConnection,
-    await dbStg.readDatabaseFromStorage(
+    await dbStg.readDatabase(
       dlpConnection.userInfo.userName,
       fileName
     ),

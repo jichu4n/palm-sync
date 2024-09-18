@@ -3,14 +3,14 @@ import * as path from 'path';
 import os from 'os';
 import crypto from 'crypto';
 import debug from 'debug';
-import {DatabaseStorageInterface} from './db-storage-interface';
+import {DatabaseStorageInterface} from './database-storage-interface';
 import {DlpReadUserInfoRespType} from '../protocols/dlp-commands';
 import {DatabaseHdrType, RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 
 const log = debug('palm-sync').extend('node-db-stg');
 export const READ_WRITE_TO_BASE_DIR_DIRECTLY = true;
 
-export class NodeDatabaseStorageImplementation
+export class NodeDatabaseStorage
   implements DatabaseStorageInterface
 {
   baseDir?: string;
@@ -49,17 +49,17 @@ export class NodeDatabaseStorageImplementation
     return truncatedHash;
   }
 
-  async createUsernameInStorage(requestedUserName: string): Promise<void> {
+  async createUser(requestedUserName: string): Promise<void> {
     await fs.ensureDir(this.getBackupPath(requestedUserName));
     await fs.ensureDir(this.getInstallPath(requestedUserName));
   }
 
-  async isUsernameKnownInStorage(requestedUserName: string): Promise<boolean> {
+  async userExists(requestedUserName: string): Promise<boolean> {
     const userDir = this.getBackupPath(requestedUserName);
     return await fs.pathExists(userDir);
   }
 
-  async writeDatabaseToStorage(
+  async writeDatabase(
     requestedUserName: string,
     db: RawPdbDatabase | RawPrcDatabase
   ): Promise<void> {
@@ -74,7 +74,7 @@ export class NodeDatabaseStorageImplementation
     await fs.writeFile(filePath, db.serialize());
   }
 
-  async readDatabaseFromStorage(
+  async readDatabase(
     requestedUserName: string,
     dbName: string
   ): Promise<RawPdbDatabase | RawPrcDatabase> {
@@ -105,7 +105,7 @@ export class NodeDatabaseStorageImplementation
       : RawPdbDatabase.from(fileBuffer);
   }
 
-  async databaseExistsInStorage(
+  async databaseExists(
     requestedUserName: string,
     dbName: string
   ): Promise<boolean> {
@@ -113,7 +113,7 @@ export class NodeDatabaseStorageImplementation
     return await fs.pathExists(filePath);
   }
 
-  async getAllDatabasesFromStorage(
+  async getAllDatabases(
     requestedUserName: string
   ): Promise<Array<RawPdbDatabase | RawPrcDatabase>> {
     const userDir = this.getBackupPath(requestedUserName);
@@ -122,7 +122,7 @@ export class NodeDatabaseStorageImplementation
     const databases: Array<RawPdbDatabase | RawPrcDatabase> = [];
 
     for (const dbFile of dbFiles) {
-      const db = await this.readDatabaseFromStorage(requestedUserName, dbFile);
+      const db = await this.readDatabase(requestedUserName, dbFile);
       databases.push(db);
     }
 
@@ -145,7 +145,7 @@ export class NodeDatabaseStorageImplementation
       .sort();
 
     for (const dbFile of sortedFiles) {
-      const db = await this.readDatabaseFromStorage(requestedUserName, dbFile);
+      const db = await this.readDatabase(requestedUserName, dbFile);
       databases.push(db);
       filenames.push(dbFile);
     }

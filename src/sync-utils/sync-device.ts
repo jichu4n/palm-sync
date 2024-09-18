@@ -5,7 +5,7 @@ import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
 import {DlpAddSyncLogEntryReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
-import {DatabaseStorageInterface} from '../database-storage/db-storage-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('sync-device');
 
@@ -56,11 +56,11 @@ export async function syncDevice(
     syncType = SyncType.SLOW_SYNC;
   }
 
-  if (!(await dbStg.isUsernameKnownInStorage(requestedUserName))) {
+  if (!(await dbStg.userExists(requestedUserName))) {
     log(
       `The requested username [${requestedUserName}] was never synced here before. Creating folder structure in filesystem.`
     );
-    await dbStg.createUsernameInStorage(requestedUserName);
+    await dbStg.createUser(requestedUserName);
     syncType = SyncType.FIRST_SYNC;
   } else {
     if (localID.newlySet) {
