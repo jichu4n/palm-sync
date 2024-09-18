@@ -79,10 +79,7 @@ export async function writeDbFromFile(
 
   return await writeRawDb(
     dlpConnection,
-    await dbStg.readDatabase(
-      dlpConnection.userInfo.userName,
-      fileName
-    ),
+    await dbStg.readDatabase(dlpConnection.userInfo.userName, fileName),
     opts
   );
 }

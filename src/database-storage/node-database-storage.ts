@@ -10,9 +10,7 @@ import {DatabaseHdrType, RawPdbDatabase, RawPrcDatabase} from 'palm-pdb';
 const log = debug('palm-sync').extend('node-db-stg');
 export const READ_WRITE_TO_BASE_DIR_DIRECTLY = true;
 
-export class NodeDatabaseStorage
-  implements DatabaseStorageInterface
-{
+export class NodeDatabaseStorage implements DatabaseStorageInterface {
   baseDir?: string;
   readWriteToBasedir: boolean;
 

@@ -25,9 +25,7 @@ export class RestoreResourcesConduit implements ConduitInterface {
     log(`Restoring backup for [${conduitData.palmID.userName}]`);
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
-    const dbs = await dbStg.getAllDatabases(
-      conduitData.palmID.userName
-    );
+    const dbs = await dbStg.getAllDatabases(conduitData.palmID.userName);
 
     for (const db of dbs) {
       log(`Restoring [${db.header.name}] to the device`);

@@ -38,10 +38,7 @@ export interface DatabaseStorageInterface {
    * @param userInfo the user which the database belongs to
    * @param dbName the name of the database to retrieve
    */
-  databaseExists(
-    requestedUserName: string,
-    dbName: string
-  ): Promise<boolean>;
+  databaseExists(requestedUserName: string, dbName: string): Promise<boolean>;
   /**
    * Returns an array of databases which were previously backed-up for the
    * supplied user.
