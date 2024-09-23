@@ -1,32 +1,22 @@
-import crypto from 'crypto';
 import debug from 'debug';
-import fs from 'fs-extra';
-import os from 'os';
-import path from 'path';
-import {ConduitData} from '../conduits/conduit-interface';
-import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
-import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
+import crypto from 'crypto';
+import {ConduitData, ConduitInterface} from '../conduits/conduit-interface';
 import {RestoreResourcesConduit} from '../conduits/restore-resources-conduit';
-import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
-import {UpdateClockConduit} from '../conduits/update-clock-conduit';
-import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
 import {DlpAddSyncLogEntryReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
 import {readDbList} from './read-db';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('sync-device');
 
 const NO_ID_SET = 0;
-export const TO_INSTALL_DIR = 'install';
-export const DATABASES_STORAGE_DIR = 'databases';
-export const JSON_PALM_ID = 'palm-id.json';
 export const CARD_ZERO = 0;
 
 export class PalmDeviceIdentification {
-  userId = 0;
+  userId = NO_ID_SET;
   userName = '';
   newlySet = false;
-  thisPcId = getComputerID();
+  thisPcId = NO_ID_SET;
 }
 
 /**
@@ -43,24 +33,15 @@ export enum SyncType {
 
 export async function syncDevice(
   dlpConnection: DlpConnection,
-  storageDir: string,
-  requestedUserName: string
+  requestedUserName: string,
+  /** The database storage backend that will handle this operation */
+  dbStg: DatabaseStorageInterface,
+  conduits: Array<ConduitInterface>
 ) {
-  const palmDir = path.join(storageDir, requestedUserName);
-
-  let conduits = [
-    new SyncDatabasesConduit(),
-    new DownloadNewResourcesConduit(),
-    new InstallNewResourcesConduit(),
-    new UpdateClockConduit(),
-    new UpdateSyncInfoConduit(),
-  ];
-
   log(`Start syncing device! There are [${conduits.length}] conduits.`);
-  await assertMandatoryDirectories(storageDir, palmDir);
 
   let syncType = getDefaultSyncType();
-  let localID = getLocalID(dlpConnection, requestedUserName);
+  let localID = getLocalID(dlpConnection, requestedUserName, dbStg);
 
   let shoudRestoreAllResources = false;
 
@@ -71,20 +52,27 @@ export async function syncDevice(
     );
   }
 
-  if (!(await fs.exists(path.join(palmDir, JSON_PALM_ID)))) {
+  if (dlpConnection.userInfo.lastSyncPc != localID.thisPcId) {
+    syncType = SyncType.SLOW_SYNC;
+  }
+
+  if (!(await dbStg.userExists(requestedUserName))) {
     log(
-      `The username [${requestedUserName}] is new. Creating new local-id file.`
+      `The requested username [${requestedUserName}] was never synced here before. Creating folder structure in filesystem.`
     );
-    await fs.writeJSON(path.join(palmDir, JSON_PALM_ID), localID);
+    await dbStg.createUser(requestedUserName);
     syncType = SyncType.FIRST_SYNC;
   } else {
     if (localID.newlySet) {
+      log(
+        `The requested username [${localID.userName}] is known in storage, but the device is clean. Restoring backup.`
+      );
       shoudRestoreAllResources = true;
+    } else {
+      log(
+        `The requested username [${requestedUserName}] is known in storage, and matches the device.`
+      );
     }
-  }
-
-  if (dlpConnection.userInfo.lastSyncPc != localID.thisPcId) {
-    syncType = SyncType.SLOW_SYNC;
   }
 
   log(`Sync Type is [${syncType.valueOf()}]`);
@@ -96,13 +84,16 @@ export async function syncDevice(
   let conduitData: ConduitData = {
     palmID: localID,
     dbList: null,
-    palmDir: palmDir,
     syncType: syncType,
   };
 
   if (shoudRestoreAllResources) {
     log('Restoring backup!');
-    await new RestoreResourcesConduit().execute(dlpConnection, conduitData);
+    await new RestoreResourcesConduit().execute(
+      dlpConnection,
+      conduitData,
+      dbStg
+    );
     await appendToHotsyncLog(
       dlpConnection,
       `Successfully restored the backup!`
@@ -130,8 +121,7 @@ export async function syncDevice(
     log(
       `Executing conduit [${i + 1}] of [${conduits.length}]: ${conduit.name}`
     );
-    await conduit.execute(dlpConnection, conduitData);
-
+    await conduit.execute(dlpConnection, conduitData, dbStg);
     await appendToHotsyncLog(dlpConnection, `- '${conduit.name}' OK!`);
 
     log(`Conduit '${conduit.name}' successfully executed!`);
@@ -142,27 +132,18 @@ export async function syncDevice(
   log(`Finished sync!`);
 }
 
-async function assertMandatoryDirectories(storageDir: string, palmDir: string) {
-  try {
-    await fs.ensureDir(storageDir);
-    await fs.ensureDir(palmDir);
-    await fs.ensureDir(path.join(palmDir, TO_INSTALL_DIR));
-    await fs.ensureDir(path.join(palmDir, DATABASES_STORAGE_DIR));
-  } catch (e) {
-    console.error(`Failed to create necessary directories to sync device`, e);
-    throw new Error(`Failed to create necessary directories to sync device`);
-  }
-}
-
 function getDefaultSyncType(): SyncType {
   return SyncType.FAST_SYNC;
 }
 
 function getLocalID(
   dlpConnection: DlpConnection,
-  requestedUserName: string
+  requestedUserName: string,
+  dbStg: DatabaseStorageInterface
 ): PalmDeviceIdentification {
   let localID = new PalmDeviceIdentification();
+
+  localID.thisPcId = dbStg.getComputerId();
 
   if (dlpConnection.userInfo.userId !== NO_ID_SET) {
     localID.userId = dlpConnection.userInfo.userId;
@@ -185,28 +166,4 @@ async function appendToHotsyncLog(
   let logEntry = new DlpAddSyncLogEntryReqType();
   logEntry.text = `${message}\n`;
   await dlpConnection.execute(logEntry);
-}
-
-/**
- * Generates a UInt32 using computer's hostname, CPU and memory information
- * used for identifying if the PDA was syncd with another computer.
- *
- * @returns A UInt32 that roughly uniquely identifies a computer
- */
-function getComputerID() {
-  const hostname = os.hostname();
-  const cpus = os
-    .cpus()
-    .map((cpu) => cpu.model)
-    .join(';');
-  const totalMemory = os.totalmem();
-
-  const combinedInfo = `${hostname}:${cpus}:${totalMemory}`;
-
-  const hash = crypto.createHash('sha256').update(combinedInfo).digest('hex');
-  const truncatedHash = parseInt(hash.substring(0, 8), 16) >>> 0; // Truncate to 32 bits
-
-  log(`This computer ID is [0x${truncatedHash}]`);
-
-  return truncatedHash;
 }

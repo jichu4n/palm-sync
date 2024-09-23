@@ -21,6 +21,15 @@ import {
 } from '../sync-utils/read-db';
 import {syncDevice} from '../sync-utils/sync-device';
 import {writeDbFromFile} from '../sync-utils/write-db';
+import {DownloadNewResourcesConduit} from '../conduits/download-rsc-conduit';
+import {InstallNewResourcesConduit} from '../conduits/install-rsc-conduit';
+import {SyncDatabasesConduit} from '../conduits/sync-databases-conduit';
+import {UpdateClockConduit} from '../conduits/update-clock-conduit';
+import {UpdateSyncInfoConduit} from '../conduits/update-sync-info-conduit';
+import {
+  NodeDatabaseStorage,
+  READ_WRITE_TO_BASE_DIR_DIRECTLY,
+} from '../database-storage/node-database-storage';
 // Not using resolveJsonModule because it causes the output to be generated
 // relative to the root directory instead of src/.
 const packageJson = require('../../package.json');
@@ -203,7 +212,14 @@ if (require.main === module) {
             }
             syncFn = async (dlpConnection) => {
               for (const name of names) {
-                await readDbToFile(dlpConnection, name, outputDir);
+                await readDbToFile(
+                  dlpConnection,
+                  name,
+                  new NodeDatabaseStorage(
+                    outputDir,
+                    READ_WRITE_TO_BASE_DIR_DIRECTLY
+                  )
+                );
               }
             };
           } else if (ram || rom) {
@@ -211,7 +227,10 @@ if (require.main === module) {
               await readAllDbsToFile(
                 dlpConnection,
                 {ram: !!ram, rom: !!rom},
-                outputDir
+                new NodeDatabaseStorage(
+                  outputDir,
+                  READ_WRITE_TO_BASE_DIR_DIRECTLY
+                )
               );
             };
           } else {
@@ -235,7 +254,20 @@ if (require.main === module) {
         ) => {
           await runSyncForCommand(command, async (dlpConnection) => {
             for (const filePath of filePaths) {
-              await writeDbFromFile(dlpConnection, filePath, {overwrite});
+              const directory = path.dirname(filePath);
+              const filename = path.basename(filePath);
+
+              await writeDbFromFile(
+                dlpConnection,
+                filename,
+                new NodeDatabaseStorage(
+                  directory,
+                  READ_WRITE_TO_BASE_DIR_DIRECTLY
+                ),
+                {
+                  overwrite,
+                }
+              );
             }
           });
         }
@@ -297,7 +329,20 @@ if (require.main === module) {
 
           await runSyncForCommand(command, async (dlpConnection) => {
             try {
-              await syncDevice(dlpConnection, storageDir, userName);
+              let conduits = [
+                new SyncDatabasesConduit(),
+                new DownloadNewResourcesConduit(),
+                new InstallNewResourcesConduit(),
+                new UpdateClockConduit(),
+                new UpdateSyncInfoConduit(),
+              ];
+
+              await syncDevice(
+                dlpConnection,
+                userName,
+                new NodeDatabaseStorage(storageDir),
+                conduits
+              );
             } catch (error) {
               console.error(error);
             }

@@ -1,10 +1,9 @@
-import fs from 'fs-extra';
 import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DATABASES_STORAGE_DIR, TO_INSTALL_DIR} from '../sync-utils/sync-device';
 import {ConduitData, ConduitInterface} from './conduit-interface';
-import {writeDbFromFile} from '../sync-utils/write-db';
+import {writeDb} from '../sync-utils/write-db';
 import debug from 'debug';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('install-rsc');
 
@@ -17,31 +16,31 @@ export class InstallNewResourcesConduit implements ConduitInterface {
 
   async execute(
     dlpConnection: DlpConnection,
-    conduitData: ConduitData
+    conduitData: ConduitData,
+    dbStg: DatabaseStorageInterface
   ): Promise<void> {
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
-    let toInstallDir = await fs.opendir(
-      `${conduitData.palmDir}/${TO_INSTALL_DIR}`
-    );
 
     let installCount = 0;
 
     try {
-      for await (const dirent of toInstallDir) {
-        await writeDbFromFile(
-          dlpConnection,
-          `${conduitData.palmDir}/${TO_INSTALL_DIR}/${dirent.name}`,
-          {overwrite: true}
-        );
+      const {databases, filenames} = await dbStg.getDatabasesFromInstallList(
+        conduitData.palmID.userName
+      );
+      log(`Found [${databases.length}] resources to install`);
 
-        await fs.copyFile(
-          `${conduitData.palmDir}/${TO_INSTALL_DIR}/${dirent.name}`,
-          `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}/${dirent.name}`
+      for (let i = 0; i < databases.length; i++) {
+        const db = databases[i];
+        log(`Installing [${db.header.name}]`);
+        await writeDb(dlpConnection, db, {overwrite: true});
+        log(`Successfully installed [${db.header.name}]`);
+        await dbStg.removeDatabaseFromInstallList(
+          conduitData.palmID.userName,
+          db,
+          filenames[i]
         );
+        log(`Removed [${db.header.name}] from install list`);
 
-        await fs.remove(
-          `${conduitData.palmDir}/${TO_INSTALL_DIR}/${dirent.name}`
-        );
         installCount++;
       }
     } catch (err) {
@@ -51,7 +50,7 @@ export class InstallNewResourcesConduit implements ConduitInterface {
     if (installCount == 0) {
       log(`No new resources to install`);
     } else {
-      log(`Done! Successfully installed ${installCount} resources`);
+      log(`Done! Successfully installed [${installCount}] resources`);
     }
   }
 }

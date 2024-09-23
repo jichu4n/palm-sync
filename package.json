@@ -1,6 +1,6 @@
 {
   "name": "palm-sync",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Sync with Palm OS devices",
   "repository": {
     "type": "git",
@@ -26,6 +26,7 @@
     "build:udev-rules": "ts-node ./src/bin/generate-udev-rules.ts",
     "web-demo": "npm run build && npm --prefix ./tools/web-demo run dev -- --force",
     "lint": "prettier --check .",
+    "lint-write": "prettier --write .",
     "test": "env TZ=UTC jest",
     "cli": "ts-node ./src/bin/cli.ts",
     "record-sync-session": "env TZ=UTC ts-node ./src/bin/record-sync-session.ts",
@@ -38,7 +39,8 @@
     "usb": "./src/sync-servers/usb.browser.ts",
     "./src/sync-servers/network-sync-server.ts": false,
     "./src/sync-servers/serial-network-sync-server.ts": false,
-    "./src/sync-servers/serial-sync-server.ts": false
+    "./src/sync-servers/serial-sync-server.ts": false,
+    "./src/database-storage/node-db-stg-impl.ts": false
   },
   "devDependencies": {
     "@types/browserify": "^12.0.40",

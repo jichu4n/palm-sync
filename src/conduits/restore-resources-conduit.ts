@@ -1,10 +1,9 @@
 import debug from 'debug';
-import fs from 'fs-extra';
 import {DlpOpenConduitReqType} from '../protocols/dlp-commands';
 import {DlpConnection} from '../protocols/sync-connections';
-import {DATABASES_STORAGE_DIR} from '../sync-utils/sync-device';
-import {writeDbFromFile} from '../sync-utils/write-db';
+import {writeDb} from '../sync-utils/write-db';
 import {ConduitData, ConduitInterface} from './conduit-interface';
+import {DatabaseStorageInterface} from '../database-storage/database-storage-interface';
 
 const log = debug('palm-sync').extend('conduit').extend('restore-rsc');
 
@@ -19,36 +18,26 @@ export class RestoreResourcesConduit implements ConduitInterface {
 
   async execute(
     dlpConnection: DlpConnection,
-    conduitData: ConduitData
+    conduitData: ConduitData,
+    dbStg: DatabaseStorageInterface
   ): Promise<void> {
-    if (conduitData.palmDir == null) {
-      throw new Error('palmDir is mandatory for this Conduit');
-    }
-
     let installCount = 0;
+    log(`Restoring backup for [${conduitData.palmID.userName}]`);
 
     await dlpConnection.execute(DlpOpenConduitReqType.with({}));
-    let toInstallDir = fs.opendirSync(
-      `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}`
-    );
+    const dbs = await dbStg.getAllDatabases(conduitData.palmID.userName);
 
-    for await (const dirent of toInstallDir) {
-      if (dirent.name.endsWith('.prc') || dirent.name.endsWith('.pdb')) {
-        log(`Restoring ${dirent.name} to the device`);
-        try {
-          await writeDbFromFile(
-            dlpConnection,
-            `${conduitData.palmDir}/${DATABASES_STORAGE_DIR}/${dirent.name}`,
-            {overwrite: true}
-          );
-        } catch (error) {
-          console.error(
-            `Failed to restore ${dirent.name} from the backup. Skipping it...`,
-            error
-          );
-        }
+    for (const db of dbs) {
+      log(`Restoring [${db.header.name}] to the device`);
 
+      try {
+        await writeDb(dlpConnection, db, {overwrite: true});
         installCount++;
+      } catch (error) {
+        console.error(
+          `Failed to restore [${db.header.name}] from the backup. Skipping it...`,
+          error
+        );
       }
     }
 
