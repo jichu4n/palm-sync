@@ -74,7 +74,7 @@ Not supported:
 - **Operating systems**: iOS, iPadOS
 - **Connections**: Bluetooth, IR
 
-For more information, please see Connecting Palm OS Devices.
+For more information, please see [Connecting Palm OS Devices](./docs/connecting-palm-os-devices.md).
 
 ## Web demo
 
@@ -85,7 +85,7 @@ You can try out palm-sync right in your browser! The web demo allows you to do a
 Requirements:
 
 - Palm OS device connected via USB or serial, including via serial-to-USB adapter.
-- A Chromium-based browser such as Google Chrome or Microsoft Edge, running on Windows, macOS, Linux, ChromeOS, or Android (USB only). See Connecting Palm OS Devices for OS-specific setup.
+- A Chromium-based browser such as Google Chrome or Microsoft Edge, running on Windows, macOS, Linux, ChromeOS, or Android (USB only). See [Connecting Palm OS Devices](./docs/connecting-palm-os-devices.md) for OS-specific setup.
 
 ## Quickstart
 
@@ -132,7 +132,7 @@ npm run build
 ./node_modules/.bin/palm-sync run --usb ./dist/list-dbs.js
 ```
 
-Now connect and initiate HotSync on the Palm OS device! See Connecting Palm OS Devices for OS-specific setup.
+Now connect and initiate HotSync on the Palm OS device! See [Connecting Palm OS Devices](./docs/connecting-palm-os-devices.md) for OS-specific setup.
 
 ## API
 
@@ -156,6 +156,8 @@ Additionally, palm-sync depends on the following sister projects:
 
 The [`SyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/SyncServer.html) class represents a daemon that listens for incoming HotSync connections. A `SyncServer` is responsible for interfacing with the underlying hardware, setting up a transport protocol stack and passing control to the configured conduit. The various subclasses of `SyncServer` correspond to different types of connections.
 
+A `SyncServer` doesn't perform conduit logic (i.e. business logic for data synchronization) itself. Instead, it takes in a [`SyncFn`](https://jichu4n.github.io/palm-sync/docs/types/SyncFn.html) which it passes control to when a HotSync connection is established. The `SyncFn` is responsible for performing the desired conduit logic over the DLP protocol. This provides a clean connection-agnostic abstraction for conduit logic.
+
 | Connection type                                                                                                    | Node.js                                                        | Browser (Chromium)                                                                      |
 | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | [`UsbSyncServer`](https://jichu4n.github.io/palm-sync/docs/classes/UsbSyncServer.html)                             | Yes - [`usb`](https://www.npmjs.com/package/usb)               | Yes - [WebUSB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API)         |
@@ -168,8 +170,6 @@ To create a `SyncServer`:
 
 - [`createSyncServer()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServer.html) - Main entrypoint to create a `SyncServer` instance. The caller can use `start()` and `stop()` to manage the server lifecycle, and subscribe to its `connect` and `disconnect` events.
 - [`createSyncServerAndRunSync()`](https://jichu4n.github.io/palm-sync/docs/functions/createSyncServerAndRunSync.html) - Convenience function to run a single HotSync operation - create and start a `SyncServer` instance, run a conduit, and stop the server.
-
-A `SyncServer`s doesn't perform conduit logic (i.e. business logic for data synchronization) itself. Instead, it takes in a [`SyncFn`](https://jichu4n.github.io/palm-sync/docs/types/SyncFn.html) to be invoked when a HotSync connection is established. The `SyncFn` is responsible for performing the desired conduit logic over the DLP protocol. This provides a clean layer of abstraction between conduit logic and the various types of connections.
 
 ### Protocols
 
@@ -202,7 +202,11 @@ TODO
 
 ### Logs
 
-TODO
+palm-sync uses the [`debug`](https://www.npmjs.com/package/debug) library for logging messages. All messages are logged under the `palm-sync` namespace.
+
+To enable verbose logging, set the `DEBUG` environment variable to `palm-sync:*` or call `debug.enable('palm-sync:*')` to enable logging programmatically. You can capture logs by overriding `debug.log`. See [`debug` documentation](https://www.npmjs.com/package/debug) for more information.
+
+Note that on Web, you will need to import `debug` from `palm-sync` itself as it is bundled with the library using Browserify. See [`log-store.ts`](https://github.com/jichu4n/palm-sync/blob/master/tools/web-demo/src/log-store.ts) for an example.
 
 ### Reference
 
