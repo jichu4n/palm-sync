@@ -49,7 +49,9 @@ For most Palm devices with a USB cradle / cable, steps 2 and 3 can be performed 
 
 ### Network
 
-TODO
+#### Hardware
+
+On the computer side, network HotSync requires no special hardware or software. If using a firewall or connecting through a router, `palm-sync` should be whitelisted to accept incoming connections on TCP port 14238.
 
 ## Windows
 
