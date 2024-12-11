@@ -1090,7 +1090,7 @@ export class DlpReadAppBlockRespType extends DlpResponse {
 
   /** AppInfo block data. */
   @dlpArg(0, SBuffer)
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 // =============================================================================
@@ -1125,7 +1125,7 @@ export class DlpWriteAppBlockReqType extends DlpRequest<DlpWriteAppBlockRespType
       lengthType = SUInt16BE;
     }
   )
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 /** DLP response for {@link DlpWriteAppBlockReqType}. */
@@ -1176,7 +1176,7 @@ export class DlpReadSortBlockRespType extends DlpResponse {
 
   /** SortInfo block data. */
   @dlpArg(0, SBuffer)
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 // =============================================================================
@@ -1210,7 +1210,7 @@ export class DlpWriteSortBlockReqType extends DlpRequest<DlpWriteSortBlockRespTy
       lengthType = SUInt16BE;
     }
   )
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 /** DLP response for {@link DlpWriteSortBlockReqType}. */
@@ -1356,7 +1356,7 @@ export class DlpReadRecordRespType extends DlpResponse {
 
   /** Record data. */
   @dlpArg(0, SBuffer)
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 /** DLP response for {@link DlpReadNextModifiedRecReqType}. */
@@ -1493,7 +1493,7 @@ export class DlpWriteRecordReqType extends DlpRequest<DlpWriteRecordRespType> {
 
   /** Record data. */
   @dlpArg(0, SBuffer)
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 /** DLP response for {@link DlpWriteRecordReqType}. */
@@ -1701,7 +1701,7 @@ export class DlpReadResourceRespType extends DlpResponse {
       lengthType = SUInt16BE;
     }
   )
-  resData = Buffer.alloc(0);
+  resData: Buffer = Buffer.alloc(0);
 }
 
 // =============================================================================
@@ -1743,7 +1743,7 @@ export class DlpWriteResourceReqType extends DlpRequest<DlpWriteResourceRespType
       lengthType = SUInt16BE;
     }
   )
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 /** DLP response for {@link DlpWriteResourceReqType}. */
@@ -1915,7 +1915,7 @@ export class DlpCallApplicationReqTypeV10 extends DlpRequest<DlpCallApplicationR
       lengthType = SUInt16BE;
     }
   )
-  paramData = Buffer.alloc(0);
+  paramData: Buffer = Buffer.alloc(0);
 }
 
 /** DLP response for {@link DlpCallApplicationReqTypeV10}. */
@@ -1937,7 +1937,7 @@ export class DlpCallApplicationRespTypeV10 extends DlpResponse {
       lengthType = SUInt16BE;
     }
   )
-  resultData = Buffer.alloc(0);
+  resultData: Buffer = Buffer.alloc(0);
 }
 
 /** DLP request to call an application.
@@ -1975,7 +1975,7 @@ export class DlpCallApplicationReqType extends DlpRequest<DlpCallApplicationResp
 
   /** Custom parameter data. */
   @dlpArg(1, SBuffer)
-  paramData = Buffer.alloc(0);
+  paramData: Buffer = Buffer.alloc(0);
 
   serialize(opts?: SerializeOptions): Buffer {
     this.paramSize = this.paramData.length;
@@ -2000,7 +2000,7 @@ export class DlpCallApplicationRespType extends DlpResponse {
 
   /** Custom result data. */
   @dlpArg(1, SBuffer)
-  resultData = Buffer.alloc(0);
+  resultData: Buffer = Buffer.alloc(0);
 
   serialize(opts?: SerializeOptions): Buffer {
     this.resultSize = this.resultData.length;
@@ -2403,7 +2403,7 @@ export class DlpReadAppPreferenceRespType extends DlpResponse {
       lengthType = SUInt16BE;
     }
   )
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 // =============================================================================
@@ -2447,7 +2447,7 @@ export class DlpWriteAppPreferenceReqType extends DlpRequest<DlpWriteAppPreferen
 
   /** App preference data to write. */
   @dlpArg(0, SBuffer)
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 
   serialize(opts?: SerializeOptions): Buffer {
     this.prefSize = this.data.length;
@@ -3065,7 +3065,7 @@ export class DlpLoopBackTestReqType extends DlpRequest<DlpLoopBackTestRespType> 
       lengthType = SUInt32BE;
     }
   )
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 /** DLP response for {@link DlpLoopBackTestReqType}. */
@@ -3079,7 +3079,7 @@ export class DlpLoopBackTestRespType extends DlpResponse {
       lengthType = SUInt32BE;
     }
   )
-  data = Buffer.alloc(0);
+  data: Buffer = Buffer.alloc(0);
 }
 
 // =============================================================================

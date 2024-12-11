@@ -107,7 +107,7 @@ export class PadpDatagram extends SerializableWrapper<Buffer> {
   /** SLP datagram header. */
   header = new PadpDatagramHeader();
   /** Data payload. */
-  value = Buffer.alloc(0);
+  value: Buffer = Buffer.alloc(0);
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
@@ -586,5 +586,5 @@ export class PadpStream extends Duplex {
 
   /** Most recently processed SLP datagram of type PADP DATA. This is used for
    * deduplicating messages in case our ACK gets lost. */
-  private lastProcessedPadpDataChunk = Buffer.alloc(0);
+  private lastProcessedPadpDataChunk: Buffer = Buffer.alloc(0);
 }
