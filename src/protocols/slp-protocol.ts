@@ -160,7 +160,7 @@ const SLP_DATAGRAM_HEADER_LENGTH = 10;
 export class SlpDatagram extends SerializableWrapper<Buffer> {
   /** SLP datagram header. */
   header = new SlpDatagramHeader();
-  value = Buffer.alloc(0);
+  value: Buffer = Buffer.alloc(0);
 
   deserialize(buffer: Buffer, opts?: DeserializeOptions): number {
     const reader = SmartBuffer.fromBuffer(buffer);
