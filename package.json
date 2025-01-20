@@ -64,7 +64,7 @@
   "dependencies": {
     "debug": "^4.4.0",
     "duplexify": "^4.1.3",
-    "fs-extra": "^11.2.0",
+    "fs-extra": "^11.3.0",
     "lodash": "^4.17.21",
     "p-event": "^4.2.0",
     "palm-pdb": "^0.2.2",
