@@ -19,7 +19,7 @@
     "mobx-react": "^9.2.0",
     "palm-sync": "file:../../",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
