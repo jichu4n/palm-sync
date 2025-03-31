@@ -18,7 +18,7 @@
     "mobx": "^6.13.6",
     "mobx-react": "^9.2.0",
     "palm-sync": "file:../../",
-    "react": "^19.0.0",
+    "react": "^19.1.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
