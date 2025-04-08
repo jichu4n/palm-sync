@@ -59,7 +59,7 @@
     "ts-node": "^10.9.2",
     "tsify": "^5.0.4",
     "typedoc": "^0.28.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "debug": "^4.4.0",
