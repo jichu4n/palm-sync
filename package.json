@@ -55,7 +55,7 @@
     "commander": "^14.0.0",
     "concurrently": "^9.2.0",
     "prettier": "^3.6.2",
-    "ts-jest": "^29.4.0",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "tsify": "^5.0.4",
     "typedoc": "^0.28.7",
