@@ -184,7 +184,7 @@ export class UsbConnectionStream extends Duplex {
     }
     const result = await this.device.transferOut(
       this.config.outEndpoint,
-      chunk.buffer
+      chunk as unknown as ArrayBuffer
     );
     if (result.status === 'ok') {
       callback(null);
