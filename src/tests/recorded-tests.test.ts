@@ -1,4 +1,3 @@
-import assert from 'assert';
 import debug from 'debug';
 import fs from 'fs-extra';
 import path from 'path';
@@ -18,7 +17,8 @@ const recordedSessionFiles = fs
 describe('recorded tests', function () {
   for (const recordedSessionFile of recordedSessionFiles) {
     test(recordedSessionFile, async function () {
-      const [testModule, connectionType] = recordedSessionFile.split('.');
+      const [testModule, rawConnectionType] = recordedSessionFile.split('.');
+      const connectionType = rawConnectionType.replaceAll('-', ':');
       const syncFn = getSyncFn(testModule);
       const recorder = await StreamRecorder.loadFromFile(
         path.join(RECORDED_SESSION_DIR, recordedSessionFile)
