@@ -21,9 +21,11 @@ export const RECORDED_SESSION_DIR = path.join(
 );
 
 export function getRecordedSessionFilePath(
-  connectionString: string,
+  rawConnectionString: string,
   testModule: string
 ) {
+  // Replace colon in file name as it's not an allowed on Windows.
+  const connectionString = rawConnectionString.replaceAll(':', '-');
   return path.join(
     RECORDED_SESSION_DIR,
     `${testModule}.${connectionString}.json`
