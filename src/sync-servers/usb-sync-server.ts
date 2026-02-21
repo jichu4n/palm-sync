@@ -184,7 +184,7 @@ export class UsbConnectionStream extends Duplex {
     }
     const result = await this.device.transferOut(
       this.config.outEndpoint,
-      chunk as unknown as ArrayBuffer
+      chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength)
     );
     if (result.status === 'ok') {
       callback(null);
@@ -213,7 +213,13 @@ export class UsbConnectionStream extends Duplex {
     }
     if (result.status === 'ok') {
       this.push(
-        result.data ? Buffer.from(result.data.buffer) : Buffer.alloc(0)
+        result.data
+          ? Buffer.from(
+              result.data.buffer,
+              result.data.byteOffset,
+              result.data.byteLength
+            )
+          : Buffer.alloc(0)
       );
     } else {
       const message = `USB read failed with status ${result.status}`;
@@ -569,10 +575,14 @@ export class UsbSyncServer extends SyncServer {
       this.log(`--- ${message}`);
       throw new Error(message);
     }
-    const responseData = Buffer.from(result.data.buffer);
+    const responseData = Buffer.from(
+      result.data.buffer,
+      result.data.byteOffset,
+      result.data.byteLength
+    );
     this.log(`<<< ${responseData.toString('hex')}`);
     try {
-      response.deserialize(Buffer.from(result.data.buffer));
+      response.deserialize(responseData);
     } catch (e: any) {
       const message = `Failed to parse ${requestName} response: ${e.message}`;
       this.log(`--- ${message}`);
