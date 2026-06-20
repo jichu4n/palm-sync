@@ -353,6 +353,14 @@ export const USB_DEVICE_CONFIGS: ReadonlyArray<UsbDeviceConfig> = Object.freeze(
       initType: UsbInitType.GENERIC,
       protocolStackType: UsbProtocolStackType.NET_SYNC,
     },
+    /* Fossil Wrist PDA */
+    {
+      vendorId: 0x0e67,
+      productId: 0x0002,
+      label: 'Fossil Wrist PDA',
+      initType: UsbInitType.GENERIC,
+      protocolStackType: UsbProtocolStackType.NET_SYNC,
+    },
   ].map((obj) => ({...obj, usbId: toUsbId(obj)}))
 );
 
